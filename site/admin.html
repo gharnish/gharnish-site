@@ -865,7 +865,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 55</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 56</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -2410,7 +2410,7 @@ function prodRow(p,idx,total){
     +'<div class="pcard-meta">'+(CAT_LABEL[p.cat]||p.cat)+(p.internal?' <span class="badge" style="background:#5B5BBC22;color:#5B5BBC">INTERNAL</span>':'')+(p.hidden?' <span class="badge" style="background:#C6282822;color:#C62828">HIDDEN</span>':'')+(p.section==='residential'?' <span class="badge" style="background:#0E7C6B22;color:#0E7C6B">RESIDENTIAL</span>':'')+'</div>'
     +'<div class="pcard-badges">'+stockBadge+'</div>'+prodCostVendorUI(p)
     +'<div class="pcard-foot">'
-    +'<div class="pcard-price">'+fmt(p.price)+'</div>'
+    +'<div class="pcard-price" id="ppr-'+p.id+'" title="Click to edit price" onclick="event.stopPropagation();prodPriceEdit(\''+p.id+'\')" style="cursor:pointer;border-bottom:1px dashed rgba(200,134,10,.55)">'+fmt(p.price)+'</div>'
     +'<div class="prod-actions">'
     +'<button class="btn-icon" title="'+(p.hidden?'Show on customer app':'Hide from customer app')+'" onclick="event.stopPropagation();prodToggleHidden(\''+p.id+'\')" style="'+(p.hidden?'color:#C62828':'')+'">'+(p.hidden?'<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>':'<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>')+'</button>'
     +'<button class="btn-icon btn-edit" title="Edit"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>'
@@ -2747,6 +2747,8 @@ function addcatConfirm(){
   saveProductCategories(); addcatClose(); renderProducts();
   toast(n?('Added '+n+' product'+(n>1?'s':'')+' to '+((typeof CAT_LABEL!=='undefined'&&CAT_LABEL[key])||key)):'Already in this category','#1B7A4D');
 }
+function prodPriceEdit(id){ var el=document.getElementById('ppr-'+id); if(!el||el.querySelector('input'))return; var prods=loadProds(); var p=prods.find(function(x){return x.id===id;}); if(!p)return; var old=+p.price||0; el.innerHTML='<input type="number" value="'+old+'" style="width:92px;padding:4px 7px;border:1.5px solid var(--g,#C8860A);border-radius:7px;font-size:13px;font-weight:700;font-family:inherit;background:var(--c1)" onclick="event.stopPropagation()" onkeydown="if(event.key===\'Enter\'){this.blur();} if(event.key===\'Escape\'){this.dataset.esc=\'1\'; this.blur();}" onblur="prodPriceSave(\''+id+'\',this)">'; var inp=el.querySelector('input'); inp.focus(); inp.select(); }
+function prodPriceSave(id,inp){ var el=document.getElementById('ppr-'+id); var prods=loadProds(); var p=prods.find(function(x){return x.id===id;}); if(!p){ if(el)el.textContent=''; return; } function restore(){ if(el){ el.innerHTML=(p.price>=1000?('\u20b9'+(+p.price).toLocaleString('en-IN')):('\u20b9'+p.price)); } } if(inp&&inp.dataset.esc){ restore(); return; } var v=parseFloat(inp&&inp.value); if(!(v>0)){ restore(); toast('Enter a valid price','#C62828'); return; } if(v===+p.price){ restore(); return; } p.price=v; saveProds(prods); restore(); var pm=document.getElementById('pm-'+id); if(pm) pm.textContent=prodMargin(p); toast('Price updated \u2192 '+('\u20b9'+v.toLocaleString('en-IN')),'#1B7A4D'); }
 function prodToggleHidden(id){ var prods=loadProds(); var p=prods.find(function(x){return x.id===id;}); if(!p)return; if(p.hidden){ delete p.hidden; } else { p.hidden=true; } saveProds(prods); toast(p.hidden?'Hidden from customer app':'Now visible on customer app', p.hidden?'#C8860A':'#1B7A4D'); renderProducts(); }
 function duplicateProd(id){
   const prods=loadProds();
