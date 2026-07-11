@@ -1,0 +1,5 @@
+# SPA fallback — real static files (admin.html, /blog/*, /images/*, /icons/*,
+# /functions/api/*) are served first; any unmatched path renders the app shell
+# so /product/* and /category/* deep-links load index.html and the router
+# resolves the view client-side.
+/*    /index.html   200

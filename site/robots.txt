@@ -1,0 +1,11 @@
+# Gharnish (gharnish.app) — crawl policy
+# All search and AI crawlers are welcome (we want visibility + AI citations).
+# Only the private admin panel is disallowed.
+
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /manager.html
+
+Sitemap: https://gharnish.app/sitemap.xml
+Sitemap: https://gharnish.app/sitemap-products.xml

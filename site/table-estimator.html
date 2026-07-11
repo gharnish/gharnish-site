@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>try{if(new URLSearchParams(location.search).get('embed')==='1'||window.self!==window.top){document.documentElement.classList.add('embed');}}catch(e){}</script>
+<title>Free Restaurant Table Planner &amp; Price Calculator | Gharnish</title>
+<meta name="description" content="Free online table planner for restaurants, cafes &amp; bars in India. Pick a base and top material — marble, sintered stone, terrazzo, Corian or laminate — and get instant 2, 4 &amp; 6-seater table sizes and prices. Ready stock, delivery in Hyderabad &amp; Bangalore.">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://gharnish.app/table-estimator.html">
+<meta property="og:image" content="https://gharnish.app/icons/icon-512.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Free Restaurant Table Planner | Gharnish">
+<meta name="twitter:description" content="Pick a base and top material and get instant 2/4/6-seater table sizes and prices for cafes, restaurants and bars in India.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Free Restaurant Table Planner | Gharnish">
+<meta property="og:description" content="Pick your venue type, table base and top material and get instant table sizes, seating and pricing for cafes, restaurants and bars in India.">
+<meta property="og:url" content="https://gharnish.app/table-estimator.html">
+<meta property="og:site_name" content="Gharnish">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "@id": "https://gharnish.app/#table-planner",
+  "name": "Gharnish Restaurant Table Planner",
+  "url": "https://gharnish.app/table-estimator.html",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Web",
+  "isAccessibleForFree": true,
+  "offers": {"@type":"Offer","price":"0","priceCurrency":"INR"},
+  "description": "A free online tool for restaurant, cafe and bar owners in India to plan tables: choose a venue type (cafe, QSR, fine-dine or bar), table base and top material, and get instant table sizes, seating capacity and pricing.",
+  "publisher": {"@type":"Organization","name":"Gharnish","url":"https://gharnish.com/","sameAs":["https://gharnish.com/","https://gharnish.app/"]}
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--g:#C8860A;--g2:#a06d08;--bg:#FFFFFF;--bg2:#fff;--c1:#F2F4F6;--ink:#1f1a14;--ink2:#4a4036;--ink3:#8a7d6c;--line:rgba(0,0,0,.09);--dark:#211b14}
+html.embed .top{display:none}
+html.embed body{padding-bottom:104px}
+html.embed .bar{position:static;background:none;backdrop-filter:none;border-top:1px solid var(--line);margin-top:18px;padding-bottom:0}
+html.embed .wrap{padding-top:10px}
+.r-shop{display:inline-block;margin-top:6px;font-size:11px;font-weight:700;color:var(--g2);cursor:pointer;border-bottom:1px dashed rgba(160,109,8,.45)}
+.r-shop:hover{color:var(--g)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',sans-serif;background:radial-gradient(1200px 480px at 50% -120px,#fff 0%,var(--bg) 60%),var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.5;padding-bottom:118px;overflow-x:hidden}
+.wrap{max-width:1160px;margin:0 auto;padding:0 18px}
+.top{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:12px;padding:13px 18px;max-width:1160px;margin:0 auto;background:rgba(247,243,236,.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.back{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--bg2);display:flex;align-items:center;justify-content:center;color:var(--ink);text-decoration:none;font-size:19px;flex:none;transition:.15s}
+.back:active{transform:scale(.94)}
+.brand{font-family:'Poppins',sans-serif;font-weight:800;font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink)}
+.brand .dot{color:var(--g)}
+.tag{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;color:var(--g);border:1.4px solid rgba(200,134,10,.35);padding:5px 10px;border-radius:999px}
+.hero{padding:18px 4px 8px;max-width:680px;animation:fade .5s ease both}
+.hero h1{font-family:'Poppins',sans-serif;font-size:30px;font-weight:800;letter-spacing:-.025em;line-height:1.08}
+.hero h1 em{font-style:normal;color:var(--g)}
+.hero p{color:var(--ink2);font-size:14px;margin-top:7px}
+
+/* layout */
+.layout{display:grid;grid-template-columns:1fr;grid-template-areas:"preview" "choices" "results" "enquire";gap:0;animation:fade .5s .05s ease both}
+.a-preview{grid-area:preview}.a-choices{grid-area:choices}.a-results{grid-area:results}.a-enquire{grid-area:enquire;display:none}
+@media(min-width:980px){
+  .layout{grid-template-columns:1fr 390px;grid-template-areas:"choices preview" "choices results" "choices enquire";column-gap:38px;align-items:start}
+  .a-preview{position:sticky;top:74px}
+  .a-enquire{display:block}
+}
+
+/* builder preview */
+.studio{margin:6px 0 0;border-radius:24px;padding:26px 20px 22px;background:radial-gradient(420px 200px at 50% 0%,#fffdf8,var(--c1));border:1.5px solid var(--line);box-shadow:0 20px 54px -30px rgba(80,55,10,.42);overflow:hidden;position:relative}
+.studio::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(200,134,10,.035) 0 1px,transparent 1px 16px);pointer-events:none}
+.builder{display:flex;align-items:center;justify-content:center;gap:12px;position:relative;z-index:1}
+.bld{display:flex;flex-direction:column;align-items:center;gap:9px;flex:0 0 auto}
+.bld-tile{width:80px;height:80px;border-radius:20px;position:relative;overflow:hidden;box-shadow:0 10px 26px -10px rgba(0,0,0,.35);transition:.45s cubic-bezier(.2,.8,.2,1)}
+.bld-tile.icon{background:var(--bg2);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--dark)}
+.bld-tile.icon svg{width:48px;height:48px}
+.bld-sheen{position:absolute;inset:0;background:linear-gradient(125deg,rgba(255,255,255,.5),transparent 42%);pointer-events:none}
+.bld-cap{font-size:10.5px;font-weight:700;color:var(--ink2);text-align:center;max-width:90px;line-height:1.25;min-height:26px;font-family:'Poppins',sans-serif}
+.bld-op{font-size:21px;color:var(--ink3);font-weight:300;margin:0 -3px 26px;flex:0 0 auto}
+.mt{width:108px;display:flex;flex-direction:column;align-items:center}
+.mt-top{width:100%;height:18px;border-radius:6px;box-shadow:0 5px 11px -3px rgba(0,0,0,.3),inset 0 1px 0 rgba(255,255,255,.4);transition:.45s cubic-bezier(.2,.8,.2,1);position:relative;overflow:hidden}
+.mt-legs{width:84%;height:38px;display:flex;justify-content:space-between;position:relative}
+.mt-legs.ped{justify-content:center}
+.leg{width:5px;background:linear-gradient(180deg,#4a4a4a,#222);border-radius:0 0 2px 2px}
+.ped-col{width:7px;background:linear-gradient(180deg,#4a4a4a,#222)}
+.ped-foot{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:48px;height:5px;background:linear-gradient(180deg,#3a3a3a,#1c1c1c);border-radius:3px}
+.ped-foot.round{border-radius:50%;height:7px;width:52px}
+.pv-meta{margin-top:16px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap;position:relative;z-index:1}
+.pv-pill{font-size:11px;font-weight:700;color:var(--ink2);background:var(--bg2);border:1.4px solid var(--line);border-radius:999px;padding:5px 11px;font-family:'Poppins',sans-serif}
+.pv-pill b{color:var(--g2)}
+
+/* sections */
+.sec{margin:24px 0 0}
+.a-choices .sec:first-child{margin-top:6px}
+.sec-h{font-family:'Poppins',sans-serif;font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);margin-bottom:13px;display:flex;align-items:center;gap:8px}
+.sec-h b{display:inline-flex;width:20px;height:20px;border-radius:50%;background:var(--g);color:#fff;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'Poppins',sans-serif;box-shadow:0 3px 8px -2px rgba(200,134,10,.6)}
+
+/* venue */
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.vchip{display:flex;align-items:center;gap:10px;background:var(--bg2);border:1.6px solid var(--line);border-radius:15px;padding:11px 13px;cursor:pointer;transition:.18s cubic-bezier(.2,.8,.2,1);font-family:inherit;text-align:left;position:relative}
+.vchip:hover{border-color:rgba(200,134,10,.5);transform:translateY(-2px)}
+.vchip.on{border-color:var(--g);background:linear-gradient(180deg,#fffdf7,#fff8ec);box-shadow:0 8px 18px -10px rgba(200,134,10,.5)}
+.vchip.on::after{content:"\2713";position:absolute;top:7px;right:8px;width:17px;height:17px;background:var(--g);color:#fff;border-radius:50%;font-size:10px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.vc-ic{width:34px;height:34px;border-radius:10px;background:var(--c1);border:1.3px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--g2);flex:none}
+.vc-ic svg{width:20px;height:20px}
+.vchip.on .vc-ic{background:#fff;color:var(--g)}
+.vc-n{font-family:'Poppins',sans-serif;font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.15;display:block}
+.vc-s{font-size:10px;color:var(--ink3);font-weight:600;margin-top:3px;display:block;line-height:1.3}
+
+/* bases */
+.bgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(192px,1fr));gap:11px}
+.base-srch{margin-top:13px}
+.base-srch input{width:100%;padding:12px 14px;border:1.5px solid #e2dacb;border-radius:12px;background:#F2F4F6;font-size:15px;color:#1f1a14;box-sizing:border-box;font-family:inherit}
+.base-srch input:focus{outline:none;border-color:#C8860A;background:#fff}
+.base-srch-res{margin-top:8px;display:flex;flex-direction:column;gap:6px}
+.bs-row{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:11px 13px;border:1px solid #ece4d5;border-radius:10px;background:#fff;cursor:pointer}
+.bs-row:hover{border-color:#C8860A;background:#EFF3F8}
+.bs-th{width:40px;height:40px;border-radius:9px;overflow:hidden;background:#f3ece0;flex:none;display:flex;align-items:center;justify-content:center}
+.bs-th img{width:100%;height:100%;object-fit:cover}
+.bs-th-x{color:#C8860A}
+.bs-th-x svg{width:20px;height:20px}
+.bs-n{font-size:13.5px;font-weight:600;color:#1f1a14;flex:1;min-width:0;line-height:1.35}
+.bs-p{font-size:13px;font-weight:700;color:#C8860A;flex:none}
+.bs-empty{font-size:12.5px;color:#8a7d6c;padding:9px 4px}
+.bcard{display:flex;align-items:center;gap:11px;background:var(--bg2);border:1.6px solid var(--line);border-radius:16px;padding:11px 13px;cursor:pointer;transition:.18s cubic-bezier(.2,.8,.2,1);position:relative;text-align:left;font-family:inherit}
+.bcard:hover{border-color:rgba(200,134,10,.5);transform:translateY(-2px);box-shadow:0 10px 22px -12px rgba(0,0,0,.25)}
+.bcard.on{border-color:var(--g);background:linear-gradient(180deg,#fffdf7,#fff8ec);box-shadow:0 8px 20px -10px rgba(200,134,10,.5)}
+.bcard.on::after{content:"\2713";position:absolute;top:8px;right:9px;width:18px;height:18px;background:var(--g);color:#fff;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:800}
+.bc-ic{width:44px;height:44px;border-radius:12px;background:var(--c1);border:1.4px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--dark);flex:none;overflow:hidden}
+.bc-ic img.bc-img{width:100%;height:100%;object-fit:cover}
+.r-img{width:56px;height:56px;border-radius:13px;overflow:hidden;flex:none;background:#f3ece0;border:1px solid var(--line)}
+.r-img img{width:100%;height:100%;object-fit:cover}
+.bc-ic svg{width:27px;height:27px}
+.bcard.on .bc-ic{background:#fff}
+.bc-tx{min-width:0;display:flex;flex-direction:column}
+.bc-n{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:var(--ink);line-height:1.2;display:block}
+.bc-s{font-size:11px;color:var(--ink3);font-weight:600;margin-top:3px;display:block;line-height:1.3}
+.bc-s .duty{color:var(--g2)}
+
+/* materials */
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(144px,1fr));gap:13px}
+.mcard{cursor:pointer;border-radius:17px;overflow:hidden;background:var(--bg2);border:1.6px solid var(--line);transition:.18s cubic-bezier(.2,.8,.2,1);position:relative;font-family:inherit;padding:0;display:flex;flex-direction:column}
+.mcard:hover{transform:translateY(-3px);box-shadow:0 12px 24px -12px rgba(0,0,0,.3);border-color:rgba(200,134,10,.5)}
+.mcard.on{border-color:var(--g);box-shadow:0 10px 24px -10px rgba(200,134,10,.55)}
+.mcard.on::after{content:"\2713";position:absolute;top:9px;right:9px;width:20px;height:20px;background:var(--g);color:#fff;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:800;z-index:3;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.mc-sw{height:88px;width:100%;position:relative}
+.mc-sw .sh{position:absolute;inset:0;background:linear-gradient(120deg,rgba(255,255,255,.4),transparent 45%)}
+.mc-tx{padding:10px 12px 12px}
+.mc-n{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:var(--ink);line-height:1.18}
+.mc-r{font-size:11px;color:var(--ink3);font-weight:600;margin-top:3px}
+.mcard.dis{opacity:.55;cursor:not-allowed}
+.mcard.dis:hover{transform:none;box-shadow:none;border-color:var(--line)}
+.mcard.dis .mc-sw{filter:grayscale(.7)}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:10px}
+.fchip{cursor:pointer;border-radius:12px;overflow:hidden;background:var(--bg2);border:1.6px solid var(--line);transition:.16s;font-family:inherit;padding:0;display:flex;flex-direction:column}
+.fchip.on{border-color:var(--g);box-shadow:0 0 0 2px rgba(200,134,10,.22)}
+.fc-sw{height:64px;width:100%;display:block;background-color:var(--bg2)}
+.fc-n{font-size:10.5px;font-weight:600;color:var(--ink);padding:6px;line-height:1.2;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-add{display:block;font-size:9.5px;font-weight:700;color:var(--g);margin-top:1px}
+.mc-lock{position:absolute;inset:0;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--ink2);text-align:center;padding:6px;z-index:2}
+
+/* edge */
+.eg-wrap{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.echip{background:var(--bg2);border:1.6px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;transition:.18s;font-family:inherit;text-align:left;position:relative}
+.echip:hover{border-color:rgba(200,134,10,.5)}
+.echip.on{border-color:var(--g);background:linear-gradient(180deg,#fffdf7,#fff8ec)}
+.ec-n{font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;color:var(--ink)}
+.ec-s{font-size:11px;color:var(--ink3);font-weight:600;margin-top:2px}
+.ec-rec{display:inline-block;margin-top:6px;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--g2);background:rgba(200,134,10,.13);padding:3px 7px;border-radius:6px}
+
+/* results */
+.results{display:flex;flex-direction:column;gap:11px;margin-top:13px}
+.rcard{display:flex;align-items:center;gap:14px;border:1.6px solid var(--line);border-radius:18px;padding:15px 17px;background:linear-gradient(180deg,#fff,var(--c1));position:relative;overflow:hidden}
+.rcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:linear-gradient(180deg,var(--g),var(--g2))}
+.r-seatbadge{flex:none;width:54px;height:54px;border-radius:14px;background:var(--dark);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Poppins',sans-serif;line-height:1}
+.r-seatbadge b{font-size:21px;font-weight:800}
+.r-seatbadge span{font-size:8.5px;letter-spacing:.08em;text-transform:uppercase;opacity:.7;margin-top:2px}
+.r-mid{flex:1;min-width:0}
+.r-title{font-family:'Poppins',sans-serif;font-size:14.5px;font-weight:700;color:var(--ink)}
+.r-sub{font-size:11.5px;color:var(--ink3);font-weight:600;margin-top:3px;line-height:1.45}
+.r-sub b{color:var(--ink2);font-weight:700}
+.r-price{font-family:'Poppins',sans-serif;font-size:23px;font-weight:800;color:var(--g2);white-space:nowrap;text-align:right}
+.r-x{color:var(--g2);font-weight:800}
+.r-cfg{display:inline-block;margin-left:7px;font-size:9px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--g2);background:rgba(200,134,10,.13);padding:2px 6px;border-radius:5px;vertical-align:middle}
+.sec-note{font-size:11px;color:var(--ink3);font-weight:600;margin:-4px 0 12px;line-height:1.5}
+
+.note{font-size:11.5px;color:var(--ink3);text-align:center;margin:18px 6px 0;line-height:1.5}
+.empty,.loading{padding:54px 20px;text-align:center;color:var(--ink3);font-size:14px}
+.spin{width:30px;height:30px;border:3px solid rgba(200,134,10,.2);border-top-color:var(--g);border-radius:50%;margin:0 auto 14px;animation:rot .8s linear infinite}
+
+/* enquire */
+.enq{display:flex;align-items:center;justify-content:center;gap:9px;background:linear-gradient(180deg,#2bdc6e,#1eb955);color:#fff;border-radius:15px;padding:15px;text-decoration:none;font-size:15.5px;font-weight:800;font-family:'Poppins',sans-serif;box-shadow:0 12px 28px -8px rgba(30,185,85,.55);transition:.16s}
+.enq-pdf{background:linear-gradient(180deg,#2a2118,#1f1a14);box-shadow:0 12px 28px -10px rgba(31,26,20,.5);border:none;cursor:pointer;width:100%;margin-top:10px}
+.enq-pdf svg{width:20px;height:20px}
+.enq-pdf.busy{opacity:.6;pointer-events:none}
+.pdf-name{width:100%;margin-top:10px;padding:12px 14px;border:1.5px solid #e2dacb;border-radius:12px;background:#fff;font-size:14px;color:#1f1a14;box-sizing:border-box;font-family:inherit}
+.pdf-name:focus{outline:none;border-color:#C8860A}
+.seo-about{max-width:820px;margin:44px auto 0;padding:26px 4px 12px;border-top:1px solid var(--line);color:var(--ink2);font-size:14.5px;line-height:1.7}
+.seo-about h2{font-family:'Poppins',sans-serif;font-size:20px;color:var(--ink);margin-bottom:10px}
+.seo-about h3{font-family:'Poppins',sans-serif;font-size:15px;color:var(--ink);margin:20px 0 8px}
+.seo-about p{margin-bottom:12px}
+.seo-about ol,.seo-about ul{margin:0 0 12px 20px}
+.seo-about li{margin-bottom:6px}
+.seo-about a{color:var(--g2);font-weight:600;text-decoration:none;border-bottom:1px dashed rgba(160,109,8,.4)}
+html.embed .seo-about{display:block;margin-top:24px}
+.enq:active{transform:scale(.985)}
+.enq svg{width:19px;height:19px}
+.enq-inline{margin-top:18px}
+.enq-sum{font-size:12px;color:var(--ink2);font-weight:600;text-align:center;margin-bottom:9px}
+.enq-sum b{color:var(--ink);font-family:'Poppins',sans-serif}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(247,243,236,0),rgba(247,243,236,.96) 30%);display:none}
+.bar.show{display:block}
+@media(min-width:980px){.bar.show{display:none}}
+.bar-in{max-width:620px;margin:0 auto}
+.bar-sum{font-size:11.5px;color:var(--ink2);font-weight:600;text-align:center;margin-bottom:8px}
+.bar-sum b{color:var(--ink);font-family:'Poppins',sans-serif}
+
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes rot{to{transform:rotate(360deg)}}
+@media(max-width:430px){.hero h1{font-size:26px}.bld-tile{width:70px;height:70px}.mt{width:94px}}
+</style>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"Is the table planner free?","acceptedAnswer":{"@type":"Answer","text":"Yes, the Gharnish Table Builder is completely free with no sign-up required."}},
+{"@type":"Question","name":"Which table top materials can I choose?","acceptedAnswer":{"@type":"Answer","text":"Ply Laminated, Marble, Sintered Stone, Terrazzo and Corian, each priced per square foot."}},
+{"@type":"Question","name":"How are the 2, 4 and 6-seater prices calculated?","acceptedAnswer":{"@type":"Answer","text":"Price equals the base price plus the top area multiplied by the material rate plus any edge charge, with the top size set automatically by your venue type."}},
+{"@type":"Question","name":"Do you deliver across India?","acceptedAnswer":{"@type":"Answer","text":"Yes. Ready-stock items ship pan-India in 2 to 7 working days from Hyderabad and Bangalore."}}
+]}
+</script>
+</head>
+<body>
+<header class="top">
+  <a class="back" href="./" aria-label="Back to store">&#8592;</a>
+  <span class="brand">Gharnish<span class="dot">.</span></span>
+  <span class="tag">Table Studio</span>
+</header>
+
+<div class="wrap">
+  <div class="hero">
+    <h1>Design your <em>table</em></h1>
+    <p>Choose your venue, base and top material &mdash; we auto-size the top and show live prices for 2, 4 &amp; 6-seater tables.</p>
+    <p style="margin-top:11px"><a href="space-planner.html" onclick="ghGoSpacePlanner(event)" style="font-size:12.5px;font-weight:700;color:var(--g2);text-decoration:none;border-bottom:1px dashed rgba(160,109,8,.45)">Planning a whole room? Open the Space Planner &rarr;</a></p>
+  </div>
+  <div id="app"><div class="loading"><div class="spin"></div>Loading options&hellip;</div></div>
+  <section class="seo-about" aria-label="About this tool">
+    <h2>About the Gharnish Table Builder</h2>
+    <p>The Gharnish Table Builder is a free online tool for restaurant, caf&eacute;, bar and hotel owners to design a custom commercial dining table and see live prices in seconds. Choose your venue type, pick a table base, and select a top material &mdash; the tool automatically sizes the table top and calculates transparent prices for 2-seater, 4-seater and 6-seater tables.</p>
+    <h3>How to use the Table Builder</h3>
+    <ol>
+      <li><strong>Pick your venue</strong> &mdash; Caf&eacute;, QSR, Fine Dine or Bar / Lounge. This sets the correct top thickness and edge treatment for the way the table will be used.</li>
+      <li><strong>Choose a base</strong> &mdash; pillar, pedestal, cast-iron or heavy bases, or search our full Table Bases catalogue by name. Bases scale automatically for 2, 4 and 6 seaters.</li>
+      <li><strong>Select a top material</strong> &mdash; Ply Laminated, Marble, Sintered Stone, Terrazzo or Corian, each priced per square foot.</li>
+      <li><strong>Read your prices</strong> &mdash; instant 2 / 4 / 6-seater pricing with real dimensions. Download a branded PDF quotation or send an enquiry on WhatsApp.</li>
+    </ol>
+    <h3>Why use the Table Builder</h3>
+    <ul>
+      <li>Instant, transparent pricing &mdash; no waiting days for a manual quote.</li>
+      <li>Correct restaurant table sizes and seating for every venue type.</li>
+      <li>Mix any base with any top to match your interior style and budget.</li>
+      <li>Ready-stock velocity with fast pan-India delivery from Hyderabad and Bangalore.</li>
+    </ul>
+    <p>Gharnish supplies premium imported restaurant and caf&eacute; furniture across India, with 300+ restaurants and hotels furnished. Use the Table Builder to plan a single table, or open the <a href="space-planner.html">Space Planner</a> to lay out a whole room and estimate seating capacity.</p>
+    <h3>Table Builder FAQ</h3>
+    <p><strong>Is the table planner free?</strong> Yes &mdash; it is completely free with no sign-up.</p>
+    <p><strong>Which table top materials can I choose?</strong> Ply Laminated, Marble, Sintered Stone, Terrazzo and Corian, each priced per square foot.</p>
+    <p><strong>How are the 2, 4 and 6-seater prices calculated?</strong> Price = base + (top area &times; material rate) + edge, with the top size set automatically by your venue type.</p>
+    <p><strong>Do you deliver across India?</strong> Yes &mdash; ready-stock items ship pan-India in 2&ndash;7 working days from Hyderabad and Bangalore.</p>
+  </section>
+</div>
+
+<div class="bar" id="bar">
+  <div class="bar-in">
+    <div class="bar-sum" id="barSum"></div>
+    <a class="enq" id="enqBtn" href="#" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>
+      Enquire on WhatsApp
+    </a>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+var SUPA_URL="https://djedmaezxvuzmwjnooel.supabase.co";
+var SUPA_KEY="sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK";
+var GH_WA="919059276667";
+function ghViewTables(seats){ if(window.parent!==window && window.parent.ghPlanTables){ window.parent.ghPlanTables(seats); } else { window.top.location.href='./'; } }
+function ghGoSpacePlanner(e){ if(window.parent!==window && window.parent.ghOpenTab){ if(e)e.preventDefault(); window.parent.ghOpenTab('spaceplanner'); } }
+
+var DEFAULT={
+  bases:[
+    {name:"Diamond Single Pillar Base",price:3000},
+    {name:"Diamond Double Pillar Base",price:5500},
+    {name:"Icon Single Pillar Base - 60\u00d760 Pole",price:5000},
+    {name:"Icon Double Pillar Base - 60\u00d760 Pole",price:7000},
+    {name:"Icon SS Matt Gold Single Pillar Base",price:5500},
+    {name:"Icon SS Matt Gold Double Pillar Base",price:8000},
+    {name:"Icon Single Pillar Heavy Base - 80\u00d780 Pole",price:6000},
+    {name:"Icon Double Pillar Heavy Base - 80\u00d780 Pole",price:9000},
+    {name:"Icon Single Pillar Wooden Finish Heavy Base - 80\u00d780 Pole",price:6000},
+    {name:"Icon Double Pillar Wooden Finish Heavy Base - 80\u00d780 Pole",price:10000},
+    {name:"Tree 2 Seater Wooden Finish Base - 200\u00d7200 Pole",price:9000},
+    {name:"Tree 4 Seater Wooden Finish Base - 200\u00d7200 Pole",price:12000}
+  ],
+  materials:[
+    {name:"Ply Laminated",rate:650,wt:1},
+    {name:"Terrazzo",rate:900,wt:3},
+    {name:"Corian",rate:1200,wt:2},
+    {name:"Marble",rate:800,wt:3},
+    {name:"Sintered Stone",rate:1100,wt:3}
+  ],
+  edges:[
+    {name:"Standard Edge (18mm)",add:0},
+    {name:"Double-Thickness Edge",add:90}
+  ],
+  edgeMode:"persqft",
+  note:"Indicative price \u2014 final quote confirmed on WhatsApp."
+};
+
+var VENUES=[
+  {id:"cafe",name:"Caf\u00e9",edge:"standard",hint:"Standard 18mm edge",sizes:[
+    {seats:2,name:"2-Seater \u00b7 2\u00d72 ft",sqft:4},
+    {seats:4,name:"4-Seater \u00b7 4\u00d72 ft",sqft:8},
+    {seats:6,name:"6-Seater \u00b7 6\u00d72 ft",sqft:12}]},
+  {id:"qsr",name:"QSR",edge:"standard",hint:"Standard 18mm edge",sizes:[
+    {seats:2,name:"2-Seater \u00b7 2\u00d72 ft",sqft:4},
+    {seats:4,name:"4-Seater \u00b7 4\u00d72 ft",sqft:8},
+    {seats:6,name:"6-Seater \u00b7 6\u00d72 ft",sqft:12}]},
+  {id:"finedine",name:"Fine Dine",edge:"double",hint:"Double-thickness edge",sizes:[
+    {seats:2,name:"2-Seater \u00b7 2.5\u00d72.5 ft",sqft:6.25},
+    {seats:4,name:"4-Seater \u00b7 4\u00d72.5 ft",sqft:10},
+    {seats:6,name:"6-Seater \u00b7 6\u00d72.5 ft",sqft:15}]},
+  {id:"bar",name:"Bar / Lounge",edge:"double",hint:"Double-thickness edge",sizes:[
+    {seats:2,name:"2-Seater \u00b7 2.5\u00d72.5 ft",sqft:6.25},
+    {seats:4,name:"4-Seater \u00b7 4\u00d72.5 ft",sqft:10},
+    {seats:6,name:"6-Seater \u00b7 6\u00d72.5 ft",sqft:15}]}
+];
+
+var P={bases:DEFAULT.bases,materials:DEFAULT.materials,edges:DEFAULT.edges,edgeMode:DEFAULT.edgeMode,note:DEFAULT.note};
+var families=[], sel={venue:0,family:0,material:0,edge:0,finish:0}, prevTotals={};
+var FINISHES={};
+var TB_SUPA=null, _baseSrchT=null, _baseSrchResults=[], BASE_OPTIONS=[], _pdfName="";
+function familiesFromOptions(){
+  return BASE_OPTIONS.map(function(o){
+    var bySeat={},images={};
+    ['2','4','6'].forEach(function(s){ var sz=(o.sizes&&o.sizes[s])||{}; bySeat[s]={price:+sz.price||0,name:o.name}; if(sz.image) images[s]=sz.image; });
+    return {name:o.name, bySeat:bySeat, images:images, _opt:true};
+  });
+}
+function famThumb(f){ if(f&&f.images){ return f.images['4']||f.images['2']||f.images['6']||''; } return ''; }
+function sizeImg(f,seats){ return (f&&f.images&&f.images[String(seats)])||''; }
+function baseSearchDo(q){
+  var res=document.getElementById("base-search-res"); if(!res) return;
+  q=(q||"").trim();
+  if(_baseSrchT) clearTimeout(_baseSrchT);
+  if(q.length<2){ res.innerHTML=""; return; }
+  _baseSrchT=setTimeout(function(){ baseSearchRun(q); }, 250);
+}
+async function baseSearchRun(q){
+  var res=document.getElementById("base-search-res"); if(!res) return;
+  if(!TB_SUPA){ res.innerHTML='<div class="bs-empty">Search is unavailable right now.</div>'; return; }
+  res.innerHTML='<div class="bs-empty">Searching\u2026</div>';
+  try{
+    var r=await TB_SUPA.from("gharnish_products").select("name,price,image").eq("cat","table-base").ilike("name","%"+q+"%").order("name",{ascending:true}).limit(14);
+    var rows=(r&&r.data)||[];
+    _baseSrchResults=rows.map(function(p){return {name:p.name,price:+p.price||0,image:p.image||""};});
+    if(!_baseSrchResults.length){ res.innerHTML='<div class="bs-empty">No table bases found for \u201c'+esc(q)+'\u201d.</div>'; return; }
+    res.innerHTML=_baseSrchResults.map(function(b,idx){ var th=b.image?'<span class="bs-th"><img src="'+esc(b.image)+'" loading="lazy" alt=""></span>':'<span class="bs-th bs-th-x">'+pedIcon()+'</span>'; return '<button class="bs-row" onclick="baseAddFromCatalog('+idx+')">'+th+'<span class="bs-n">'+esc(b.name)+'</span><span class="bs-p">'+fmt(b.price)+'</span></button>'; }).join("");
+  }catch(e){ res.innerHTML='<div class="bs-empty">Search failed. Please try again.</div>'; }
+}
+function baseAddFromCatalog(idx){
+  var b=_baseSrchResults[idx]; if(!b||!b.name) return;
+  var lc=b.name.toLowerCase();
+  for(var i=0;i<families.length;i++){ if((families[i].name||"").toLowerCase()===lc){ sel.family=i; snapMaterial(); render(); return; } }
+  var fam={name:b.name, bySeat:{'2':{price:b.price,name:b.name},'4':{price:b.price,name:b.name},'6':{price:b.price,name:b.name}}, images:{}};
+  if(b.image){ fam.images={'2':b.image,'4':b.image,'6':b.image}; }
+  families.push(fam);
+  sel.family=families.length-1;
+  snapMaterial(); render();
+}
+
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function fmt(n){return "\u20b9"+Math.round(n||0).toLocaleString("en-IN");}
+function finsFor(m){ return (m&&m.name&&FINISHES[m.name])||[]; }
+function curFinish(){ var m=P.materials[sel.material]||{}, list=finsFor(m); return list.length?(list[sel.finish]||list[0]):null; }
+function matSwatchStyle(m){ var list=finsFor(m); if(list.length&&list[0].image) return 'background:url('+list[0].image+') center/cover'; return matStyle(m.name); }
+function selSwatchStyle(m){ var fn=curFinish(); if(fn&&fn.image) return 'background:url('+fn.image+') center/cover'; return matSwatchStyle(m); }
+function matLabel(){ var m=P.materials[sel.material]||{}, fn=curFinish(); return (m.name||'')+(fn&&fn.name?(' \u2014 '+fn.name):''); }
+function dims(name){var m=String(name||"").split("\u00b7");return m.length>1?m[1].trim():"";}
+function venue(){return VENUES[sel.venue]||VENUES[0];}
+function curSizes(){return venue().sizes;}
+
+function pedIcon(){return '<svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h20"/><path d="M14 8v12"/><path d="M9 22h10"/></svg>';}
+function venueIcon(id){
+  var s='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">';
+  if(id==="cafe")    return s+'<path d="M5 8h11v4a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V8z"/><path d="M16 9h2a2 2 0 0 1 0 4h-2"/><path d="M8 3v2M11 3v2"/></svg>';
+  if(id==="qsr")     return s+'<path d="M6 9h12l-1 11H7L6 9z"/><path d="M9 9V7a3 3 0 0 1 6 0v2"/></svg>';
+  if(id==="finedine")return s+'<circle cx="12" cy="12" r="6.5"/><circle cx="12" cy="12" r="2.2"/></svg>';
+  if(id==="bar")     return s+'<path d="M5 5h14l-7 8z"/><path d="M12 13v6"/><path d="M8 21h8"/></svg>';
+  return s+'</svg>';
+}
+function matStyle(name){
+  var n=(name||"").toLowerCase();
+  if(/marble/.test(n))return "background:linear-gradient(118deg,rgba(178,184,190,.55) 0%,transparent 16%),linear-gradient(150deg,rgba(165,172,182,.45) 0%,transparent 11%),radial-gradient(circle at 75% 65%,rgba(150,158,168,.4),transparent 22%),linear-gradient(135deg,#fdfdfd,#eef1f3 55%,#f8f9fa);";
+  if(/terrazzo/.test(n))return "background-color:#efeae1;background-image:radial-gradient(circle at 18% 28%,#c79a5e 0 3px,transparent 4px),radial-gradient(circle at 68% 58%,#8a8f76 0 2px,transparent 3px),radial-gradient(circle at 44% 80%,#b08585 0 2.5px,transparent 3px),radial-gradient(circle at 84% 22%,#7d8aa0 0 2px,transparent 3px),radial-gradient(circle at 30% 62%,#a3a3a3 0 2px,transparent 3px),radial-gradient(circle at 60% 18%,#cbb089 0 2px,transparent 3px);";
+  if(/corian|solid.?surface/.test(n))return "background:linear-gradient(135deg,#faf7f0,#ece7dc 70%,#f3efe6);";
+  if(/sinter|porcelain|ceramic/.test(n))return "background:linear-gradient(135deg,#b7bbc0,#d8dadd 50%,#c0c4c8);background-image:linear-gradient(120deg,rgba(255,255,255,.4),transparent 40%);";
+  if(/ply|lamin|wood|teak|oak|acacia|sheesham/.test(n))return "background:repeating-linear-gradient(96deg,rgba(80,48,16,.13) 0 2px,transparent 2px 11px),linear-gradient(100deg,#a9743f,#c89556 32%,#b07c44 58%,#caa063 82%,#a86f3a);";
+  return "background:linear-gradient(135deg,#d8a43f,#C8860A 55%,#b07908);";
+}
+
+function famKey(name){return (name||"").replace(/\b(single|sigle|double)\s*pillar\b/ig,"").replace(/\b\d+\s*seater\b/ig,"").replace(/\bbase\b/ig,"").replace(/\bpole\b/ig,"").replace(/[-\u2013\u2014]/g," ").replace(/\s+/g," ").trim();}
+function groupFamilies(bases){
+  var map={},order=[];
+  (bases||[]).forEach(function(b){
+    var n=b.name||"",key=famKey(n)||n;
+    if(!map[key]){map[key]={name:key,single:null,double:null,bySeat:{}};order.push(key);}
+    var f=map[key],sm=n.match(/(\d+)\s*seater/i);
+    if(sm){f.bySeat[+sm[1]]={name:n,price:+b.price||0};}
+    else if(/double/i.test(n)){f.double={name:n,price:+b.price||0};}
+    else{f.single={name:n,price:+b.price||0};}
+  });
+  return order.map(function(k){return map[k];});
+}
+function famFrom(f){var v=[];if(f.single)v.push(f.single.price);if(f.double)v.push(f.double.price);if(f.bySeat)Object.keys(f.bySeat).forEach(function(k){v.push(f.bySeat[k].price);});return v.length?Math.min.apply(null,v):0;}
+function famWt(f){var n=(f&&f.name||"").toLowerCase();if(/heavy|tree|200/.test(n))return 3;if(/diamond/.test(n))return 2;return 2;}
+function baseForSeat(f,seats){
+  if(!f)return null;
+  if(f.bySeat&&f.bySeat[seats])return {base:f.bySeat[seats],units:1,label:"Dedicated "+seats+"-seater base"};
+  if(seats<=2){if(f.single)return{base:f.single,units:1,label:"Single pillar"};if(f.double)return{base:f.double,units:1,label:"Double pillar"};}
+  else if(seats===4){if(f.double)return{base:f.double,units:1,label:"Double pillar"};if(f.single)return{base:f.single,units:2,label:"Twin pillar"};}
+  else{if(f.single)return{base:f.single,units:2,label:"Twin pillar"};if(f.bySeat&&f.bySeat[2])return{base:f.bySeat[2],units:2,label:"Twin (2 bases)"};if(f.double)return{base:f.double,units:1,label:"Double pillar"};}
+  var any=f.single||f.double||(f.bySeat&&(f.bySeat[2]||f.bySeat[4]));return any?{base:any,units:1,label:any.name}:null;
+}
+function recFamilyType(){var v=venue().id;return (v==="cafe"||v==="qsr")?"diamond":"icon";}
+function isRecFamily(f){var t=recFamilyType(),n=(f&&f.name||"").toLowerCase();return t==="diamond"?/diamond/.test(n):(/icon|tree/.test(n));}
+function firstRecFamily(){for(var i=0;i<families.length;i++){if(isRecFamily(families[i]))return i;}return 0;}
+function curFam(){return families[sel.family]||families[0]||null;}
+function curWt(){return famWt(curFam()||{});}
+
+function recEdgeIndex(){
+  var v=venue();
+  if(v.edge==="double"){for(var i=0;i<P.edges.length;i++){if((P.edges[i].add||0)>0||/double|fine|thick/i.test(P.edges[i].name))return i;}}
+  else{for(var j=0;j<P.edges.length;j++){if((P.edges[j].add||0)===0||/standard|18/i.test(P.edges[j].name))return j;}}
+  return 0;
+}
+function calc(size){
+  var f=curFam(),mat=P.materials[sel.material],edge=P.edges[sel.edge]||{add:0,name:""};
+  if(!f||!mat||!size)return null;
+  var bf=baseForSeat(f,size.seats||0);if(!bf)return null;
+  var baseCost=(bf.base.price||0)*bf.units;
+  var _fn=curFinish(); var fnAdd=(_fn&&+_fn.add)||0;
+  var top=(size.sqft||0)*((mat.rate||0)+fnAdd);
+  var edgeAdd=(edge.add||0)*((P.edgeMode==="persqft")?(size.sqft||0):1);
+  return {fam:f,mat:mat,edge:edge,size:size,units:bf.units,baseName:bf.base.name,baseLabel:bf.label,baseCost:Math.round(baseCost),top:Math.round(top),edgeAdd:Math.round(edgeAdd),total:Math.round(baseCost+top+edgeAdd)};
+}
+function enquireLink(){
+  var f=curFam()||{},mat=P.materials[sel.material]||{},edge=P.edges[sel.edge]||{},v=venue();
+  var L=["Hi! I'd like a custom table quote:","\u2022 Venue: "+v.name,"\u2022 Base model: "+f.name,"\u2022 Top material: "+matLabel(),"\u2022 Edge: "+edge.name,"","Prices:"];
+  curSizes().forEach(function(sz){var c=calc(sz);if(c)L.push("\u2022 "+sz.seats+"-Seater ("+sz.name.split("\u00b7")[1].trim()+") \u2014 "+c.baseName+(c.units>1?" \u00d7"+c.units:"")+": "+fmt(c.total));});
+  L.push("","Please confirm availability & final price.");
+  return "https://wa.me/"+GH_WA+"?text="+encodeURIComponent(L.join("\n"));
+}
+function snapMaterial(){var fw=curWt(),cur=P.materials[sel.material];if(!cur||(cur.wt||2)>fw){var best=-1,bw=-1;for(var k=0;k<P.materials.length;k++){var mw=P.materials[k].wt||2;if(mw<=fw&&mw>bw){bw=mw;best=k;}}sel.material=best>=0?best:0;}}
+function pick(field,i){
+  sel[field]=i;
+  if(field==="venue"){sel.edge=recEdgeIndex();sel.family=firstRecFamily();}
+  if(field==="venue"||field==="family")snapMaterial();
+  if(field==="material"||field==="venue"||field==="family")sel.finish=0;
+  render();
+}
+function pickFinish(i){ sel.finish=i; render(); }
+function animatePrice(el,to){var from=+el.getAttribute("data-from")||0,start=null,dur=520;function step(ts){if(!start)start=ts;var p=Math.min((ts-start)/dur,1),e=1-Math.pow(1-p,3);el.textContent=fmt(Math.round(from+(to-from)*e));if(p<1)requestAnimationFrame(step);else el.textContent=fmt(to);}requestAnimationFrame(step);}
+
+function fmtP(n){ return 'Rs. '+(Number(n)||0).toLocaleString('en-IN'); }
+function imgToJpeg(src){
+  return new Promise(function(resolve,reject){
+    if(!src){ reject(new Error('no image')); return; }
+    var im=new Image();
+    if(!/^data:/.test(src)) im.crossOrigin='anonymous';
+    im.onload=function(){ try{ var cv=document.createElement('canvas'); cv.width=im.naturalWidth||im.width||1; cv.height=im.naturalHeight||im.height||1; var g=cv.getContext('2d'); g.fillStyle='#ffffff'; g.fillRect(0,0,cv.width,cv.height); g.drawImage(im,0,0); resolve(cv.toDataURL('image/jpeg',0.85)); }catch(e){ reject(e); } };
+    im.onerror=function(){ reject(new Error('load failed')); };
+    im.src=src;
+  });
+}
+async function downloadQuotePDF(){
+  var btn=document.getElementById('pdf-btn');
+  if(!(window.jspdf&&window.jspdf.jsPDF)){ alert('PDF is still loading \u2014 please try again in a moment.'); return; }
+  if(btn) btn.classList.add('busy');
+  try{
+    var f=curFam()||{}, mat=P.materials[sel.material]||{}, edge=P.edges[sel.edge]||{}, v=venue();
+    var hero=famThumb(f)||sizeImg(f,4)||sizeImg(f,2)||sizeImg(f,6)||'';
+    var heroJpg=hero?await imgToJpeg(hero).catch(function(){return null;}):null;
+    var rowImgs={}, szs=curSizes();
+    for(var si=0;si<szs.length;si++){ var im=sizeImg(f,szs[si].seats); if(im){ rowImgs[szs[si].seats]=await imgToJpeg(im).catch(function(){return null;}); } }
+    var jsPDF=window.jspdf.jsPDF, doc=new jsPDF('p','mm','a4'), W=210, M=14;
+    doc.setFillColor(31,26,20); doc.rect(0,0,W,33,'F');
+    doc.setFillColor(200,134,10); doc.rect(0,33,W,1.6,'F');
+    doc.setTextColor(255,255,255); doc.setFont('helvetica','bold'); doc.setFontSize(21); doc.text('GHARNISH',M,15);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(214,192,150); doc.text('Premium Restaurant & Hospitality Furniture',M,21);
+    doc.setFont('helvetica','bold'); doc.setFontSize(12.5); doc.setTextColor(255,255,255); doc.text('Custom Table Quotation',W-M,14,{align:'right'});
+    var today=new Date(), ref='GH-'+today.getTime().toString(36).toUpperCase().slice(-6);
+    doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(214,192,150);
+    doc.text('Date: '+today.toLocaleDateString('en-IN'),W-M,20,{align:'right'});
+    doc.text('Ref: '+ref,W-M,25,{align:'right'});
+    var y=46;
+    var pdfName=(_pdfName||'').trim();
+    if(pdfName){ doc.setFont('helvetica','bold'); doc.setFontSize(9.5); doc.setTextColor(31,26,20); doc.text('Prepared for: ',M,40.5); var pw=doc.getTextWidth('Prepared for: '); doc.setFont('helvetica','normal'); doc.text(pdfName,M+pw,40.5); }
+    doc.setTextColor(31,26,20); doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.text('Configuration',M,y); y+=7;
+    doc.setFontSize(9.5);
+    [['Venue',v.name],['Base model',f.name],['Top material',mat.name],['Edge',edge.name]].forEach(function(r){
+      doc.setFont('helvetica','normal'); doc.setTextColor(120,108,92); doc.text(String(r[0]),M,y);
+      doc.setFont('helvetica','bold'); doc.setTextColor(40,33,25); doc.text(String(r[1]||'-'),M+32,y); y+=6.5;
+    });
+    if(heroJpg){ doc.addImage(heroJpg,'JPEG',W-M-50,44,50,50); doc.setDrawColor(220,210,195); doc.setLineWidth(0.3); doc.rect(W-M-50,44,50,50);
+      doc.setFontSize(7.5); doc.setTextColor(150,138,120); doc.text(String(f.name||''),W-M-25,99,{align:'center'}); }
+    y=Math.max(y,101)+2;
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(31,26,20); doc.text('Pricing',M,y); y+=3;
+    doc.setFillColor(247,243,236); doc.rect(M,y,W-2*M,8,'F'); y+=5.4;
+    doc.setFontSize(8); doc.setTextColor(120,108,92); doc.setFont('helvetica','bold');
+    doc.text('SIZE',M+20,y); doc.text('DIMENSIONS',M+52,y); doc.text('BASE',M+96,y); doc.text('PRICE',W-M-2,y,{align:'right'}); y+=7;
+    szs.forEach(function(sz){ var c=calc(sz); if(!c)return; var dm=dims(sz.name), rimg=rowImgs[sz.seats];
+      if(rimg){ doc.addImage(rimg,'JPEG',M,y-4,14,14); } else { doc.setFillColor(243,236,224); doc.rect(M,y-4,14,14,'F'); }
+      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(31,26,20); doc.text(sz.seats+'-Seater',M+20,y+3);
+      doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(90,80,68); doc.text(String(dm||'-'),M+52,y+3);
+      doc.text(String(c.baseName||'').slice(0,22),M+96,y+3);
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(200,134,10); doc.text(fmtP(c.total),W-M-2,y+3,{align:'right'});
+      y+=16; doc.setDrawColor(235,228,215); doc.setLineWidth(0.2); doc.line(M,y-3,W-M,y-3);
+    });
+    y+=6; doc.setFont('helvetica','italic'); doc.setFontSize(8); doc.setTextColor(120,108,92);
+    var note=(P.note||'Prices are indicative and fully customisable. Final quotation confirmed on enquiry. Ready-stock delivery pan-India.');
+    doc.text(doc.splitTextToSize(String(note),W-2*M),M,y);
+    doc.setFillColor(200,134,10); doc.rect(0,283,W,1,'F');
+    doc.setFillColor(31,26,20); doc.rect(0,284,W,13,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(8.5); doc.setFont('helvetica','bold');
+    doc.text('WhatsApp +91 90592 76667    |    gharnish.app    |    Hyderabad & Bangalore',W/2,291,{align:'center'});
+    doc.save('Gharnish-Quote-'+ref+'.pdf');
+  }catch(e){ alert('Could not generate PDF: '+((e&&e.message)||e)); }
+  if(btn) btn.classList.remove('busy');
+}
+
+function render(){
+  var app=document.getElementById("app"),bar=document.getElementById("bar");
+  if(!families.length||!P.materials||!P.materials.length){
+    app.innerHTML='<div class="empty">No table bases or materials found.<br>Add them in the admin panel or your inventory.</div>';
+    bar.classList.remove("show");return;
+  }
+  var fw=curWt(),f=curFam()||{name:""},mat=P.materials[sel.material]||{},edge=P.edges[sel.edge]||{},v=venue();
+
+  var preview='<div class="studio"><div class="builder">'
+    +'<div class="bld"><div class="bld-tile icon">'+pedIcon()+'</div><div class="bld-cap">'+esc(f.name)+'</div></div>'
+    +'<div class="bld-op">+</div>'
+    +'<div class="bld"><div class="bld-tile" style="'+selSwatchStyle(mat)+'"><div class="bld-sheen"></div></div><div class="bld-cap">'+esc(matLabel())+'</div></div>'
+    +'<div class="bld-op">=</div>'
+    +'<div class="bld"><div class="mt"><div class="mt-top" style="'+selSwatchStyle(mat)+'"><div class="bld-sheen"></div></div><div class="mt-legs ped"><div class="ped-col"></div><div class="ped-foot"></div></div></div><div class="bld-cap" style="margin-top:7px">Your table</div></div>'
+    +'</div><div class="pv-meta"><span class="pv-pill"><b>'+esc(v.name)+'</b></span><span class="pv-pill">'+esc(edge.name)+'</span></div></div>';
+
+  var venueSec='<div class="sec"><div class="sec-h"><b>1</b> Venue type</div><div class="vgrid">'
+    +VENUES.map(function(vv,i){return '<button class="vchip'+(sel.venue===i?" on":"")+'" onclick="pick(\'venue\','+i+')"><span class="vc-ic">'+venueIcon(vv.id)+'</span><span><span class="vc-n">'+esc(vv.name)+'</span><span class="vc-s">'+esc(vv.hint)+'</span></span></button>';}).join("")
+    +'</div></div>';
+
+  var baseSec='<div class="sec"><div class="sec-h"><b>2</b> Base model</div><div class="sec-note">Pillar bases scale with size \u2014 2-seater uses a single pillar, 4-seater a double pillar, 6-seater two pillars (priced automatically). <b>Diamond</b> suits Caf\u00e9 / QSR &amp; economy; <b>Icon</b> &amp; <b>Tree</b> for Fine Dine &amp; Bars.</div><div class="bgrid">'
+    +families.map(function(ff,i){var rec=isRecFamily(ff);var th=famThumb(ff);var ic=th?'<img class="bc-img" src="'+th+'" alt="">':pedIcon();return '<button class="bcard'+(sel.family===i?" on":"")+'" onclick="pick(\'family\','+i+')"><span class="bc-ic">'+ic+'</span><span class="bc-tx"><span class="bc-n">'+esc(ff.name)+'</span><span class="bc-s">from '+fmt(famFrom(ff))+(rec?' &middot; <span class="duty">Recommended</span>':'')+'</span></span></button>';}).join("")
+    +'</div>'
+    +'<div class="base-srch"><input id="base-search" type="text" placeholder="Search all our table bases by name\u2026" oninput="baseSearchDo(this.value)" autocomplete="off"/><div id="base-search-res" class="base-srch-res"></div></div>'
+    +'</div>';
+
+  var matSec='<div class="sec"><div class="sec-h"><b>3</b> Top material</div><div class="mgrid">'
+    +P.materials.map(function(m,i){var ok=(m.wt||2)<=fw;return '<button class="mcard'+(sel.material===i&&ok?" on":"")+(ok?"":" dis")+'"'+(ok?' onclick="pick(\'material\','+i+')"':' disabled')+'><span class="mc-sw" style="'+matSwatchStyle(m)+'"><span class="sh"></span>'+(ok?"":'<span class="mc-lock">Needs a heavier base</span>')+'</span><span class="mc-tx"><span class="mc-n">'+esc(m.name)+'</span><span class="mc-r">'+fmt(m.rate)+'/sqft</span></span></button>';}).join("")
+    +'</div></div>';
+
+  var matFinSec="";
+  var _fins=finsFor(mat);
+  if(_fins.length){
+    matFinSec='<div class="sec"><div class="sec-h"><b>3b</b> '+esc(mat.name)+' finish <span style="font-weight:400;color:var(--ink3);font-size:12px">\u00b7 '+_fins.length+' option'+(_fins.length===1?'':'s')+'</span></div><div class="fgrid">'
+      +_fins.map(function(fn,i){var ad=+fn.add||0;return '<button class="fchip'+(sel.finish===i?" on":"")+'" onclick="pickFinish('+i+')" title="'+esc(fn.name||'')+'"><span class="fc-sw" style="background:url('+(fn.image||'')+') center/cover"></span><span class="fc-n">'+esc(fn.name||('Finish '+(i+1)))+(ad>0?'<span class="fc-add">+'+fmt(ad)+'/sqft</span>':'')+'</span></button>';}).join("")
+      +'</div></div>';
+  }
+
+  var edgeSec="";
+  if(P.edges&&P.edges.length>1){
+    var rec=recEdgeIndex();
+    edgeSec='<div class="sec"><div class="sec-h"><b>4</b> Edge finish</div><div class="eg-wrap">'
+      +P.edges.map(function(e,i){return '<button class="echip'+(sel.edge===i?" on":"")+'" onclick="pick(\'edge\','+i+')"><div class="ec-n">'+esc(e.name)+'</div><div class="ec-s">'+(e.add?("+"+fmt(e.add)+(P.edgeMode==="persqft"?"/sqft":"")):"Included")+'</div>'+(i===rec?'<span class="ec-rec">Recommended for '+esc(v.name)+'</span>':'')+'</button>';}).join("")
+      +'</div></div>';
+  }
+
+  var resultsSec='<div class="sec"><div class="sec-h">Your prices</div><div class="results">'
+    +curSizes().map(function(sz,idx){var c=calc(sz);if(!c)return "";var dm=dims(sz.name),prev=prevTotals[idx]||0;
+      var tag='<span class="r-cfg">'+esc(c.baseLabel)+(c.units>1?" \u00d7"+c.units:"")+'</span>';
+      var simg=sizeImg(f,sz.seats);var rthumb=simg?'<div class="r-img"><img src="'+simg+'" alt="'+sz.seats+'-seater"></div>':'';
+      return '<div class="rcard">'+rthumb+'<div class="r-seatbadge"><b>'+sz.seats+'</b><span>seat</span></div><div class="r-mid"><div class="r-title">'+sz.seats+'-Seater'+tag+'</div><div class="r-sub">'+(dm?esc(dm)+' &middot; ':'')+'<b>'+esc(c.baseName)+'</b> + '+esc(matLabel())+'</div><span class="r-shop" onclick="ghViewTables('+sz.seats+')">View '+sz.seats+'-seater tables in catalogue &rarr;</span></div><div class="r-price" data-from="'+prev+'" data-to="'+c.total+'">'+fmt(prev)+'</div></div>';
+    }).join("")
+    +'</div><div class="note">'+esc(P.note||"")+'</div></div>';
+
+  var enqSec='<div class="enq-inline"><div class="enq-sum"><b>'+esc(v.name)+'</b> \u00b7 '+esc(f.name)+' + '+esc(matLabel())+'</div><a class="enq" href="'+enquireLink()+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.7 1-.9 1.1-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5-.1-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3z"/></svg>Enquire on WhatsApp</a>'
+    +'<input id="pdf-name" class="pdf-name" placeholder="Prepared for \u2014 customer / restaurant name (optional)" value="'+esc(_pdfName||"")+'" oninput="_pdfName=this.value" autocomplete="off"/>'
+    +'<button class="enq enq-pdf" id="pdf-btn" onclick="downloadQuotePDF()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download PDF quote</button></div>';
+
+  app.innerHTML='<div class="layout"><div class="a-preview">'+preview+'</div><div class="a-choices">'+venueSec+baseSec+matSec+matFinSec+edgeSec+'</div><div class="a-results">'+resultsSec+'</div><div class="a-enquire">'+enqSec+'</div></div>';
+
+  app.querySelectorAll(".r-price").forEach(function(el,i){var to=+el.getAttribute("data-to")||0;animatePrice(el,to);prevTotals[i]=to;});
+
+  bar.classList.add("show");
+  document.getElementById("enqBtn").href=enquireLink();
+  document.getElementById("barSum").innerHTML='<b>'+esc(v.name)+'</b> &middot; '+esc(f.name)+' + '+esc(matLabel());
+}
+
+async function basesFromInventory(supa){
+  try{
+    var r=await supa.from("gharnish_products").select("name,price").or("name.ilike.%pillar%,name.ilike.%pedestal%,name.ilike.%seater wooden%").limit(80);
+    if(r&&r.data&&r.data.length){
+      var list=r.data.filter(function(p){return /pillar|pedestal|\d+\s*seater.*(base|wooden)/i.test(p.name||"");}).map(function(p){return {name:p.name,price:+p.price||0};});
+      if(list.length>=2)return list;
+    }
+  }catch(e){}
+  return null;
+}
+
+(async function init(){
+  try{
+    if(window.supabase&&window.supabase.createClient){
+      var supa=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+      TB_SUPA=supa;
+      var rows=await supa.from("app_settings").select("key,value").in("key",["table_pricing","tb_bases","tb_base_options","top_finishes"]);
+      var tpRaw=null,cbRaw=null,boRaw=null;
+      if(rows&&rows.data){ rows.data.forEach(function(r){ if(r.key==="table_pricing")tpRaw=r.value; else if(r.key==="tb_bases")cbRaw=r.value; else if(r.key==="tb_base_options")boRaw=r.value; else if(r.key==="top_finishes"){ try{ var fv=(typeof r.value==="string")?JSON.parse(r.value):r.value; if(fv&&typeof fv==="object") FINISHES=fv; }catch(e){} } }); }
+      var tpBases=null;
+      if(tpRaw){
+        var val=(typeof tpRaw==="string")?JSON.parse(tpRaw):tpRaw;
+        if(val){
+          if(Array.isArray(val.materials)&&val.materials.length)P.materials=val.materials;
+          if(Array.isArray(val.edges)&&val.edges.length)P.edges=val.edges;
+          if(val.edgeMode)P.edgeMode=val.edgeMode;
+          if(val.note)P.note=val.note;
+          if(Array.isArray(val.bases)&&val.bases.length)tpBases=val.bases;
+        }
+      }
+      var curated=null;
+      if(cbRaw){
+        var cvv=(typeof cbRaw==="string")?JSON.parse(cbRaw):cbRaw;
+        var carr=Array.isArray(cvv)?cvv:((cvv&&cvv.bases)||[]);
+        if(carr.length) curated=carr.map(function(x){return {name:x.name,price:+x.price||0};});
+      }
+      if(boRaw){
+        var bov=(typeof boRaw==="string")?JSON.parse(boRaw):boRaw;
+        if(Array.isArray(bov)&&bov.length) BASE_OPTIONS=bov;
+      }
+      var inv=(curated||BASE_OPTIONS.length)?null:await basesFromInventory(supa);
+      P.bases=curated||tpBases||inv||DEFAULT.bases;
+    }
+  }catch(e){}
+  if(!P.bases||!P.bases.length)P.bases=DEFAULT.bases;
+  families=BASE_OPTIONS.length?familiesFromOptions():groupFamilies(P.bases);
+  sel={venue:0,family:0,material:0,edge:0};
+  sel.edge=recEdgeIndex();
+  sel.family=firstRecFamily();
+  snapMaterial();
+  render();
+})();
+
+</script>
+</body>
+</html>
