@@ -1314,7 +1314,7 @@ input[type="number"]:focus{border-color:var(--g);outline:none;}
 /* PROJECTS PORTFOLIO */
 .proj-scroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .proj-scroll::-webkit-scrollbar{display:none;}
-.proj-card{flex:none;width:200px;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10);cursor:pointer;transition:transform .15s;}
+.proj-card{flex:none;width:200px;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10);cursor:pointer;transition:transform .15s;text-decoration:none;color:inherit;display:block;}
 .proj-card:active{transform:scale(.97);}
 .proj-card-top{height:96px;display:flex;align-items:flex-end;padding:12px;position:relative;overflow:hidden;}
 .proj-card-year{position:absolute;top:10px;right:10px;font-size:10px;font-weight:700;color:rgba(255,255,255,.7);background:rgba(0,0,0,.25);padding:3px 8px;border-radius:999px;}
@@ -3816,14 +3816,14 @@ function renderLanding(){
     var topStyle=firstImg
       ? 'background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.66)),url('+firstImg+');background-size:cover;background-position:center'
       : 'background:linear-gradient(140deg,'+pr.color+',rgba(0,0,0,.5))';
-    H.push('<div class="proj-card" onclick="openProject(\''+pr.id+'\')">');
+    H.push('<a class="proj-card" href="/our-work/'+ghProjSlug(pr)+'" onclick="return ghProjNav(event,\''+pr.id+'\')">');
     H.push('<div class="proj-top" style="'+topStyle+'">');
     H.push('<span class="proj-year">'+pr.year+'</span>');
     H.push('<div class="proj-name">'+pr.name+'</div>');
     H.push('<div class="proj-type">'+pr.type+'</div>');
     H.push('</div>');
     H.push('<div class="proj-foot"><span>'+pr.loc+'</span><span class="proj-covers">'+pr.covers+' covers</span></div>');
-    H.push('</div>');
+    H.push('</a>');
   });
   H.push('</div></div>');
 
@@ -5955,6 +5955,8 @@ function ghSetMeta(title,desc){
    deep-linkable and indexable. Pairs with _redirects (SPA fallback) on Pages. */
 var GH_ORIGIN='https://gharnish.app';
 function ghProdSlug(p){ return ghSlug((p.name||'')+'-'+(p.id||'')); }
+function ghProjSlug(p){ return ghSlug((p.name||'')+'-'+(p.id||'')); }
+function ghProjNav(e,id){ try{ if(e && (e.metaKey||e.ctrlKey||e.shiftKey||e.button===1)) return true; if(e){ e.preventDefault(); } openProject(id); return false; }catch(err){ return true; } }
 function ghUrlFor(){
   if(S.selectedProduct){ var p=PRODUCTS.find(function(x){return x.id===S.selectedProduct;}); if(p) return '/product/'+ghProdSlug(p); }
   if(S.tab==='categories'){ if(S.catView==='products'&&S.filters&&S.filters.cat) return '/category/'+ghSlug(S.filters.cat); return '/categories'; }
@@ -5989,6 +5991,8 @@ function ghResolveRoute(path){
   else if(seg[0]==='space-planner'){ S.tab='spaceplanner'; }
   else if(seg[0]==='guides'){ S.tab='blog'; S.guideSlug=(seg[1]||null); }
   else if(seg[0]==='cart'){ S.tab='cart'; }
+  else if(seg[0]==='our-work'){ if(seg[1]){ var _pj=(typeof PROJECTS!=='undefined'?PROJECTS:[]).find(function(x){return ghProjSlug(x)===seg[1];}); if(_pj){ S.selectedProject=_pj.id; S.tab='home'; } else { S._openProjectSlug=seg[1]; S.tab='home'; } } else { S.tab='home'; S.homeView='landing'; } }
+  
   else { S.tab='home'; S.homeView='landing'; }
   S._pendingPath=null; return true;
 }
