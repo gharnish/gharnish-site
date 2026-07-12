@@ -1314,6 +1314,24 @@ input[type="number"]:focus{border-color:var(--g);outline:none;}
 /* PROJECTS PORTFOLIO */
 .proj-scroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .proj-scroll::-webkit-scrollbar{display:none;}
+.journey-band{margin:8px 16px 4px}
+.jb-inner{background:linear-gradient(150deg,var(--dark,#1A1208) 0%,#2A1F00 100%);border-radius:var(--r3,22px);padding:24px 22px;position:relative;overflow:hidden}
+.jb-inner::after{content:"";position:absolute;top:-70px;right:-50px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(200,134,10,.28),transparent 70%);pointer-events:none}
+.jb-copy{position:relative;max-width:640px}
+.jb-eyebrow{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--gl,#E09A18);margin-bottom:9px}
+.jb-title{font-size:clamp(20px,3.4vw,26px);font-weight:800;color:#fff;line-height:1.2;letter-spacing:-.01em}
+.jb-sub{font-size:13.5px;line-height:1.55;color:rgba(255,255,255,.72);margin:10px 0 18px}
+.jb-sub b{color:#fff;font-weight:700}
+.jb-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.jb-cta{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(180deg,var(--g,#C8860A),var(--gd,#8A5C07));color:#fff;font-weight:800;font-size:14px;padding:12px 22px;border-radius:999px;cursor:pointer;box-shadow:0 8px 20px rgba(200,134,10,.32);border:none;font-family:inherit}
+.jb-cta:hover{transform:translateY(-1px)}
+.jb-cta2{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);color:#fff;font-weight:700;font-size:14px;padding:12px 20px;border-radius:999px;cursor:pointer;border:1px solid rgba(255,255,255,.18);font-family:inherit}
+.jb-cta2:hover{background:rgba(255,255,255,.16)}
+.jb-steps{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12px;color:rgba(255,255,255,.6);font-weight:600}
+.jb-steps b{display:inline-flex;width:18px;height:18px;border-radius:50%;background:rgba(200,134,10,.25);color:var(--gl,#E09A18);align-items:center;justify-content:center;font-size:10px;font-weight:800;margin-right:5px}
+.jb-steps span{display:inline-flex;align-items:center}
+.jb-arw{color:rgba(255,255,255,.3)}
+@media(min-width:760px){.jb-inner{padding:32px 34px}}
 .proj-card{flex:none;width:200px;border-radius:14px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.10);cursor:pointer;transition:transform .15s;text-decoration:none;color:inherit;display:block;}
 .proj-card:active{transform:scale(.97);}
 .proj-card-top{height:96px;display:flex;align-items:flex-end;padding:12px;position:relative;overflow:hidden;}
@@ -3025,6 +3043,8 @@ function goToCatalog(cat, priceRange){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
+function ghScrollToProjects(){ var el=document.getElementById('home-projects'); if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); } else { goToOurWork(); } }
+function goToOurWork(){ try{ if(location.pathname!=='/our-work'){ /* server page */ location.href='/our-work'; } }catch(e){ location.href='/our-work'; } }
 function goToLanding(){
   S.homeView='landing';
   S.filters.cat='all';
@@ -3716,6 +3736,26 @@ function renderLanding(){
   H.push('</div>');
   H.push('</div>');
 
+    // ── Design-from-a-restaurant journey (hero feature) ──
+  H.push('<div class="journey-band"><div class="jb-inner"><div class="jb-copy"><div class="jb-eyebrow">\u2728 Start with a real restaurant</div><div class="jb-title">Get ideas from restaurants we\u2019ve furnished \u2014 then build your quote in a tap</div><div class="jb-sub">Browse 150+ completed caf\u00e9s, bars &amp; fine-dine spaces. Open any project, tap <b>Start With This Setup</b>, and every piece loads into your quote. Adjust and request pricing.</div><div class="jb-actions"><a class="jb-cta" href="/our-work" onclick="event.preventDefault();ghScrollToProjects()">Explore restaurants \u2192</a><button class="jb-cta2" onclick="openCart()">View my quote</button></div><div class="jb-steps"><span><b>1</b> Browse projects</span><span class="jb-arw">\u2192</span><span><b>2</b> Start with a setup</span><span class="jb-arw">\u2192</span><span><b>3</b> Request pricing</span></div></div></div></div>');
+// ── Our Work / Projects ──
+  H.push('<div class="hs" data-sec="projects" id="home-projects"><div class="hs-hd"><div><div class="hs-title">Get ideas from real restaurants</div><div class="hs-sub">Open a project \u2192 Start With This Setup \u2192 build your quote</div></div><a href="/our-work" class="hs-all" onclick="event.preventDefault();goToOurWork()" style="font-size:13px;font-weight:700;color:var(--g);text-decoration:none;white-space:nowrap">View all \u2192</a></div></div>');
+  H.push('<div class="proj-scroll">');
+  PROJECTS.forEach(function(pr){
+    var firstImg=(pr.media||[]).filter(function(m){return ghMediaKind(m)==='image';})[0];
+    var topStyle=firstImg
+      ? 'background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.66)),url('+firstImg+');background-size:cover;background-position:center'
+      : 'background:linear-gradient(140deg,'+pr.color+',rgba(0,0,0,.5))';
+    H.push('<a class="proj-card" href="/our-work/'+ghProjSlug(pr)+'" onclick="return ghProjNav(event,\''+pr.id+'\')">');
+    H.push('<div class="proj-top" style="'+topStyle+'">');
+    H.push('<span class="proj-year">'+pr.year+'</span>');
+    H.push('<div class="proj-name">'+pr.name+'</div>');
+    H.push('<div class="proj-type">'+pr.type+'</div>');
+    H.push('</div>');
+    H.push('<div class="proj-foot"><span>'+pr.loc+'</span><span class="proj-covers">'+pr.covers+' covers</span></div>');
+    H.push('</a>');
+  });
+  H.push('</div></div>');
   // ── Picks for you + Recently viewed (free personalization) ──
   var ghPicks=getPicksForYou(), ghRecent=getRecentProducts();
   if(ghPicks.length){
@@ -3808,24 +3848,7 @@ function renderLanding(){
     H.push('</div></div>');
   }
 
-  // ── Our Work / Projects ──
-  H.push('<div class="hs" data-sec="projects"><div class="hs-hd"><div><div class="hs-title">Our Work</div><div class="hs-sub">150+ hospitality spaces furnished across India</div></div><a href="/our-work" class="hs-all" style="font-size:13px;font-weight:700;color:var(--g);text-decoration:none;white-space:nowrap">View all \u2192</a></div></div>');
-  H.push('<div class="proj-scroll">');
-  PROJECTS.forEach(function(pr){
-    var firstImg=(pr.media||[]).filter(function(m){return ghMediaKind(m)==='image';})[0];
-    var topStyle=firstImg
-      ? 'background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.66)),url('+firstImg+');background-size:cover;background-position:center'
-      : 'background:linear-gradient(140deg,'+pr.color+',rgba(0,0,0,.5))';
-    H.push('<a class="proj-card" href="/our-work/'+ghProjSlug(pr)+'" onclick="return ghProjNav(event,\''+pr.id+'\')">');
-    H.push('<div class="proj-top" style="'+topStyle+'">');
-    H.push('<span class="proj-year">'+pr.year+'</span>');
-    H.push('<div class="proj-name">'+pr.name+'</div>');
-    H.push('<div class="proj-type">'+pr.type+'</div>');
-    H.push('</div>');
-    H.push('<div class="proj-foot"><span>'+pr.loc+'</span><span class="proj-covers">'+pr.covers+' covers</span></div>');
-    H.push('</a>');
-  });
-  H.push('</div></div>');
+  
 
   H.push(faqSectionHTML('home', null));
   if(ghRecent.length){
@@ -5587,7 +5610,7 @@ function renderCart(){
   updateCartBadge();
   var waNum='919059276667';
   if(!S.cart.length){
-    app.innerHTML='<div style="padding:16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="S.tab=\'home\';render()" style="background:none;border:none;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Back</button><div style="font-size:18px;font-weight:700;color:var(--ink)">Cart</div></div><div style="text-align:center;padding:60px 20px"><div style="font-size:48px;margin-bottom:14px">\uD83D\uDED2</div><div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Cart is empty</div><button onclick="S.tab=\'home\';S.homeView=\'landing\';render()" style="background:var(--g);color:#fff;font-size:14px;font-weight:700;padding:14px 28px;border-radius:999px;border:none;cursor:pointer">Browse Products</button></div></div>';
+    app.innerHTML='<div style="padding:16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:20px"><button onclick="S.tab=\'home\';render()" style="background:none;border:none;display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>Back</button><div style="font-size:18px;font-weight:700;color:var(--ink)">My Quote</div><div style="font-size:11.5px;color:var(--ink3)">Build your list \u00b7 request pricing \u2014 no payment now</div></div><div style="text-align:center;padding:60px 20px"><div style="font-size:48px;margin-bottom:14px">\uD83D\uDED2</div><div style="font-size:17px;font-weight:700;color:var(--ink);margin-bottom:8px">Your quote is empty</div><button onclick="S.tab=\'home\';S.homeView=\'landing\';render()" style="background:var(--g);color:#fff;font-size:14px;font-weight:700;padding:14px 28px;border-radius:999px;border:none;cursor:pointer">Browse furniture \u2192</button></div></div>';
     return;
   }
   var total=cartTotal();
@@ -5611,7 +5634,7 @@ function renderCart(){
     +(nextTierHint(bqty)?'<div style="font-size:11px;color:#E0A82E;margin-top:7px">&#9889; '+nextTierHint(bqty)+'</div>':'')
     +'<div style="font-size:11.5px;color:rgba(255,255,255,.35);margin-top:5px">Final price confirmed on enquiry. GST & delivery extra.</div></div>'
     +'<button onclick="downloadQuote(\'cart\')" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--g);color:#fff;font-size:15px;font-weight:700;padding:15px;border-radius:999px;margin:14px 16px 0;border:none;cursor:pointer;width:calc(100% - 32px)"><svg fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Download Quote (PDF)</button>'
-    +'<a href="https://wa.me/'+waNum+'?text='+waMsg+'" target="_blank" class="cart-wa-btn">\uD83D\uDCAC Send Enquiry on WhatsApp</a>'
+    +'<a href="https://wa.me/'+waNum+'?text='+waMsg+'" target="_blank" class="cart-wa-btn">\uD83D\uDCAC Request Pricing on WhatsApp</a>'
     +'</div>';
   document.querySelectorAll('[data-qpid]').forEach(function(btn){btn.onclick=function(){updateCartQty(btn.dataset.qpid,btn.dataset.qcol,parseInt(btn.dataset.qd));};});
   document.querySelectorAll('[data-rmpid]').forEach(function(btn){btn.onclick=function(){removeFromCart(btn.dataset.rmpid,btn.dataset.rmcol);};});
