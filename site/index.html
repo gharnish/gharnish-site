@@ -5617,6 +5617,30 @@ function renderCart(){
   document.querySelectorAll('[data-rmpid]').forEach(function(btn){btn.onclick=function(){removeFromCart(btn.dataset.rmpid,btn.dataset.rmcol);};});
 }
 
+function startWithThisSetup(pid){
+  if(!supa){ toast&&toast('Not connected'); return; }
+  if(typeof ghLoggedIn==='function' && !ghLoggedIn()){ requireLogin(function(){ startWithThisSetup(pid); }, 'Sign in to load this setup into your quote'); return; }
+  var btnMsg='Loading setup\u2026'; try{ showCartToast&&showCartToast(btnMsg,0); }catch(e){}
+  supa.from('project_products').select('product_id,default_qty,sort').eq('project_id',pid).order('sort').then(function(r){
+    if(r.error){ alert('Could not load this setup: '+r.error.message); return; }
+    var rows=(r.data)||[];
+    if(!rows.length){ alert('This project has no furniture linked yet. Tap Enquire and we\u2019ll help you build a quote.'); return; }
+    var added=0, missing=0;
+    rows.forEach(function(row){
+      var p=(PRODUCTS||[]).find(function(x){return x.id===row.product_id;});
+      if(!p){ missing++; return; }
+      var qn=Math.max(1, parseInt(row.default_qty)||1);
+      var ex=S.cart.find(function(i){return i.pid===p.id && (i.color||'')==='';});
+      if(ex){ ex.qty+=qn; } else { S.cart.push({pid:p.id,name:p.name,price:p.price,image:p.image||null,cat:p.cat,color:'',qty:qn}); }
+      added++;
+    });
+    try{ updateCartBadge(); }catch(e){}
+    S.selectedProject=null;
+    if(typeof openCart==='function'){ openCart(); } else { S.tab='cart'; render(); }
+    setTimeout(function(){ window.scrollTo(0,0); },30);
+    try{ if(added) showCartToast('Setup loaded \u2014 '+added+' item'+(added===1?'':'s')+' added', 0); }catch(e){}
+  }, function(){ alert('Could not load this setup right now. Please try again.'); });
+}
 function openProject(id){
   var proj=(PROJECTS||[]).find(function(p){return p.id===id;});
   if(!proj){
@@ -5678,7 +5702,7 @@ function renderProjectDetail(proj){
   H.push('</div>');
   // CTAs
   H.push('<div style="margin:0 16px 24px;display:flex;gap:10px">');
-  H.push('<button onclick="S.selectedProject=null;S.tab=\'calculator\';render();window.scrollTo({top:0})" style="flex:1;background:var(--g);color:#fff;border:none;border-radius:999px;padding:14px;font-size:14px;font-weight:700;cursor:pointer">Plan a similar space</button>');
+  H.push('<button onclick="startWithThisSetup(\''+proj.id+'\')" style="flex:1;background:var(--g);color:#fff;border:none;border-radius:999px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px">\u2728</span> Start With This Setup</button>');
   H.push('<a href="https://wa.me/919059276667?text='+waMsg+'" target="_blank" style="flex:none;padding:0 18px;background:#25D366;color:#fff;border-radius:999px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:700">Enquire</a>');
   H.push('</div>');
   H.push('<div style="height:40px"></div>');

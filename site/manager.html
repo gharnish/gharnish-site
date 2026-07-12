@@ -867,7 +867,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">MANAGER · 60</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">MANAGER · 61</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -3348,6 +3348,11 @@ function openProjForm(id){
     +'<div class="f-field"><label>Covers (seats)</label><input class="f-input" type="number" id="jf-covers" value="'+(p?.covers||'')+'" placeholder="60"></div>'
     +'</div>'
     +'<div class="f-field"><label>Products Used</label><textarea class="f-textarea" id="jf-products" placeholder="Dining Chairs, Round Tables, Bar Stools…">'+(p?.products||'')+'</textarea></div>'
+    +'<div class="f-section">Furniture linked \u2014 powers \u201cStart With This Setup\u201d</div>'
+    +'<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Link real catalogue products with quantities. Customers can load this exact list into a quote in one tap.</div>'
+    +'<div id="projlink-list"></div>'
+    +'<button class="spec-add-btn" onclick="projLinkPick()" style="margin:6px 0 4px">+ Link a product</button>'
+    +'<div id="projlink-total" style="font-size:12.5px;color:var(--ink2);font-weight:700;margin-top:6px"></div>'
     +'<div class="f-section">Photos &amp; Media</div>'
     +'<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Upload photos/videos (stored in Supabase Storage) or paste image/video/YouTube links. Shown on the project in the live app.</div>'
     +'<div id="media-list">'+renderMediaRows(p?.media||[])+'</div>'
@@ -3359,7 +3364,7 @@ function openProjForm(id){
     +'<div class="f-section">Card Colour</div>'
     +'<div class="f-field"><label>Card Colour</label><div style="display:flex;align-items:center;gap:10px"><input type="color" id="jf-color" value="'+(p?.color||'#C8860A')+'" style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer"><span id="jf-color-val" style="font-family:Poppins,monospace;font-size:12px;color:var(--ink3)">'+(p?.color||'#C8860A')+'</span></div></div>';
   document.getElementById('jf-color')?.addEventListener('input',function(){ document.getElementById('jf-color-val').textContent=this.value; });
-  document.getElementById('proj-overlay').classList.add('open');
+  document.getElementById('proj-overlay').classList.add('open'); projLinkLoad(id||null);
 }
 var projMedia = [];
 function renderMediaRows(media){
@@ -3418,6 +3423,14 @@ function syncProjectsCloud(projects){
 }
 function deleteProjectCloud(id){ if(supa) supa.from('projects').delete().eq('id',id).then(({error})=>{ if(error) console.warn('[GH] project cloud delete:',error.message); }); }
 
+var _projLinks=[];
+function projLinkLoad(pid){ _projLinks=[]; projLinkPaint(); if(!pid||!supa){ return; } supa.from('project_products').select('product_id,default_qty,sort').eq('project_id',pid).order('sort').then(function(r){ if(r.error||!r.data){ return; } var prods=loadProds()||[]; var byId={}; prods.forEach(function(x){byId[x.id]=x;}); _projLinks=r.data.map(function(row){ var p=byId[row.product_id]||{}; return {product_id:row.product_id, qty:row.default_qty||1, name:p.name||row.product_id, price:+p.price||0, image:p.image||''}; }); projLinkPaint(); }); }
+function projLinkPaint(){ var el=document.getElementById('projlink-list'); if(!el)return; if(!_projLinks.length){ el.innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 0 8px">No products linked yet.</div>'; var tt0=document.getElementById('projlink-total'); if(tt0)tt0.textContent=''; return; } el.innerHTML=_projLinks.map(function(l,i){ var img=l.image?('<img src="'+escA(l.image)+'" style="width:38px;height:38px;border-radius:8px;object-fit:cover;flex:none;background:#eee">'):('<div style="width:38px;height:38px;border-radius:8px;background:var(--c2);flex:none"></div>'); return '<div class="spec-row" style="align-items:center;gap:8px">'+img+'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escA(l.name)+'</div><div style="font-size:11px;color:var(--ink3)">'+custMoney(l.price)+' / unit</div></div><input type="number" min="1" value="'+l.qty+'" onchange="projLinkQty('+i+',this.value)" style="width:64px;padding:6px 8px;border:1px solid rgba(0,0,0,.14);border-radius:7px;font-size:12.5px;font-family:inherit"><button onclick="projLinkDel('+i+')" class="spec-add-btn" style="margin:0;width:34px;padding:6px;color:#C62828">\u00d7</button></div>'; }).join(''); var tot=_projLinks.reduce(function(a,l){return a+l.qty*l.price;},0); var units=_projLinks.reduce(function(a,l){return a+(+l.qty||0);},0); var tt=document.getElementById('projlink-total'); if(tt)tt.textContent=units+' units \u00b7 est. '+custMoney(tot); }
+function projLinkQty(i,v){ if(_projLinks[i]){ _projLinks[i].qty=Math.max(1,parseInt(v)||1); projLinkPaint(); } }
+function projLinkDel(i){ _projLinks.splice(i,1); projLinkPaint(); }
+function projLinkPick(){ var prods=(loadProds()||[]).filter(function(p){ return !p.internal; }); ghForm({title:'Link a product', fields:[{key:'q',label:'Search catalogue',type:'text',placeholder:'Type a product name'}], submitLabel:'Done', note:'Tap a product to link it (qty 1). Adjust quantity in the list after.', render:function(box){ function paint(q){ q=(q||'').toLowerCase(); var have={}; _projLinks.forEach(function(l){have[l.product_id]=1;}); var list=prods.filter(function(p){return p.name.toLowerCase().indexOf(q)>-1;}).slice(0,40); box.innerHTML=list.map(function(p){ var added=have[p.id]; var img=p.image?('<img src="'+escA(p.image)+'" style="width:36px;height:36px;border-radius:7px;object-fit:cover;flex:none">'):('<div style="width:36px;height:36px;border-radius:7px;background:var(--c2);flex:none"></div>'); var tag=added?('<span style="font-size:11px;color:#1B7A4D;font-weight:700">linked</span>'):('<span style="font-size:16px;color:var(--g)">+</span>'); return '<div onclick="projLinkAdd(\''+p.id+'\')" style="display:flex;align-items:center;gap:9px;padding:8px;border-radius:10px;cursor:pointer;'+(added?'opacity:.5':'')+'">'+img+'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escA(p.name)+'</div><div style="font-size:11px;color:var(--ink3)">'+custMoney(p.price||0)+'</div></div>'+tag+'</div>'; }).join('')||'<div style="padding:12px;color:var(--ink3);font-size:12px">No matches.</div>'; } window._projPickPaint=paint; paint(''); var inp=document.getElementById('ghf-q'); if(inp){ inp.oninput=function(){ paint(this.value); }; } } }); }
+function projLinkAdd(pid){ var p=(loadProds()||[]).find(function(x){return x.id===pid;}); if(!p)return; if(_projLinks.some(function(l){return l.product_id===pid;})){ toast('Already linked','#C8860A'); return; } _projLinks.push({product_id:pid, qty:1, name:p.name, price:+p.price||0, image:p.image||''}); projLinkPaint(); if(window._projPickPaint){ var inp=document.getElementById('ghf-q'); window._projPickPaint(inp?inp.value:''); } toast('Linked '+p.name,'#1B7A4D'); }
+function projLinkSaveCloud(pid){ if(!supa||!pid) return Promise.resolve(); return supa.from('project_products').delete().eq('project_id',pid).then(function(){ if(!_projLinks.length) return null; var rows=_projLinks.map(function(l,i){ return {project_id:pid, product_id:l.product_id, default_qty:l.qty, sort:i+1}; }); return supa.from('project_products').insert(rows); }).then(function(r){ if(r&&r.error){ toast('Furniture link save failed: '+r.error.message,'#C62828'); } }); }
 function saveProj(){
   const name=(document.getElementById('jf-name')?.value||'').trim();
   if(!name){ toast('Name is required','#C62828'); return; }
@@ -3426,7 +3439,7 @@ function saveProj(){
   const media=projMedia.filter(u=>u.trim()); const proj={id:pid,name,loc:document.getElementById('jf-loc')?.value||'',type:document.getElementById('jf-type')?.value||'',covers:parseInt(document.getElementById('jf-covers')?.value)||0,year:document.getElementById('jf-year')?.value||'',color:document.getElementById('jf-color')?.value||'#C8860A',products:document.getElementById('jf-products')?.value||'',visible:true}; if(media.length) proj.media=media;
   if(editingProjId){ const idx=projects.findIndex(p=>p.id===editingProjId); if(idx>=0) projects[idx]=proj; else projects.push(proj); }
   else projects.push(proj);
-  lsSaveProjects(projects); syncProjectsCloud(projects); closeProjForm(); renderProjects(); toast('Project saved');
+  lsSaveProjects(projects); syncProjectsCloud(projects); projLinkSaveCloud(pid); closeProjForm(); renderProjects(); toast('Project saved');
 }
 
 /* ══════════════════════════════════════
