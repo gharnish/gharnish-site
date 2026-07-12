@@ -871,7 +871,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 63</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 66</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -1160,13 +1160,12 @@ function ghGetUpi(cb){
   var u=(typeof APP_SETTINGS!=='undefined' && APP_SETTINGS && APP_SETTINGS.gh_upi)||'';
   try{ if(!u) u=localStorage.getItem('gh_upi')||''; }catch(e){}
   if(u){ cb(u); return; }
-  u=prompt('Enter your business UPI ID (e.g. gharnish@okaxis) \u2014 saved for next time'); if(!u)return; u=u.trim();
-  try{ localStorage.setItem('gh_upi',u); }catch(e){}
-  try{ if(supa) supa.from('app_settings').upsert({key:'gh_upi',value:u},{onConflict:'key'}).then(function(){},function(){}); }catch(e){}
-  cb(u);
+  ghForm({title:'Business UPI ID', note:'Saved for next time (e.g. gharnish@okaxis).', fields:[{key:'upi',label:'UPI ID',placeholder:'yourbusiness@okaxis'}], submitLabel:'Save & continue', onSubmit:function(v){ var x=(v.upi||'').trim(); if(!x){ toast('Enter a UPI ID','#C62828'); return false; } try{ localStorage.setItem('gh_upi',x); }catch(e){} try{ if(supa) supa.from('app_settings').upsert({key:'gh_upi',value:x},{onConflict:'key'}).then(function(){},function(){}); }catch(e){} cb(x); }});
 }
 function custReqPay(){
-  var amt=prompt('Amount to request (\u20b9)'); if(!amt)return; amt=parseFloat(amt)||0; if(amt<=0){toast('Enter an amount','#C62828');return;}
+  ghForm({title:'Request payment', fields:[{key:'amt',label:'Amount to request (\u20b9)',type:'number',placeholder:'0'}], submitLabel:'Continue', onSubmit:function(v){ var amt=parseFloat(v.amt)||0; if(amt<=0){ toast('Enter an amount','#C62828'); return false; } custReqPayGo(amt); }});
+}
+function custReqPayGo(amt){
   ghGetUpi(function(upi){
     var upiLink='upi://pay?pa='+encodeURIComponent(upi)+'&pn=Gharnish&am='+amt+'&cu=INR&tn='+encodeURIComponent('Gharnish payment');
     var msg='Hi '+((_curCust.name||'').split(' ')[0]||'')+', please pay \u20b9'+amt.toLocaleString('en-IN')+' to Gharnish.\nUPI ID: '+upi+'\nOr tap to pay: '+upiLink+'\n\nThank you!';
@@ -1179,8 +1178,18 @@ var GST_STATES=[['37','Andhra Pradesh'],['35','Andaman & Nicobar'],['12','Arunac
 var _quote={items:[],quoteNo:'',date:'',reference:'',company:'',gstin:'',billing:'',shipTo:'',phone:'',posCode:'36'};
 var _quoteProds=[];
 function inWords(num){ num=Math.round(num); if(num===0)return 'Zero'; var a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen']; var b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety']; function two(n){return n<20?a[n]:(b[Math.floor(n/10)]+(n%10?' '+a[n%10]:''));} function three(n){return (n>=100?(a[Math.floor(n/100)]+' Hundred'+(n%100?' ':'')):'')+(n%100?two(n%100):'');} var out=''; var cr=Math.floor(num/10000000); num%=10000000; var la=Math.floor(num/100000); num%=100000; var th=Math.floor(num/1000); num%=1000; if(cr)out+=three(cr)+' Crore '; if(la)out+=three(la)+' Lakh '; if(th)out+=three(th)+' Thousand '; if(num)out+=three(num); return out.trim(); }
-function custNextQuoteNo(){ var n=2221; try{ n=parseInt(localStorage.getItem('gh_quote_no')||'2221',10)||2221; }catch(e){} n+=1; try{ localStorage.setItem('gh_quote_no',String(n)); }catch(e){} try{ if(supa) supa.from('app_settings').upsert({key:'gh_quote_no',value:String(n)},{onConflict:'key'}).then(function(){},function(){}); }catch(e){} return 'GHQ'+n; }
-function custNextInvNo(){ var n=1000; try{ n=parseInt(localStorage.getItem('gh_inv_no')||'1000',10)||1000; }catch(e){} n+=1; try{ localStorage.setItem('gh_inv_no',String(n)); }catch(e){} try{ if(supa) supa.from('app_settings').upsert({key:'gh_inv_no',value:String(n)},{onConflict:'key'}).then(function(){},function(){}); }catch(e){} return 'GHI'+n; }
+async function ghNextCounter(key,floor,prefix){
+  var local=floor; try{ local=parseInt(localStorage.getItem(key)||String(floor),10)||floor; }catch(e){}
+  var cloud=floor;
+  if(supa){ try{ var r=await supa.from('app_settings').select('value').eq('key',key).maybeSingle(); if(r&&r.data&&r.data.value!=null){ var cvRaw=(typeof r.data.value==='string')?r.data.value:JSON.stringify(r.data.value); var cv=parseInt(String(cvRaw).replace(/[^0-9]/g,''),10); if(!isNaN(cv)) cloud=cv; } }catch(e){} }
+  var n=Math.max(local,cloud,floor)+1;
+  try{ localStorage.setItem(key,String(n)); }catch(e){}
+  if(supa){ try{ await supa.from('app_settings').upsert({key:key,value:String(n)},{onConflict:'key'}); }catch(e){} }
+  return prefix+n;
+}
+async function custNextQuoteNo(){ return ghNextCounter('gh_quote_no',2221,'GHQ'); }
+async function custNextInvNo(){ return ghNextCounter('gh_inv_no',1000,'GHI'); }
+
 function stateName(code){ var s=GST_STATES.find(function(x){return x[0]===code;}); return s?s[1]:''; }
 function custOpenBuilder(){ qReset(); var c=_curCust||{}; _quote.name=c.name||''; _quote.mobile=c.mobile||''; _quote.company=c.company||''; _quote.gstin=c.gstin||''; _quote.billing=c.billing_address||''; if(c.state_code) _quote.posCode=c.state_code; try{ currentPage='quotations'; document.querySelectorAll('.nav-item,.mnav-btn').forEach(function(el){ el.classList.toggle('active', el.dataset&&el.dataset.page==='quotations'); }); var mc=document.getElementById('main-content'); if(mc) mc.classList.remove('mc-wide'); }catch(e){} renderQuoteBuilder(); var mc2=document.getElementById('main-content'); if(mc2) mc2.scrollTop=0; }
 function custQuoteOpen(){
@@ -1193,10 +1202,10 @@ function custQuoteOpen(){
 function custQuoteClose(){ var m=document.getElementById('quote-modal'); if(m) m.classList.remove('open'); }
 function custQuoteExtras(){ var e=[]; if(+_quote.transport>0) e.push({name:'Transportation charges',image:'',hsn:'9965',tax:+_quote.transportTax||18,qty:1,rate:+_quote.transport,per:'-'}); if(+_quote.labour>0) e.push({name:'Loading / Labour charges',image:'',hsn:'998819',tax:+_quote.labourTax||18,qty:1,rate:+_quote.labour,per:'-'}); return e; }
 function custQuoteExtra(k,v){ _quote[k]=parseFloat(v)||0; custQuoteUpdTotals(); }
-function custQuoteGst(m){ _quote.gstMode=(m==='none')?'none':'gst'; custQuoteRender(); }
+function custQuoteGst(m){ _quote.gstMode=(m==='none')?'none':'gst'; if(_quote.gstMode==='none' && _quote.docType==='Tax Invoice'){ _quote.docType='Quotation'; toast('Switched to Quotation \u2014 a Tax Invoice requires GST','#C8860A'); } custQuoteRender(); }
 function custQuoteDisc(k,v){ if(k==='type'){ _quote.discType=(v==='percent')?'percent':'amount'; custQuoteRender(); } else { _quote.discount=parseFloat(v)||0; custQuoteUpdTotals(); } }
 
-function custQuoteType(dt){ _quote.docType=dt; custQuoteRender(); }
+function custQuoteType(dt){ if(dt==='Tax Invoice' && _quote.gstMode==='none'){ _quote.gstMode='gst'; toast('GST enabled \u2014 required for a Tax Invoice','#C8860A'); } _quote.docType=dt; custQuoteRender(); }
 function custQuoteTotals(){ var gross=0; _quote.items.forEach(function(it){ gross+=(+it.qty||0)*(+it.rate||0); }); var dType=_quote.discType||'amount'; var dVal=+_quote.discount||0; var disc=0; if(dVal>0){ disc = (dType==='percent') ? gross*(dVal/100) : dVal; } if(disc>gross) disc=gross; var taxable=gross-disc; var gstOn=(_quote.gstMode!=='none'); var tax=0; if(gstOn){ var ratio = gross>0 ? (taxable/gross) : 0; _quote.items.forEach(function(it){ var amt=(+it.qty||0)*(+it.rate||0)*ratio; tax+=amt*((+it.tax||0)/100); }); } var tr=+_quote.transport||0, lb=+_quote.labour||0; return {gross:gross,disc:disc,discType:dType,discVal:dVal,taxable:taxable,tax:tax,gstOn:gstOn,transport:tr,labour:lb,grand:taxable+tax+tr+lb}; }
 function custQuoteUpdTotals(){ var t=custQuoteTotals(); var intra=(_quote.posCode===GH_SELLER.stateCode); var el=document.getElementById('qm-totals'); if(el) el.innerHTML=qTotalsRowsHTML(t,intra); }
 function custQuoteSearch(v){ var box=document.getElementById('q-presults'); if(!box)return; v=(v||'').trim().toLowerCase(); if(!v){ box.innerHTML=''; box.style.display='none'; return; } var m=_quoteProds.filter(function(p){return (p.name||'').toLowerCase().indexOf(v)>-1;}).slice(0,8); if(!m.length){ box.innerHTML='<div style="padding:8px;color:var(--ink3);font-size:12px">No match</div>'; box.style.display='block'; return; } box.innerHTML=m.map(function(p){ return '<div class="q-pres" onmousedown="custQuoteAddProd(\''+escA(String(p.id))+'\')"><div style="width:30px;height:30px;border-radius:6px;background:var(--c2);overflow:hidden;flex:none;display:flex;align-items:center;justify-content:center">'+(p.image?'<img src="'+escA(p.image)+'" style="width:100%;height:100%;object-fit:contain">':'')+'</div><span style="flex:1;font-size:12.5px;color:var(--ink)">'+escA(p.name)+'</span><span style="font-size:12px;color:var(--g);font-weight:700">'+custMoney(p.price||0)+'</span></div>'; }).join(''); box.style.display='block'; }
@@ -1217,8 +1226,8 @@ function custQuoteRender(){
     +'<div style="max-height:230px;overflow-y:auto;margin-bottom:6px">'+(rows||'<div style="color:var(--ink3);font-size:12.5px;padding:8px 0">No items yet \u2014 search the catalogue above or add a custom line.</div>')+'</div>'
     +'<button onclick="custQuoteAddCustom()" style="background:var(--c2);border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;color:var(--ink2);margin-bottom:12px">+ Custom line</button>'
     +'<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap"><div style="flex:1;min-width:150px"><label style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:3px">Transportation \u20b9</label><input class="cust-in" type="number" style="margin:0" value="'+(_quote.transport||'')+'" placeholder="0" oninput="custQuoteExtra(\'transport\',this.value)"></div><div style="flex:1;min-width:150px"><label style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:3px">Loading / Labour \u20b9</label><input class="cust-in" type="number" style="margin:0" value="'+(_quote.labour||'')+'" placeholder="0" oninput="custQuoteExtra(\'labour\',this.value)"></div></div>'
-    +'<div class="lead-filters" style="margin:2px 0 8px"><button class="lead-filter\'+((_quote.gstMode!==\'none\')?\' on\':\'\')+\'" onclick="custQuoteGst(\'gst\')">With GST</button><button class="lead-filter\'+((_quote.gstMode===\'none\')?\' on\':\'\')+\'" onclick="custQuoteGst(\'none\')">Without GST</button></div>'
-    +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px"><div style="flex:1"><label style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:3px">Discount</label><input class="cust-in" type="number" style="margin:0" value="\'+(_quote.discount||\'\')+\'" placeholder="0" oninput="custQuoteDisc(\'val\',this.value)"></div><div class="lead-filters" style="margin:0"><button class="lead-filter\'+((_quote.discType!==\'percent\')?\' on\':\'\')+\'" onclick="custQuoteDisc(\'type\',\'amount\')">\u20b9</button><button class="lead-filter\'+((_quote.discType===\'percent\')?\' on\':\'\')+\'" onclick="custQuoteDisc(\'type\',\'percent\')">%</button></div></div>'
+    +'<div class="lead-filters" style="margin:2px 0 8px"><button class="lead-filter'+(_quote.gstMode!=='none'?' on':'')+'" onclick="custQuoteGst(\'gst\')">With GST</button><button class="lead-filter'+(_quote.gstMode==='none'?' on':'')+'" onclick="custQuoteGst(\'none\')">Without GST</button></div>'
+    +'<div style="display:flex;gap:8px;align-items:flex-end;margin-bottom:10px"><div style="flex:1"><label style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;display:block;margin-bottom:3px">Discount</label><input class="cust-in" type="number" style="margin:0" value="'+(_quote.discount||'')+'" placeholder="0" oninput="custQuoteDisc(\'val\',this.value)"></div><div class="lead-filters" style="margin:0"><button class="lead-filter'+(_quote.discType!=='percent'?' on':'')+'" onclick="custQuoteDisc(\'type\',\'amount\')">\u20b9</button><button class="lead-filter'+(_quote.discType==='percent'?' on':'')+'" onclick="custQuoteDisc(\'type\',\'percent\')">%</button></div></div>'
     +'<div id="qm-totals" style="max-width:260px;margin-left:auto;font-size:13px;margin-bottom:14px"></div>'
     +'<button class="cust-add-btn" id="qgen" onclick="custGenQuote()" style="width:100%;padding:13px">Generate GST PDF &amp; save</button></div>';
   custQuoteUpdTotals();
@@ -1237,9 +1246,9 @@ function custGenQuote(){
     try{ custBuildQuotePDF(items); }catch(e){ toast('PDF error: '+((e&&e.message)||e),'#C62828'); if(btn){btn.disabled=false;btn.textContent='Generate GST PDF & save';} }
   }).catch(function(){ toast('Could not load PDF library','#C62828'); if(btn){btn.disabled=false;btn.textContent='Generate GST PDF & save';} });
 }
-function custBuildQuotePDF(items){
+async function custBuildQuotePDF(items){
   var btn=document.getElementById('qgen');
-  if(!_quote.quoteNo){ _quote.quoteNo=(_quote.docType==='Tax Invoice')?custNextInvNo():custNextQuoteNo(); }
+  if(!_quote.quoteNo){ _quote.quoteNo=(_quote.docType==='Tax Invoice')?(await custNextInvNo()):(await custNextQuoteNo()); }
   function money(n){ return 'Rs. '+Math.round(+n||0).toLocaleString('en-IN'); }
   var JS=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF; var doc=new JS({unit:'pt',format:'a4'});
   var W=doc.internal.pageSize.getWidth(); var M=36; var y=34;
@@ -1411,7 +1420,9 @@ function renderQuoteBuilder(){
       +'<div class="q-card"><h4>Line items</h4><div id="q-items"></div><button onclick="qAddCustom()" class="q-addline">+ Add custom line</button></div>'
       +'<div class="q-bottom">'
         +'<div class="q-card"><h4>Additional charges <span style="text-transform:none;font-weight:600;color:var(--ink3)">(no GST)</span></h4><div style="display:flex;gap:14px;flex-wrap:wrap"><div class="q-ff" style="flex:1;min-width:150px"><label>Transportation \u20b9</label><input class="cust-in" style="margin:0" type="number" value="'+(_quote.transport||'')+'" placeholder="0" oninput="qExtra(\'transport\',this.value)"></div><div class="q-ff" style="flex:1;min-width:150px"><label>Loading / Labour \u20b9</label><input class="cust-in" style="margin:0" type="number" value="'+(_quote.labour||'')+'" placeholder="0" oninput="qExtra(\'labour\',this.value)"></div></div></div>'
-        +'<div class="q-card"><h4>GST &amp; discount</h4>'          +'<div class="lead-filters" style="margin-bottom:12px"><button class="lead-filter\'+((_quote.gstMode!==\'none\')?\' on\':\'\')+\'" onclick="qGstMode(\'gst\')">With GST</button><button class="lead-filter\'+((_quote.gstMode===\'none\')?\' on\':\'\')+\'" onclick="qGstMode(\'none\')">Without GST</button></div>'          +'<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><div class="q-ff" style="flex:1;min-width:130px"><label>Discount</label><input class="cust-in" style="margin:0" type="number" value="\'+(_quote.discount||\'\')+\'" placeholder="0" oninput="qDisc(\'val\',this.value)"></div><div class="q-ff" style="flex:none"><label>Type</label><div class="lead-filters" style="margin:0"><button class="lead-filter\'+((_quote.discType!==\'percent\')?\' on\':\'\')+\'" onclick="qDisc(\'type\',\'amount\')">\u20b9</button><button class="lead-filter\'+((_quote.discType===\'percent\')?\' on\':\'\')+\'" onclick="qDisc(\'type\',\'percent\')">%</button></div></div></div></div>'
+        +'<div class="q-card"><h4>GST &amp; discount</h4>'
+          +'<div class="lead-filters" style="margin-bottom:12px"><button class="lead-filter\'+((_quote.gstMode!==\'none\')?\' on\':\'\')+\'" onclick="qGstMode(\\\'gst\\\')">With GST</button><button class="lead-filter\'+((_quote.gstMode===\'none\')?\' on\':\'\')+\'" onclick="qGstMode(\\\'none\\\')">Without GST</button></div>'
+          +'<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end"><div class="q-ff" style="flex:1;min-width:130px"><label>Discount</label><input class="cust-in" style="margin:0" type="number" value="\'+(_quote.discount||\'\')+\'" placeholder="0" oninput="qDisc(\\\'val\\\',this.value)"></div><div class="q-ff" style="flex:none"><label>Type</label><div class="lead-filters" style="margin:0"><button class="lead-filter\'+((_quote.discType!==\'percent\')?\' on\':\'\')+\'" onclick="qDisc(\\\'type\\\',\\\'amount\\\')">\u20b9</button><button class="lead-filter\'+((_quote.discType===\'percent\')?\' on\':\'\')+\'" onclick="qDisc(\\\'type\\\',\\\'percent\\\')">%</button></div></div></div></div>'
         +'<div class="q-card q-totcard"><div id="q-totals" style="font-size:14px"></div><button class="cust-add-btn q-genbtn" id="qgen" onclick="qGenerate()" style="width:100%;padding:14px;margin-top:14px">'+(_quote.editId?'Update':'Generate')+' '+(_quote.docType==='Tax Invoice'?'Tax Invoice':'Quotation')+' PDF</button></div>'
       +'</div>'
     +'</div>';
@@ -1453,11 +1464,11 @@ function qRenderItems(){
   }).join('');
 }
 function qExtra(k,v){ _quote[k]=parseFloat(v)||0; qRenderTotals(); }
-function qGstMode(m){ _quote.gstMode=(m==='none')?'none':'gst'; renderQuoteBuilder(); }
+function qGstMode(m){ _quote.gstMode=(m==='none')?'none':'gst'; if(_quote.gstMode==='none' && _quote.docType==='Tax Invoice'){ _quote.docType='Quotation'; toast('Switched to Quotation \u2014 a Tax Invoice requires GST','#C8860A'); } renderQuoteBuilder(); }
 function qDisc(k,v){ if(k==='type'){ _quote.discType=(v==='percent')?'percent':'amount'; } else { _quote.discount=parseFloat(v)||0; } qRenderTotals(); if(k==='type') renderQuoteBuilder(); }
 
 function qHdr(k,v){ _quote[k]=v; if(k==='posCode')qRenderTotals(); if(k==='gstin'){ var g=(v||'').replace(/\s/g,''); if(g.length>=15){ var sc=g.substring(0,2); if(GST_STATES.some(function(s){return s[0]===sc;}) && _quote.posCode!==sc){ _quote.posCode=sc; var sel=document.querySelector('.q-fgrid select'); if(sel)sel.value=sc; qRenderTotals(); toast('Place of supply → '+sc+'-'+stateName(sc),'#1B7A4D'); } } } }
-function qType(dt){ _quote.docType=dt; renderQuoteBuilder(); }
+function qType(dt){ if(dt==='Tax Invoice' && _quote.gstMode==='none'){ _quote.gstMode='gst'; toast('GST enabled \u2014 required for a Tax Invoice','#C8860A'); } _quote.docType=dt; renderQuoteBuilder(); }
 function qTotalsRowsHTML(t,intra){
   var h='';
   h+='<div style="display:flex;justify-content:space-between;padding:2px 0"><span>Subtotal</span><b>'+custMoney(t.gross)+'</b></div>';
@@ -1802,8 +1813,8 @@ function txnRender(){
   h+='<div style="display:flex;flex-direction:column;gap:7px">'+(list.length?list.map(function(t){ var col=t.type==='in'?'#1B7A4D':'#C62828'; return '<div class="q-listrow"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;color:var(--ink)">'+escA(t.party)+'</div><div style="font-size:11.5px;color:var(--ink3)">'+escA(t.kind)+(t.note?(' \u00b7 '+escA(t.note)):'')+' \u00b7 '+custDate(t.date)+'</div></div><div style="font-family:Poppins,sans-serif;font-weight:800;font-size:15px;color:'+col+'">'+(t.type==='in'?'+':'\u2212')+custMoney(t.amount)+'</div>'+(t.canDel?'<button onclick="txnDelete(\''+t.src+'\','+t.id+')" style="background:none;border:none;color:#C62828;cursor:pointer;font-size:16px">\u00d7</button>':'')+'</div>'; }).join(''):'<div class="sc" style="padding:28px;text-align:center;color:var(--ink3)">No transactions'+(q||f!=='all'?' match this filter':' yet')+'.</div>')+'</div>';
   el.innerHTML=h;
 }
-function txnAddExpense(){ if(!supa){toast('Connect Supabase','#C62828');return;} var cat=prompt('Expense category (Rent, Salary, Utilities, Transport, Misc\u2026)'); if(!cat)return; cat=cat.trim(); if(!cat)return; var amt=parseFloat(prompt('Amount \u20b9'))||0; if(amt<=0){toast('Enter an amount','#C62828');return;} var note=(prompt('Note (optional)')||'').trim(); supa.from('expenses').insert({category:cat,amount:amt,note:note||null,created_at:new Date().toISOString()}).then(function(r){ if(r&&r.error){toast('Failed (run expenses SQL?): '+r.error.message,'#C62828');return;} toast('Expense added','#1B7A4D'); txnLoad(); }); }
-function txnVendorPay(){ if(!supa){toast('Connect Supabase','#C62828');return;} if(!VENDORS.length){toast('Add a vendor first','#C62828');return;} var listStr=VENDORS.map(function(v,i){return (i+1)+'. '+v.name;}).join('\n'); var pick=prompt('Pay which vendor?\n'+listStr+'\n\nEnter the number:'); if(pick==null)return; var idx=parseInt(pick,10)-1; if(isNaN(idx)||!VENDORS[idx]){toast('Invalid choice','#C62828');return;} var v=VENDORS[idx]; var amt=parseFloat(prompt('Amount to pay '+v.name+' \u20b9'))||0; if(amt<=0){toast('Enter an amount','#C62828');return;} var mode=(prompt('Mode (UPI / Bank / Cash)')||'UPI').trim(); supa.from('vendor_payments').insert({vendor_id:v.id,amount:amt,mode:mode,created_at:new Date().toISOString()}).then(function(r){ if(r&&r.error){toast('Failed (run vendor_payments SQL?): '+r.error.message,'#C62828');return;} toast('Vendor payment recorded','#1B7A4D'); txnLoad(); }); }
+function txnAddExpense(){ if(!supa){toast('Connect Supabase','#C62828');return;} ghForm({title:'Add expense', fields:[{key:'cat',label:'Category',type:'select',value:'Rent',options:[['Rent','Rent'],['Salary','Salary'],['Utilities','Utilities'],['Transport','Transport'],['Marketing','Marketing'],['Misc','Misc']]},{key:'amt',label:'Amount (\u20b9)',type:'number',placeholder:'0'},{key:'note',label:'Note (optional)',placeholder:''}], submitLabel:'Add expense', onSubmit:function(v){ var cat=(v.cat||'').trim(); var amt=parseFloat(v.amt)||0; if(!cat){ toast('Pick a category','#C62828'); return false; } if(amt<=0){ toast('Enter an amount','#C62828'); return false; } supa.from('expenses').insert({category:cat,amount:amt,note:(v.note||'').trim()||null,created_at:new Date().toISOString()}).then(function(r){ if(r&&r.error){toast('Failed (run expenses SQL?): '+r.error.message,'#C62828');return;} toast('Expense added','#1B7A4D'); txnLoad(); }); }}); }
+function txnVendorPay(){ if(!supa){toast('Connect Supabase','#C62828');return;} if(!VENDORS.length){toast('Add a vendor first','#C62828');return;} ghForm({title:'Record vendor payment', fields:[{key:'vid',label:'Vendor',type:'select',value:(VENDORS[0]&&VENDORS[0].id),options:VENDORS.map(function(v){return [v.id,v.name];})},{key:'amt',label:'Amount (\u20b9)',type:'number',placeholder:'0'},{key:'mode',label:'Mode',type:'select',value:'UPI',options:[['UPI','UPI'],['Bank','Bank'],['Cash','Cash']]}], submitLabel:'Record payment', onSubmit:function(val){ var v=VENDORS.find(function(x){return String(x.id)===String(val.vid);}); if(!v){ toast('Pick a vendor','#C62828'); return false; } var amt=parseFloat(val.amt)||0; if(amt<=0){ toast('Enter an amount','#C62828'); return false; } supa.from('vendor_payments').insert({vendor_id:v.id,amount:amt,mode:val.mode||'UPI',created_at:new Date().toISOString()}).then(function(r){ if(r&&r.error){toast('Failed (run vendor_payments SQL?): '+r.error.message,'#C62828');return;} toast('Vendor payment recorded','#1B7A4D'); txnLoad(); }); }}); }
 function txnInsert(table,payload,cb){ function retry(){ var p2=Object.assign({},payload); var had=false; if(p2.account!==undefined){ delete p2.account; had=true; } if(p2.order_id!==undefined){ delete p2.order_id; had=true; } if(had){ supa.from(table).insert(p2).then(function(r2){cb(r2);},function(){cb({error:{message:'failed'}});}); } else cb({error:{message:'failed'}}); } supa.from(table).insert(payload).then(function(r){ if(r&&r.error){ if(/account|order_id/i.test(r.error.message||'')) retry(); else cb(r); } else cb(r); },function(){ retry(); }); }
 function txnAcctField(label){ return {key:'account',label:label,type:'select',options:[['','\u2014 none \u2014']].concat((PAY_ACCOUNTS||[]).map(function(a){return [a,a];}))}; }
 function txnAccounts(){ ghForm({title:'Payment accounts', note:'One account per line \u2014 e.g. Bank of Baroda, HDFC UPI, Cash drawer. Pick one when recording money in/out.', fields:[{key:'list',label:'Accounts (one per line)',type:'textarea',value:(PAY_ACCOUNTS||[]).join('\n')}], submitLabel:'Save accounts', onSubmit:function(v){ PAY_ACCOUNTS=(v.list||'').split('\n').map(function(x){return x.trim();}).filter(Boolean); savePayAccounts(); toast('Accounts saved','#1B7A4D'); }}); }
@@ -3333,13 +3344,29 @@ const DEFAULT_PROJECTS=[
 ];
 
 function getProjects(){ return lsGetProjects()||DEFAULT_PROJECTS; }
+var _projCloudLoaded=false; var _projSearch='';
+function projSearch(v){ _projSearch=v; renderProjects(); var el=document.getElementById('proj-search-inp'); if(el){ el.focus(); var L=el.value.length; try{el.setSelectionRange(L,L);}catch(e){} } }
+function loadProjectsCloud(force){
+  if(!supa) return; if(_projCloudLoaded && !force) return; _projCloudLoaded=true;
+  supa.from('projects').select('*').then(function(r){
+    if(r.error||!r.data) return;
+    var cloud=r.data.map(function(p){ return {id:p.id,name:p.name,loc:p.loc||'',type:p.type||'',covers:p.covers||0,year:p.year||'',color:p.color||'#C8860A',products:p.products||'',budget:p.budget||'',timeline:p.timeline||'',media:p.media||[],visible:p.visible!==false}; });
+    if(cloud.length){ lsSaveProjects(cloud); if(document.querySelector('.proj-list-adm')||document.querySelector('.proj-search-adm')){ renderProjects(); } }
+  }, function(){});
+}
+
 
 function renderProjects(){
-  const projects=getProjects();
+  loadProjectsCloud();
+  var all=getProjects();
+  var q=(_projSearch||'').trim().toLowerCase();
+  const projects=q?all.filter(function(p){ return ((p.name||'')+' '+(p.loc||'')+' '+(p.type||'')+' '+(p.products||'')).toLowerCase().indexOf(q)>-1; }):all;
   const mc=document.getElementById('main-content');
   mc.innerHTML=
     '<div class="page-hd"><div><div class="page-title">Projects Portfolio</div><div class="page-sub">Completed restaurants, cafés & hospitality projects</div></div>'
     +'<button class="add-btn" onclick="openProjForm()"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add</button></div>'
+    +'<div class="proj-search-adm" style="position:relative;margin:0 0 16px"><svg style="position:absolute;left:14px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--ink3)" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input id="proj-search-inp" value="'+escA(_projSearch||'')+'" oninput="projSearch(this.value)" placeholder="Search projects by name, city, type\u2026" style="width:100%;padding:11px 14px 11px 40px;border:1px solid rgba(0,0,0,.12);border-radius:12px;font-size:14px;font-family:inherit;background:var(--c1);box-sizing:border-box"></div>'
+    +(projects.length?'':'<div style="text-align:center;padding:40px;color:var(--ink3);font-size:13.5px">No projects match \u201c'+escA(q)+'\u201d</div>')
     +'<div class="proj-list-adm">'
     +projects.map(p=>'<div class="proj-row-adm">'
       +'<div class="proj-color-dot" style="background:'+p.color+'">'+(p.name[0])+'</div>'
@@ -4608,11 +4635,7 @@ function openLeadWA(id,waNum){
 function addLeadNote(id){
   ghForm({title:'Add note',fields:[{key:'note',label:'Note for this lead',type:'textarea'}],submitLabel:'Add note',onSubmit:function(v){ var note=(v.note||'').trim(); if(!note)return false; var leads=lsGetLeads(); var l=leads.find(function(x){return x.id===id;}); if(l) l.notes=(l.notes?l.notes+' | ':'')+note; lsSaveLeads(leads); renderLeads(); toast('Note added'); }}); }
 function addManualLead(){
-  const venue=prompt('Venue / Business name:'); if(!venue) return;
-  const type=prompt('Venue type (Café / Restaurant / Hotel):');
-  const val=parseInt(prompt('Estimated value (₹):'))||0;
-  const lead={id:'L'+Date.now(),venue,venueType:type||'',totalValue:val,stage:'new',ts:Date.now(),time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})};
-  const leads=lsGetLeads(); leads.push(lead); lsSaveLeads(leads); renderLeads(); toast('Lead added');
+  ghForm({title:'Add lead', fields:[{key:'venue',label:'Venue / Business name',placeholder:''},{key:'type',label:'Venue type',type:'select',value:'Restaurant',options:[['Caf\u00e9','Caf\u00e9'],['Restaurant','Restaurant'],['Hotel','Hotel'],['Bar','Bar'],['Banquet','Banquet'],['QSR','QSR']]},{key:'val',label:'Estimated value (\u20b9)',type:'number',placeholder:'0'}], submitLabel:'Add lead', onSubmit:function(v){ var venue=(v.venue||'').trim(); if(!venue){ toast('Enter a venue name','#C62828'); return false; } var val=parseInt(v.val,10)||0; var lead={id:'L'+Date.now(),venue:venue,venueType:v.type||'',totalValue:val,stage:'new',ts:Date.now(),time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}; var leads=lsGetLeads(); leads.push(lead); lsSaveLeads(leads); renderLeads(); toast('Lead added','#1B7A4D'); }});
 }
 
 /* ══════════════════════════════════════
