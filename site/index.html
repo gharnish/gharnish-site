@@ -3809,7 +3809,7 @@ function renderLanding(){
   }
 
   // ── Our Work / Projects ──
-  H.push('<div class="hs" data-sec="projects"><div class="hs-hd"><div><div class="hs-title">Our Work</div><div class="hs-sub">150+ hospitality spaces furnished across India</div></div></div>');
+  H.push('<div class="hs" data-sec="projects"><div class="hs-hd"><div><div class="hs-title">Our Work</div><div class="hs-sub">150+ hospitality spaces furnished across India</div></div><a href="/our-work" class="hs-all" style="font-size:13px;font-weight:700;color:var(--g);text-decoration:none;white-space:nowrap">View all \u2192</a></div></div>');
   H.push('<div class="proj-scroll">');
   PROJECTS.forEach(function(pr){
     var firstImg=(pr.media||[]).filter(function(m){return ghMediaKind(m)==='image';})[0];
@@ -6735,11 +6735,14 @@ async function loadProductsFromSupabase(){
     ghApplySection();
     try{ localStorage.setItem('gh_custom_products', JSON.stringify(GH_ALL)); }catch(e){}
     if(S._pendingPath){ if(ghResolveRoute(S._pendingPath)){ render(); window.scrollTo(0,0); return; } }
+    try{ if(S._openProjectId){ var _op=S._openProjectId; S._openProjectId=null; var _auto=S._autoSetup; S._autoSetup=false; if(typeof openProject==='function'){ openProject(_op); if(_auto && typeof startWithThisSetup==='function'){ setTimeout(function(){ startWithThisSetup(_op); },400); } } render(); window.scrollTo(0,0); return; } }catch(e){}
     render();
   } catch(e){ console.warn('Supabase:', e.message); }
 }
 
 try{ ghResolveRoute(location.pathname); }catch(e){}
+try{ var _sp=new URLSearchParams(location.search); var _pid=_sp.get('p'); if(_pid){ S._openProjectId=_pid; S._autoSetup=(_sp.get('setup')==='1'); var _clean=location.pathname+location.hash; history.replaceState(null,'',_clean); } }catch(e){}
+try{ if(S._openProjectId && typeof PROJECTS!=='undefined' && PROJECTS.length){ var _op2=S._openProjectId; if((PROJECTS||[]).some(function(x){return x.id===_op2;})){ S._openProjectId=null; var _a2=S._autoSetup; S._autoSetup=false; if(typeof openProject==='function'){ openProject(_op2); if(_a2 && typeof startWithThisSetup==='function'){ setTimeout(function(){ startWithThisSetup(_op2); },400); } } } } }catch(e){}
 try{ render(); }catch(e){
   var appEl=document.getElementById('app');
   if(appEl) appEl.innerHTML='<div style="padding:24px;font-family:Poppins,sans-serif;font-size:14px;color:#C62828;background:#fff3f3;min-height:100vh"><b>ERROR:</b> '+e.message+'<br><br>Stack: '+(e.stack||'none')+'</div>';

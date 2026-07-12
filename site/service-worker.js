@@ -1,5 +1,5 @@
 /* Gharnish PWA service worker — network-first for fresh content, offline fallback */
-var CACHE = 'gharnish-v40';
+var CACHE = 'gharnish-v41';
 var SHELL = ['/', '/index.html', '/table-estimator.html', '/space-planner.html', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', function (e) {
