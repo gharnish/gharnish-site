@@ -1969,6 +1969,15 @@ body.detail-open #ai-fab{display:none}
 .mq-qa-line.mq-qa-total{border-top:1px solid rgba(0,0,0,.1);margin-top:6px;padding-top:8px;font-size:16px;font-weight:800;font-family:Poppins,sans-serif}
 .mq-qa-hint{font-size:12px;color:var(--gd);background:var(--gg);border-radius:8px;padding:7px 10px;margin-top:8px;font-weight:600}
 /* ── Finish swatches (polish + top) ── */
+.pdx-wrap{max-width:1080px;margin:0 auto;padding-left:20px;padding-right:20px}
+.pdx-body{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:40px;margin-top:30px;align-items:start}
+.pdx-main{min-width:0}
+.pdx-side{display:flex;flex-direction:column;gap:14px;position:sticky;top:74px}
+.pdx-card{background:var(--c1);border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.05)}
+@media(max-width:820px){
+  .pdx-body{grid-template-columns:1fr;gap:24px;margin-top:22px}
+  .pdx-side{position:static}
+}
 .mq-fin-grid{display:flex;flex-wrap:wrap;gap:8px}
 .mq-fin{display:inline-flex;align-items:center;gap:8px;background:var(--c2);border:1.5px solid rgba(0,0,0,.1);border-radius:11px;padding:9px 13px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit}
 .mq-fin.on{border-color:var(--g);background:var(--gg)}
@@ -5895,83 +5904,83 @@ function openProject(id){
   if(!proj) return;
   S.selectedProject=proj; render(); setTimeout(function(){window.scrollTo(0,0);},30);
 }
-function closeProject(){ S.selectedProject=null; render(); setTimeout(function(){window.scrollTo(0,0);},30); }
+function closeProject(){ S.selectedProject=null; try{ if(location.pathname.indexOf('/our-work/')===0){ history.pushState({},'', '/our-work'); } }catch(e){} render(); setTimeout(function(){window.scrollTo(0,0);},30); }
 
 function renderProjectDetail(proj){
   if(!proj){ closeProject(); return; }
+  // reflect URL so the project page is shareable/visible in the address bar
+  try{ var _slug=ghProjSlug(proj); if(location.pathname!=='/our-work/'+_slug){ history.pushState({proj:proj.id},'', '/our-work/'+_slug); } }catch(e){}
   var waMsg=encodeURIComponent('Hi! I saw the '+proj.name+' project on your site. I\u2019d like similar furniture for my space \u2014 please share options.');
   var imgs=(proj.media||[]).filter(function(m){return ghMediaKind(m)==='image';});
   var hero=imgs[0];
   var H=[];
-  H.push('<div class="detail-page" style="background:var(--c1);min-height:100vh">');
-  // slim back link (main site nav already sits above — no second dark bar)
-  H.push('<div style="max-width:1080px;margin:0 auto;padding:16px 16px 0"><button onclick="closeProject()" style="display:inline-flex;align-items:center;gap:7px;background:none;border:none;color:var(--ink2);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>Our Work</button></div>');
-  // MAGAZINE HERO — full-bleed image or rich gradient, editorial overlay
+  H.push('<div class="proj-detail-page" style="background:var(--c1);min-height:100vh">');
+  // slim back link
+  H.push('<div class="pdx-wrap" style="padding-top:16px"><button onclick="closeProject()" style="display:inline-flex;align-items:center;gap:7px;background:none;border:none;color:var(--ink2);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>Our Work</button></div>');
+  // FULL-BLEED HERO
   var heroBg = hero
     ? 'background-image:linear-gradient(180deg,rgba(23,19,16,.1) 0%,rgba(23,19,16,.35) 50%,rgba(23,19,16,.82) 100%),url('+hero+');background-size:cover;background-position:center'
     : 'background:linear-gradient(150deg,'+proj.color+',rgba(23,19,16,.85))';
-  H.push('<div style="position:relative;'+heroBg+';color:#fff;min-height:340px;display:flex;flex-direction:column;justify-content:flex-end;padding:28px 20px 26px">');
-  H.push('<div style="max-width:760px;margin:0 auto;width:100%">');
+  H.push('<div class="pdx-wrap" style="margin-top:12px"><div style="position:relative;border-radius:22px;overflow:hidden;'+heroBg+';color:#fff;min-height:clamp(300px,42vw,440px);display:flex;flex-direction:column;justify-content:flex-end;padding:32px">');
   H.push('<div style="font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#f0d9a8;margin-bottom:9px">'+escH(proj.type||'')+(proj.year?' \u00b7 '+escH(proj.year):'')+'</div>');
-  H.push('<div style="font-family:\'Fraunces\',serif;font-size:clamp(32px,8vw,46px);font-weight:600;letter-spacing:-.02em;line-height:1.0">'+escH(proj.name)+'</div>');
+  H.push('<div style="font-family:\'Fraunces\',serif;font-size:clamp(32px,6vw,52px);font-weight:600;letter-spacing:-.02em;line-height:1.0">'+escH(proj.name)+'</div>');
   if(proj.loc) H.push('<div style="font-size:14px;opacity:.9;margin-top:8px;display:flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'+escH(proj.loc)+'</div>');
   H.push('</div></div>');
-  // FACTS ROW — editorial
-  H.push('<div style="max-width:760px;margin:0 auto;padding:22px 20px 0">');
+  // TWO-COLUMN BODY: left = brief + gallery ; right = facts + furniture + CTA
+  H.push('<div class="pdx-wrap pdx-body">');
+  // LEFT column
+  H.push('<div class="pdx-main">');
+  if(proj.desc){
+    H.push('<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:0 0 12px">The brief</div>');
+    H.push('<p style="font-family:\'Fraunces\',serif;font-size:clamp(19px,2.4vw,23px);font-weight:400;line-height:1.5;color:var(--ink);letter-spacing:-.01em;margin:0 0 26px">'+escH(proj.desc)+'</p>');
+  }
+  if(proj.media && proj.media.length){
+    H.push('<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:0 0 12px">Gallery</div>');
+    H.push('<div style="display:flex;gap:11px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin">');
+    proj.media.forEach(function(m){
+      var k=ghMediaKind(m);
+      if(k==='video'){ H.push('<video src="'+m+'" controls playsinline preload="metadata" style="flex:none;width:280px;height:210px;object-fit:cover;border-radius:16px;background:#000"></video>'); }
+      else if(k==='youtube'||k==='vimeo'){ H.push('<div style="flex:none;width:300px;height:210px;border-radius:16px;overflow:hidden;background:#000"><iframe src="'+ghEmbedUrl(m)+'" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>'); }
+      else if(k==='link'){ H.push('<a href="'+m+'" target="_blank" rel="noopener" style="flex:none;width:160px;height:210px;border-radius:16px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">View \u2197</a>'); }
+      else { H.push('<img src="'+m+'" loading="lazy" style="flex:none;width:280px;height:210px;object-fit:cover;border-radius:16px" onerror="this.remove()">'); }
+    });
+    H.push('</div>');
+  }
+  H.push('</div>');  // close pdx-main
+  // RIGHT column (sticky facts + furniture + CTA)
+  H.push('<aside class="pdx-side">');
   var facts=[];
   if(proj.covers) facts.push(['Seating', proj.covers+' covers']);
   if(proj.budget) facts.push(['Budget', proj.budget]);
   if(proj.timeline) facts.push(['Delivery', proj.timeline]);
   if(proj.year) facts.push(['Year', String(proj.year)]);
   if(facts.length){
-    H.push('<div style="display:flex;flex-wrap:wrap;gap:16px 34px;padding-bottom:22px;border-bottom:1px solid rgba(0,0,0,.08)">');
+    H.push('<div class="pdx-card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">');
     facts.forEach(function(f){
       H.push('<div><div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);font-weight:800;margin-bottom:2px">'+escH(f[0])+'</div><div style="font-size:16px;font-weight:800;color:var(--ink)">'+escH(f[1])+'</div></div>');
     });
-    H.push('</div>');
+    H.push('</div></div>');
   }
-  // GALLERY (remaining media)
-  if(proj.media && proj.media.length){
-    H.push('<div style="display:flex;gap:11px;overflow-x:auto;padding:20px 0 4px;scrollbar-width:thin">');
-    proj.media.forEach(function(m){
-      var k=ghMediaKind(m);
-      if(k==='video'){ H.push('<video src="'+m+'" controls playsinline preload="metadata" style="flex:none;width:280px;height:200px;object-fit:cover;border-radius:16px;background:#000"></video>'); }
-      else if(k==='youtube'||k==='vimeo'){ H.push('<div style="flex:none;width:300px;height:200px;border-radius:16px;overflow:hidden;background:#000"><iframe src="'+ghEmbedUrl(m)+'" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>'); }
-      else if(k==='link'){ H.push('<a href="'+m+'" target="_blank" rel="noopener" style="flex:none;width:160px;height:200px;border-radius:16px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">View \u2197</a>'); }
-      else { H.push('<img src="'+m+'" loading="lazy" style="flex:none;width:260px;height:200px;object-fit:cover;border-radius:16px" onerror="this.remove()">'); }
-    });
-    H.push('</div>');
-  }
-  // BRIEF
-  if(proj.desc){
-    H.push('<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:30px 0 12px">The brief</div>');
-    H.push('<p style="font-family:\'Fraunces\',serif;font-size:20px;font-weight:400;line-height:1.5;color:var(--ink);letter-spacing:-.01em;margin:0">'+escH(proj.desc)+'</p>');
-  }
-  // FURNITURE — real linked products if available, else text list
-  H.push('<div id="proj-furniture-slot">');
+  // FURNITURE
+  H.push('<div class="pdx-card" id="proj-furniture-slot">');
   var textList=(proj.products||[]);
   if(textList.length){
-    H.push('<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:30px 0 14px">Furniture supplied</div>');
-    H.push('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:11px">');
+    H.push('<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:0 0 12px">Furniture used</div>');
     textList.forEach(function(pr){
-      H.push('<div style="display:flex;align-items:center;gap:11px;padding:12px 14px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:14px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--sage,#7A8B6F)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><polyline points="20 6 9 17 4 12"/></svg><div style="font-size:13.5px;font-weight:700;color:var(--ink)">'+escH(pr)+'</div></div>');
+      H.push('<div style="display:flex;align-items:center;gap:10px;padding:8px 0"><svg viewBox="0 0 24 24" fill="none" stroke="var(--sage,#7A8B6F)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;width:16px;height:16px"><polyline points="20 6 9 17 4 12"/></svg><div style="font-size:13.5px;font-weight:700;color:var(--ink)">'+escH(pr)+'</div></div>');
     });
-    H.push('</div>');
   }
   H.push('</div>');
   // CTAs
-  H.push('<div style="display:flex;gap:11px;margin:34px 0 24px">');
-  H.push('<button onclick="startWithThisSetup(\''+proj.id+'\')" style="flex:1;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;border:none;border-radius:999px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 10px 24px rgba(176,126,68,.3)"><span style="font-size:16px">\u2728</span> Start With This Setup</button>');
-  H.push('<a href="https://wa.me/919059276667?text='+waMsg+'" target="_blank" style="flex:none;padding:0 20px;background:#25D366;color:#fff;border-radius:999px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13.5px;font-weight:700">Enquire</a>');
-  H.push('</div>');
-  H.push('<div style="height:8px"></div>');
-  // ── MORE SECTIONS to fill the page (similar projects · related furniture · clearance) ──
-  H.push('<div id="proj-more-slot"></div>');
+  H.push('<button onclick="startWithThisSetup(\''+proj.id+'\')" style="width:100%;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;border:none;border-radius:999px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 10px 24px rgba(176,126,68,.3);margin-bottom:10px"><span style="font-size:16px">\u2728</span> Start With This Setup</button>');
+  H.push('<a href="https://wa.me/919059276667?text='+waMsg+'" target="_blank" style="width:100%;box-sizing:border-box;padding:14px;background:#25D366;color:#fff;border-radius:999px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:14px;font-weight:700">\uD83D\uDCAC Enquire on WhatsApp</a>');
+  H.push('</aside>');
+  H.push('</div>');  // close pdx-body
+  // MORE SECTIONS
+  H.push('<div class="pdx-wrap"><div id="proj-more-slot"></div></div>');
   H.push('<div style="height:40px"></div>');
-  H.push('</div>');   // close max-width wrap
-  H.push('</div>');   // close detail-page
+  H.push('</div>');  // close proj-detail-page
   app.innerHTML=H.join('');
-  // Async: replace text list with real linked furniture (photos + qty + price) when linked
   ghLoadProjFurniture(proj.id);
   ghProjMoreSections(proj);
 }
