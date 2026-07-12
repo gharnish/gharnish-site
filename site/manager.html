@@ -520,6 +520,15 @@ input,select,textarea{font-family:inherit;}
 .feat-prod-name{flex:1;font-size:13px;font-weight:500;color:var(--ink);}
 .feat-prod-rm{color:var(--ink3);font-size:20px;line-height:1;cursor:pointer;background:none;border:none;padding:0 4px;}
 
+.fin-sub{font-size:12px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--ink3);margin:0 0 10px}
+.fin-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.fin-dot{width:22px;height:22px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.fin-sw-grid{display:flex;flex-wrap:wrap;gap:12px}
+.fin-sw{width:96px}
+.fin-sw-img{width:96px;height:64px;border-radius:9px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12);margin-bottom:6px}
+.fin-sw-del{background:none;border:none;color:#C62828;font-size:11px;font-weight:700;cursor:pointer;padding:3px 0;width:100%}
+.fin-sw-add{width:96px;height:64px;border:2px dashed rgba(0,0,0,.18);border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink3);font-size:12px;font-weight:700;text-align:center;padding:6px}
+.fin-sw-add:hover{border-color:var(--g);color:var(--gd)}
 </style>
 <script>window.GH_MANAGER=true;</script>
 <link rel="manifest" href="/manager-manifest.json">
@@ -873,7 +882,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">MANAGER · 66</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">MANAGER · 67</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -3640,6 +3649,77 @@ function loadMgrEmails(cb){ if(!supa){ if(cb)cb(); return; } supa.from('app_sett
 function mgrAccessHTML(){ return '<div class="set-card" style="background:var(--c1);border:1px solid rgba(0,0,0,.08);border-radius:14px;padding:18px;margin-bottom:16px"><div style="font-size:14px;font-weight:800;color:var(--ink);margin-bottom:4px">Manager app access</div><div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Managers sign in at <b>gharnish.app/manager.html</b> \u2014 a simplified app with only Analytics, Leads, Customers &amp; Quotations (no costs, vendors or settings). Emails listed here are blocked from this full admin and auto-redirected to the manager app. Create their login first in Supabase \u2192 Authentication \u2192 Users \u2192 Add user.</div><div id="mgr-email-list" style="font-size:12.5px;color:var(--ink2);margin-bottom:10px">Loading\u2026</div><button class="cust-hbtn" onclick="mgrEmailsEdit()" style="padding:8px 14px;font-size:12px">Edit manager emails</button></div>'; }
 function mgrEmailsPaint(){ var el=document.getElementById('mgr-email-list'); if(!el)return; el.innerHTML=MGR_EMAILS.length?MGR_EMAILS.map(function(e){return '<span style="display:inline-block;background:var(--c2);border-radius:99px;padding:4px 12px;margin:0 6px 6px 0;font-weight:600">'+escA(e)+'</span>';}).join(''):'<i style="color:var(--ink3)">No manager emails yet.</i>'; }
 function mgrEmailsEdit(){ ghForm({title:'Manager emails', fields:[{key:'emails',label:'One email per line',type:'textarea',value:MGR_EMAILS.join('\n'),placeholder:'manager@gharnish.com'}], submitLabel:'Save', note:'These accounts can only use the manager app.', onSubmit:function(v){ var arr=(v.emails||'').split(/\n+/).map(function(s){return s.trim().toLowerCase();}).filter(Boolean); MGR_EMAILS=arr; supa.from('app_settings').upsert({key:'gh_manager_emails',value:arr}).then(function(r){ if(r&&r.error){ toast('Save failed: '+r.error.message,'#C62828'); } else { toast('Manager emails saved','#1B7A4D'); mgrEmailsPaint(); } }); } }); }
+var WOOD_POLISHES_ADM=[]; var TOP_FINISHES_ADM={laminate:[],sintered:[]};
+function loadFinishes(cb){
+  if(!supa){ if(cb)cb(); return; }
+  supa.from('app_settings').select('key,value').in('key',['wood_polishes','top_finishes']).then(function(r){
+    if(r&&r.data){ r.data.forEach(function(row){
+      var v=row.value; try{ v=(typeof v==='string')?JSON.parse(v):v; }catch(e){}
+      if(row.key==='wood_polishes' && Array.isArray(v)) WOOD_POLISHES_ADM=v;
+      if(row.key==='top_finishes' && v && typeof v==='object') TOP_FINISHES_ADM={laminate:(v.laminate||[]),sintered:(v.sintered||[])};
+    }); }
+    if(cb)cb();
+  }, function(){ if(cb)cb(); });
+}
+function saveWoodPolishes(){
+  if(!supa) return;
+  supa.from('app_settings').upsert({key:'wood_polishes',value:JSON.stringify(WOOD_POLISHES_ADM)},{onConflict:'key'}).then(function(r){
+    if(r&&r.error){ toast('Save failed: '+r.error.message,'#C62828'); return; }
+    toast('Wood polishes saved','#1B7A4D');
+  });
+}
+function saveTopFinishes(){
+  if(!supa) return;
+  supa.from('app_settings').upsert({key:'top_finishes',value:JSON.stringify(TOP_FINISHES_ADM)},{onConflict:'key'}).then(function(r){
+    if(r&&r.error){ toast('Save failed: '+r.error.message,'#C62828'); return; }
+    toast('Table-top finishes saved','#1B7A4D');
+  });
+}
+function finishesHTML(){
+  var wp=WOOD_POLISHES_ADM.map(function(o,i){
+    return '<div class="fin-row"><span class="fin-dot" style="background:'+(o.swatch||'#8a5c2c')+'"></span>'
+      +'<input class="settings-input" style="flex:1" value="'+escA(o.name||'')+'" onchange="finWpSet('+i+',\'name\',this.value)">'
+      +'<input class="settings-input" style="width:96px" value="'+escA(o.swatch||'')+'" placeholder="#8a5c2c" onchange="finWpSet('+i+',\'swatch\',this.value)">'
+      +'<button class="btn-icon btn-del" onclick="finWpDel('+i+')">\u2715</button></div>';
+  }).join('');
+  function swGrid(kind){
+    var arr=TOP_FINISHES_ADM[kind]||[];
+    var cells=arr.map(function(o,i){
+      var name=(typeof o==='string')?o:(o.name||''); var img=(typeof o==='string')?'':(o.image||'');
+      return '<div class="fin-sw"><div class="fin-sw-img" style="'+(img?'background-image:url('+img+');background-size:cover;background-position:center':'background:var(--c3)')+'"></div>'
+        +'<input class="settings-input" style="font-size:11px;padding:5px 7px" value="'+escA(name)+'" onchange="finTopName(\''+kind+'\','+i+',this.value)" placeholder="Name">'
+        +'<button class="fin-sw-del" onclick="finTopDel(\''+kind+'\','+i+')">Remove</button></div>';
+    }).join('');
+    return '<div class="fin-sw-grid">'+cells+'<label class="fin-sw-add"><input type="file" accept="image/*" style="display:none" onchange="finTopUpload(\''+kind+'\',this)"><span>+ Upload swatch</span></label></div>';
+  }
+  return '<div class="settings-group"><div class="settings-title">Finishes</div>'
+    +'<div style="font-size:12.5px;color:var(--ink3);margin-bottom:14px;line-height:1.6">Wood chairs show polish options; table tops show laminate &amp; sintered swatches in the customer quote picker.</div>'
+    +'<div class="fin-sub">Wood chair polishes</div>'
+    +'<div id="fin-wp">'+wp+'</div>'
+    +'<div style="display:flex;gap:8px;margin:10px 0 20px"><button class="cust-add-btn" style="padding:8px 14px;font-size:12.5px" onclick="finWpAdd()">+ Add polish</button><button class="cust-add-btn" style="padding:8px 14px;font-size:12.5px;background:var(--ink)" onclick="saveWoodPolishes()">Save polishes</button></div>'
+    +'<div class="fin-sub">Ply-laminate tops</div>'+swGrid('laminate')
+    +'<div class="fin-sub" style="margin-top:16px">Sintered stone tops</div>'+swGrid('sintered')
+    +'<button class="cust-add-btn" style="padding:8px 14px;font-size:12.5px;background:var(--ink);margin-top:14px" onclick="saveTopFinishes()">Save table-top finishes</button>'
+  +'</div>';
+}
+function finWpSet(i,k,v){ if(WOOD_POLISHES_ADM[i]){ WOOD_POLISHES_ADM[i][k]=v; } }
+function finWpAdd(){ WOOD_POLISHES_ADM.push({name:'New Finish',swatch:'#8a5c2c'}); finRepaint(); }
+function finWpDel(i){ WOOD_POLISHES_ADM.splice(i,1); finRepaint(); }
+function finTopName(kind,i,v){ var a=TOP_FINISHES_ADM[kind]; if(a&&a[i]){ if(typeof a[i]==='string'){ a[i]={name:v,image:''}; } else { a[i].name=v; } } }
+function finTopDel(kind,i){ TOP_FINISHES_ADM[kind].splice(i,1); finRepaint(); saveTopFinishes(); }
+function finTopUpload(kind,input){
+  var f=input.files&&input.files[0]; if(!f||!supa) return;
+  toast('Uploading swatch\u2026');
+  var path='finishes/'+kind+'-'+Date.now()+'.'+((f.name||'').split('.').pop()||'png');
+  supa.storage.from('project-media').upload(path,f,{cacheControl:'3600',upsert:true,contentType:f.type||'image/png'}).then(function(up){
+    if(up&&up.error){ toast('Upload failed: '+up.error.message,'#C62828'); return; }
+    var url=supa.storage.from('project-media').getPublicUrl(path).data.publicUrl;
+    TOP_FINISHES_ADM[kind].push({name:'',image:url});
+    finRepaint(); saveTopFinishes();
+    toast('Swatch added','#1B7A4D');
+  });
+}
+function finRepaint(){ var el=document.getElementById('fin-slot'); if(el) el.innerHTML=finishesHTML(); }
 function renderSettings(){
   const settings=lsGetSettings();
   const mc=document.getElementById('main-content');
@@ -3649,6 +3729,8 @@ function renderSettings(){
     +sellerSettingsHTML()
     +mgrAccessHTML()
     +'<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="display:none" onload="loadMgrEmails(mgrEmailsPaint)">'
+    +'<div id="fin-slot"></div>'
+    +'<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="display:none" onload="loadFinishes(finRepaint)">'
 
     +'<div class="settings-group"><div class="settings-label">WhatsApp Business</div>'
     +'<div class="settings-card">'

@@ -1276,6 +1276,9 @@ input[type="number"]:focus{border-color:var(--g);outline:none;}
 /* HORIZONTAL PRODUCT SCROLL */
 .prod-hscroll{display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .prod-hscroll::-webkit-scrollbar{display:none;}
+.mq-relbtn{margin-top:8px;width:100%;background:var(--gg);border:1px solid var(--g);color:var(--gd);font-size:12px;font-weight:800;padding:8px;border-radius:9px;cursor:pointer;font-family:inherit;transition:background .15s}
+.mq-relbtn:hover{background:var(--g);color:#fff}
+.mq-relbtn:active{transform:scale(.97)}
 .phcard{flex:none;width:148px;background:var(--c1);border-radius:14px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.05);cursor:pointer;transition:transform .15s;}
 .phcard:active{transform:scale(.96);}
 .phcard-img{height:148px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
@@ -1948,6 +1951,34 @@ body.detail-open #ai-fab{display:none}
 .mq-sheet-in{width:100%;padding:12px 14px;border:1px solid rgba(0,0,0,.14);border-radius:12px;font-size:15px;font-family:inherit;background:var(--c1);box-sizing:border-box;margin-bottom:14px;color:var(--ink)}
 .mq-sheet-in:focus{outline:none;border-color:var(--g)}
 .mq-sheet-row{display:flex;gap:12px}
+/* ── Quick-add sheet ── */
+.mq-qa-prod{display:flex;align-items:center;gap:12px;background:var(--c2);border-radius:14px;padding:12px;margin-bottom:16px}
+.mq-qa-prod img{width:52px;height:52px;border-radius:10px;object-fit:contain;background:#fff;flex:none}
+.mq-qa-prod .mq-noimg{width:52px;height:52px;display:flex;align-items:center;justify-content:center;font-size:24px;flex:none}
+.mq-qa-name{font-size:14px;font-weight:700;color:var(--ink);line-height:1.25}
+.mq-qa-unit{font-size:12.5px;color:var(--ink3);margin-top:2px}
+.mq-qa-qtyrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mq-qa-step{border:1px solid rgba(0,0,0,.14)}
+.mq-qa-step input{width:56px}
+.mq-qa-quick{display:flex;gap:6px}
+.mq-qa-quick button{background:var(--c2);border:1px solid rgba(0,0,0,.1);color:var(--ink2);font-size:13px;font-weight:700;padding:8px 12px;border-radius:9px;cursor:pointer;font-family:inherit}
+.mq-qa-quick button:hover{background:var(--gg);border-color:var(--g);color:var(--gd)}
+.mq-qa-summary{margin-top:16px;background:var(--c2);border-radius:12px;padding:12px 14px}
+.mq-qa-line{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--ink);padding:3px 0}
+.mq-qa-line.mq-qa-save{color:#2E7D32;font-weight:600}
+.mq-qa-line.mq-qa-total{border-top:1px solid rgba(0,0,0,.1);margin-top:6px;padding-top:8px;font-size:16px;font-weight:800;font-family:Poppins,sans-serif}
+.mq-qa-hint{font-size:12px;color:var(--gd);background:var(--gg);border-radius:8px;padding:7px 10px;margin-top:8px;font-weight:600}
+/* ── Finish swatches (polish + top) ── */
+.mq-fin-grid{display:flex;flex-wrap:wrap;gap:8px}
+.mq-fin{display:inline-flex;align-items:center;gap:8px;background:var(--c2);border:1.5px solid rgba(0,0,0,.1);border-radius:11px;padding:9px 13px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer;font-family:inherit}
+.mq-fin.on{border-color:var(--g);background:var(--gg)}
+.mq-fin-dot{width:16px;height:16px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.mq-fin-swatches{display:flex;flex-wrap:wrap;gap:9px}
+.mq-fin-sw{background:none;border:none;padding:0;cursor:pointer;width:64px;text-align:center;font-family:inherit}
+.mq-fin-swimg{display:block;width:64px;height:48px;border-radius:9px;border:2px solid transparent;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1);transition:border-color .15s}
+.mq-fin-sw.on .mq-fin-swimg{border-color:var(--g)}
+.mq-fin-swnm{display:block;font-size:11px;font-weight:600;color:var(--ink2);margin-top:4px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mq-fin-sw.on .mq-fin-swnm{color:var(--gd)}
 @media(min-width:560px){.mq-sheet-ov{align-items:center}.mq-sheet{border-radius:22px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -3709,6 +3740,7 @@ function orderedCards(){
 }
 function catCardImg(c){ var m=CATMETA[c.cats[0]]; return (m&&m.image)||(typeof CAT_IMAGES!=='undefined'&&CAT_IMAGES[c.key])||''; }
 var TAG_GROUPS=[], PRODUCT_TAGS={};
+var WOOD_POLISHES=[]; var TOP_FINISHES={laminate:[],sintered:[]};
 function tagEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function productMatchesTags(pid){
   var sel=(S.filters&&S.filters.tags)||[]; if(!sel.length) return true;
@@ -5872,11 +5904,8 @@ function renderProjectDetail(proj){
   var hero=imgs[0];
   var H=[];
   H.push('<div class="detail-page" style="background:var(--c1);min-height:100vh">');
-  // top bar
-  H.push('<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;position:sticky;top:0;background:rgba(24,18,12,.97);backdrop-filter:blur(8px);z-index:20;border-bottom:1px solid rgba(255,255,255,.08)">');
-  H.push('<button onclick="closeProject()" aria-label="Back" style="background:rgba(255,255,255,.12);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px">\u2190</button>');
-  H.push('<div style="font-size:15px;font-weight:700;color:#fff;font-family:\'Fraunces\',serif">Our Work</div>');
-  H.push('</div>');
+  // slim back link (main site nav already sits above — no second dark bar)
+  H.push('<div style="max-width:1080px;margin:0 auto;padding:16px 16px 0"><button onclick="closeProject()" style="display:inline-flex;align-items:center;gap:7px;background:none;border:none;color:var(--ink2);font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;padding:0"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg>Our Work</button></div>');
   // MAGAZINE HERO — full-bleed image or rich gradient, editorial overlay
   var heroBg = hero
     ? 'background-image:linear-gradient(180deg,rgba(23,19,16,.1) 0%,rgba(23,19,16,.35) 50%,rgba(23,19,16,.82) 100%),url('+hero+');background-size:cover;background-position:center'
@@ -5935,14 +5964,223 @@ function renderProjectDetail(proj){
   H.push('<button onclick="startWithThisSetup(\''+proj.id+'\')" style="flex:1;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;border:none;border-radius:999px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 10px 24px rgba(176,126,68,.3)"><span style="font-size:16px">\u2728</span> Start With This Setup</button>');
   H.push('<a href="https://wa.me/919059276667?text='+waMsg+'" target="_blank" style="flex:none;padding:0 20px;background:#25D366;color:#fff;border-radius:999px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13.5px;font-weight:700">Enquire</a>');
   H.push('</div>');
+  H.push('<div style="height:8px"></div>');
+  // ── MORE SECTIONS to fill the page (similar projects · related furniture · clearance) ──
+  H.push('<div id="proj-more-slot"></div>');
   H.push('<div style="height:40px"></div>');
   H.push('</div>');   // close max-width wrap
   H.push('</div>');   // close detail-page
   app.innerHTML=H.join('');
   // Async: replace text list with real linked furniture (photos + qty + price) when linked
   ghLoadProjFurniture(proj.id);
+  ghProjMoreSections(proj);
 }
 function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function ghProjMoreSections(proj){
+  var slot=document.getElementById('proj-more-slot'); if(!slot) return;
+  var H=[];
+  // 1) SIMILAR PROJECTS — same type first, excluding current
+  var others=(PROJECTS||[]).filter(function(p){ return p.id!==proj.id && p.visible!==false; });
+  function typeKey(t){ return (t||'').toLowerCase().split(/[\u00b7,]/)[0].trim(); }
+  var myType=typeKey(proj.type);
+  var similar=others.slice().sort(function(a,b){
+    var sa=(typeKey(a.type)===myType)?0:1, sb=(typeKey(b.type)===myType)?0:1;
+    if(sa!==sb) return sa-sb;
+    // then same city
+    var ca=((a.loc||'').toLowerCase().indexOf((proj.loc||'').toLowerCase().split(',').pop().trim())>-1)?0:1;
+    var cb=((b.loc||'').toLowerCase().indexOf((proj.loc||'').toLowerCase().split(',').pop().trim())>-1)?0:1;
+    return ca-cb;
+  }).slice(0,8);
+  if(similar.length){
+    H.push('<div class="hs" style="margin-top:36px"><div class="hs-hd"><div><div class="hs-title">More projects like this</div><div class="hs-sub">Get ideas from other spaces we\u2019ve furnished</div></div><a href="/our-work" onclick="event.preventDefault();goToOurWork()" style="font-size:13px;font-weight:700;color:var(--g);white-space:nowrap">View all \u2192</a></div>');
+    H.push('<div class="proj-scroll">');
+    similar.forEach(function(pr){
+      var fi=(pr.media||[]).filter(function(m){return ghMediaKind(m)==='image';})[0];
+      var top=fi?('background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.66)),url('+fi+');background-size:cover;background-position:center'):('background:linear-gradient(140deg,'+(pr.color||'#C8860A')+',rgba(0,0,0,.5))');
+      H.push('<a class="proj-card" href="/our-work/'+ghProjSlug(pr)+'" onclick="return ghProjNav(event,\''+pr.id+'\')"><div class="proj-top" style="'+top+'"><span class="proj-year">'+(pr.year||'')+'</span><div class="proj-name">'+(pr.name||'')+'</div><div class="proj-type">'+(pr.type||'')+'</div></div><div class="proj-foot"><span>'+(pr.loc||'')+'</span><span class="proj-covers">'+(pr.covers||0)+' covers</span></div></a>');
+    });
+    H.push('</div></div>');
+  }
+  H.push('<div id="proj-related-slot"></div>');
+  slot.innerHTML=H.join('');
+
+  // 2) RELATED FURNITURE — ranked: name-match > bestseller(chairs first) > same category
+  if(!supa){ ghProjRelatedFallback(proj); return; }
+  supa.from('project_products').select('product_id').eq('project_id',proj.id).then(function(r){
+    var byId={}; (PRODUCTS||[]).forEach(function(p){byId[p.id]=p;});
+    var usedIds={}; var linkedProds=[];
+    if(r&&r.data){ r.data.forEach(function(row){ usedIds[row.product_id]=1; if(byId[row.product_id]) linkedProds.push(byId[row.product_id]); }); }
+
+    // build keyword set from linked product names (e.g. "cane","teak","wooden","booth")
+    var STOP={'the':1,'and':1,'with':1,'for':1,'ms':1,'double':1,'single':1,'side':1,'outdoor':1,'indoor':1};
+    var kw={};
+    linkedProds.forEach(function(p){
+      (p.name||'').toLowerCase().split(/[^a-z0-9]+/).forEach(function(w){ if(w.length>=3 && !STOP[w]) kw[w]=1; });
+    });
+    var cats={}; linkedProds.forEach(function(p){ var c=(p.cat||p.category||'').toLowerCase(); if(c) cats[c]=1; });
+
+    function score(p){
+      if(usedIds[p.id]) return -1;
+      var s=0;
+      var nm=(p.name||'').toLowerCase();
+      // name-match: shares a keyword with linked items
+      var hits=0; Object.keys(kw).forEach(function(w){ if(nm.indexOf(w)>-1) hits++; });
+      s += hits*10;
+      // bestseller boost (chairs first)
+      if(p.bestseller===true){ s += 5; if(/chair/i.test(p.cat||p.category||'')) s += 3; }
+      // same category
+      var c=(p.cat||p.category||'').toLowerCase();
+      if(cats[c]) s += 2;
+      return s;
+    }
+    var ranked=(PRODUCTS||[]).filter(function(p){return !usedIds[p.id];})
+      .map(function(p){ return {p:p, s:score(p)}; })
+      .filter(function(x){ return x.s>0; })
+      .sort(function(a,b){ return b.s-a.s; })
+      .map(function(x){ return x.p; });
+    // if nothing scored, fall back to bestsellers then any
+    if(!ranked.length){
+      ranked=(PRODUCTS||[]).filter(function(p){return p.bestseller===true && !usedIds[p.id];});
+      if(!ranked.length) ranked=(PRODUCTS||[]).filter(function(p){return !usedIds[p.id];});
+    }
+    ranked=ranked.slice(0,12);
+
+    var H2=[];
+    H2.push('<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">You may also like</div><div class="hs-sub">Matched to this project \u2014 add to your quote</div></div><button onclick="S.tab=\'home\';S.homeView=\'catalog\';render()" class="mq-addbtn" style="padding:8px 14px;font-size:12.5px">+ Browse full catalogue</button></div>');
+    H2.push('<div class="prod-hscroll">');
+    ranked.forEach(function(p){ H2.push(ghRelCard(p)); });
+    H2.push('</div></div>');
+
+    // 3) CLEARANCE
+    var clr=(PRODUCTS||[]).filter(function(p){ return (typeof CLEARANCE_IDS!=='undefined' && CLEARANCE_IDS && CLEARANCE_IDS[p.id]); }).slice(0,12);
+    if(clr.length){
+      H2.push('<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">\uD83D\uDD25 Clearance \u2014 ready stock deals</div><div class="hs-sub">Limited quantities, dispatched fast</div></div></div>');
+      H2.push('<div class="prod-hscroll">');
+      clr.forEach(function(p){ H2.push(ghRelCard(p)); });
+      H2.push('</div></div>');
+    }
+    var extra=document.getElementById('proj-related-slot');
+    if(extra) extra.innerHTML=H2.join('');
+  }, function(){ ghProjRelatedFallback(proj); });
+}
+function ghProjRelatedFallback(proj){
+  var extra=document.getElementById('proj-related-slot'); if(!extra) return;
+  var best=(PRODUCTS||[]).filter(function(p){return p.bestseller===true;}).slice(0,12);
+  if(!best.length) best=(PRODUCTS||[]).slice(0,12);
+  var H2=['<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">You may also like</div><div class="hs-sub">Popular picks \u2014 add to your quote</div></div><button onclick="S.tab=\'home\';S.homeView=\'catalog\';render()" class="mq-addbtn" style="padding:8px 14px;font-size:12.5px">+ Browse full catalogue</button></div>','<div class="prod-hscroll">'];
+  best.forEach(function(p){ H2.push(ghRelCard(p)); });
+  H2.push('</div></div>');
+  extra.innerHTML=H2.join('');
+}
+function ghRelCard(p){
+  var img=p.image?('<img src="'+p.image+'" loading="lazy">'):(typeof svgIcon==='function'?svgIcon(p.icon):'');
+  var best=(p.bestseller===true)?'<span class="phcard-badge badge-best">&#9733;</span>':'';
+  return '<div class="phcard" data-pid="'+p.id+'">'
+    +'<div class="phcard-img" onclick="S.selectedProduct=\''+p.id+'\';render();window.scrollTo({top:0,behavior:\'smooth\'})">'+best+img+'</div>'
+    +'<div class="phcard-body">'
+    +'<div class="phcard-name" onclick="S.selectedProduct=\''+p.id+'\';render();window.scrollTo({top:0,behavior:\'smooth\'})">'+(p.name||'')+'</div>'
+    +'<span class="phcard-price">\u20b9'+Number(p.price||0).toLocaleString('en-IN')+'</span>'
+    +'<button class="mq-relbtn" onclick="ghRelAdd(\''+p.id+'\',event)">+ Add to quote</button>'
+    +'</div></div>';
+}
+function ghRelAdd(pid,ev){ if(ev){ev.stopPropagation();} ghQuickAdd(pid); }
+function ghProductFinishes(p){
+  if(!p) return null;
+  var cat=((p.cat||p.category||'')+'').toLowerCase();
+  var nm=((p.name||'')+'').toLowerCase();
+  var mat=((p.material||'')+'').toLowerCase();
+  var txt=nm+' '+mat;
+  if(cat.indexOf('table')>-1){
+    var lam=(TOP_FINISHES&&TOP_FINISHES.laminate)||[];
+    var sin=(TOP_FINISHES&&TOP_FINISHES.sintered)||[];
+    if(lam.length||sin.length){ return {type:'top', laminate:lam, sintered:sin}; }
+    return null;
+  }
+  var isChair=(cat.indexOf('chair')>-1||cat.indexOf('stool')>-1);
+  var isWood=/teak|wood|wooden|cane|sheesham|solid/i.test(txt);
+  if(isChair && isWood && WOOD_POLISHES && WOOD_POLISHES.length){
+    return {type:'polish', options:WOOD_POLISHES};
+  }
+  return null;
+}
+function ghFinishBlockHTML(fin){
+  if(!fin) return '<div class="mq-sheet-lbl" style="margin-top:14px">Finish / note <span style="text-transform:none;font-weight:500;color:var(--ink3)">(optional)</span></div>'
+    +'<input id="mq-qa-finish" class="mq-sheet-in" placeholder="e.g. grey upholstery, custom colour" autocomplete="off" oninput="window._qa.finish=this.value" style="margin-bottom:10px">';
+  if(fin.type==='polish'){
+    var sw=fin.options.map(function(o){ return '<button class="mq-fin mq-fin-color" data-fin="'+escH(o.name)+'" onclick="ghQaFinish(\''+escH(o.name).replace(/'/g,"")+'\')"><span class="mq-fin-dot" style="background:'+(o.swatch||'#8a5c2c')+'"></span>'+escH(o.name)+'</button>'; }).join('');
+    return '<div class="mq-sheet-lbl" style="margin-top:14px">Polish finish</div><div class="mq-fin-grid">'+sw+'</div>';
+  }
+  // top finishes — laminate + sintered image swatches
+  var h='';
+  if(fin.laminate && fin.laminate.length){
+    h+='<div class="mq-sheet-lbl" style="margin-top:14px">Ply-laminate top</div><div class="mq-fin-swatches">'
+      +fin.laminate.map(function(o){ return ghSwatchHTML(o,'Laminate'); }).join('')+'</div>';
+  }
+  if(fin.sintered && fin.sintered.length){
+    h+='<div class="mq-sheet-lbl" style="margin-top:14px">Sintered stone top</div><div class="mq-fin-swatches">'
+      +fin.sintered.map(function(o){ return ghSwatchHTML(o,'Sintered'); }).join('')+'</div>';
+  }
+  return h;
+}
+function ghSwatchHTML(o,kind){
+  var name=(typeof o==='string')?o:(o.name||'');
+  var img=(typeof o==='string')?'':(o.image||'');
+  var label=kind+' \u00b7 '+name;
+  var bg=img?('background-image:url('+img+');background-size:cover;background-position:center'):'background:var(--c3)';
+  return '<button class="mq-fin-sw" title="'+escH(label)+'" data-fin="'+escH(label)+'" onclick="ghQaFinish(\''+escH(label).replace(/'/g,"")+'\')"><span class="mq-fin-swimg" style="'+bg+'"></span><span class="mq-fin-swnm">'+escH(name)+'</span></button>';
+}
+function ghQuickAdd(pid){
+  var p=(PRODUCTS||[]).find(function(x){return String(x.id)===String(pid);});
+  if(!p){ addToCart(pid,1,''); return; }
+  var fin=ghProductFinishes(p);
+  var ov=document.getElementById('mq-qa-ov'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='mq-qa-ov'; ov.className='mq-sheet-ov';
+  window._qa={pid:pid, qty:10, finish:''};
+  ov.innerHTML='<div class="mq-sheet" onclick="event.stopPropagation()">'
+    +'<div class="mq-sheet-h"><div>Add to quote</div><button class="mq-sheet-x" onclick="ghQaClose()">\u2715</button></div>'
+    +'<div class="mq-qa-prod">'+(p.image?'<img src="'+p.image+'">':'<span class="mq-noimg">\uD83E\uDBA1</span>')+'<div><div class="mq-qa-name">'+(p.name||'')+'</div><div class="mq-qa-unit">\u20b9'+Number(p.price||0).toLocaleString('en-IN')+' / unit</div></div></div>'
+    +ghFinishBlockHTML(fin)
+    +'<div class="mq-sheet-lbl" style="margin-top:14px">Quantity</div>'
+    +'<div class="mq-qa-qtyrow"><div class="mq-step mq-qa-step"><button onclick="ghQaQty(-1)">\u2212</button><input id="mq-qa-qty" type="number" inputmode="numeric" value="10" min="1" onchange="ghQaSet(this.value)"><button onclick="ghQaQty(1)">+</button></div>'
+    +'<div class="mq-qa-quick"><button onclick="ghQaSet(10)">10</button><button onclick="ghQaSet(25)">25</button><button onclick="ghQaSet(50)">50</button><button onclick="ghQaSet(100)">100</button></div></div>'
+    +'<div id="mq-qa-summary" class="mq-qa-summary"></div>'
+    +'<button class="mq-cta" style="margin-top:14px" onclick="ghQaConfirm()">Add to quote</button>'
+  +'</div>';
+  ov.onclick=function(){ ghQaClose(); };
+  document.body.appendChild(ov);
+  requestAnimationFrame(function(){ ov.classList.add('on'); ghQaRender(); });
+}
+function ghQaFinish(name){
+  window._qa.finish=name;
+  var ov=document.getElementById('mq-qa-ov'); if(!ov) return;
+  ov.querySelectorAll('.mq-fin,.mq-fin-sw').forEach(function(b){ b.classList.toggle('on', (b.getAttribute('data-fin')||'').replace(/'/g,"")===name); });
+}
+function ghQaClose(){ var ov=document.getElementById('mq-qa-ov'); if(ov){ ov.classList.remove('on'); setTimeout(function(){ov.remove();},180); } }
+function ghQaQty(d){ window._qa.qty=Math.max(1,(+window._qa.qty||1)+d); var el=document.getElementById('mq-qa-qty'); if(el) el.value=window._qa.qty; ghQaRender(); }
+function ghQaSet(v){ window._qa.qty=Math.max(1,parseInt(v)||1); var el=document.getElementById('mq-qa-qty'); if(el) el.value=window._qa.qty; ghQaRender(); }
+function ghQaRender(){
+  var qa=window._qa; var p=(PRODUCTS||[]).find(function(x){return String(x.id)===String(qa.pid);}); if(!p) return;
+  var qty=+qa.qty||1; var unit=+p.price||0; var gross=unit*qty;
+  var off=(typeof bulkOff==='function')?bulkOff(qty):0;
+  var net=gross*(1-off/100);
+  var el=document.getElementById('mq-qa-summary'); if(!el) return;
+  var h='<div class="mq-qa-line"><span>'+qty+' \u00d7 \u20b9'+unit.toLocaleString('en-IN')+'</span><b>\u20b9'+Math.round(gross).toLocaleString('en-IN')+'</b></div>';
+  if(off>0){ h+='<div class="mq-qa-line mq-qa-save"><span>Bulk saving \u2212'+off+'%</span><span>\u2212\u20b9'+Math.round(gross-net).toLocaleString('en-IN')+'</span></div>'; h+='<div class="mq-qa-line mq-qa-total"><span>Est. line total</span><b>\u20b9'+Math.round(net).toLocaleString('en-IN')+'</b></div>'; }
+  else {
+    // hint next tier
+    var hint=''; if(typeof BULK_TIERS!=='undefined'){ for(var i=0;i<BULK_TIERS.length;i++){ if(qty<BULK_TIERS[i].min){ hint='Add '+(BULK_TIERS[i].min-qty)+' more for '+BULK_TIERS[i].off+'% bulk off'; break; } } }
+    h+='<div class="mq-qa-line mq-qa-total"><span>Est. line total</span><b>\u20b9'+Math.round(gross).toLocaleString('en-IN')+'</b></div>';
+    if(hint) h+='<div class="mq-qa-hint">\uD83D\uDCA1 '+hint+'</div>';
+  }
+  el.innerHTML=h;
+}
+function ghQaConfirm(){
+  var qa=window._qa; var qty=Math.max(1,+qa.qty||1); var finish=(qa.finish||'').trim();
+  addToCart(qa.pid, qty, finish);
+  ghQaClose();
+  ghNote&&ghNote('Added '+qty+' to your quote','#2E7D32');
+  if(S.tab==='cart') renderCart();
+}
 function ghLoadProjFurniture(pid){
   if(!supa) return;
   supa.from('project_products').select('product_id,default_qty,sort').eq('project_id',pid).order('sort').then(function(r){
@@ -7039,8 +7277,8 @@ function ghMediaKind(u){
   return 'image';
 }
 function ghEmbedUrl(u){
-  var yt=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/i);
-  if(yt) return 'https://www.youtube.com/embed/'+yt[1];
+  var yt=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{11})/i);
+  if(yt) return 'https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1';
   var vm=u.match(/vimeo\.com\/(\d+)/i);
   if(vm) return 'https://player.vimeo.com/video/'+vm[1];
   return u;
@@ -7074,6 +7312,10 @@ loadProjectsFromSupabase();
     }
     var tgr=await supa.from('app_settings').select('value').eq('key','tag_groups').maybeSingle();
     if(!tgr.error && tgr.data && tgr.data.value){ var tg=(typeof tgr.data.value==='string'?JSON.parse(tgr.data.value):tgr.data.value); if(Array.isArray(tg)){ TAG_GROUPS=tg; render(); } }
+    var wpr=await supa.from('app_settings').select('value').eq('key','wood_polishes').maybeSingle();
+    if(!wpr.error && wpr.data && wpr.data.value){ try{ var wp=(typeof wpr.data.value==='string'?JSON.parse(wpr.data.value):wpr.data.value); if(Array.isArray(wp)){ WOOD_POLISHES=wp; } }catch(e){} }
+    var tfr=await supa.from('app_settings').select('value').eq('key','top_finishes').maybeSingle();
+    if(!tfr.error && tfr.data && tfr.data.value){ try{ var tf=(typeof tfr.data.value==='string'?JSON.parse(tfr.data.value):tfr.data.value); if(tf && typeof tf==='object'){ TOP_FINISHES={laminate:(tf.laminate||[]),sintered:(tf.sintered||[])}; } }catch(e){} }
     var ptr=await supa.from('app_settings').select('value').eq('key','product_tags').maybeSingle();
     if(!ptr.error && ptr.data && ptr.data.value){ var pt=(typeof ptr.data.value==='string'?JSON.parse(ptr.data.value):ptr.data.value); if(pt && typeof pt==='object'){ PRODUCT_TAGS=pt; render(); } }
     var mtr=await supa.from('app_settings').select('value').eq('key','making_time').maybeSingle();
