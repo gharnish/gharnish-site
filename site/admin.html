@@ -296,6 +296,12 @@ input,select,textarea{font-family:inherit;}
 .f-section{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid rgba(0,0,0,.07);}
 .f-section:first-child{margin-top:0;}
 .f-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.proj-edit-wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:20px;padding:0 4px 40px;align-items:start}
+.proj-edit-main{display:flex;flex-direction:column;gap:18px;min-width:0}
+.proj-edit-side{display:flex;flex-direction:column;gap:14px;position:sticky;top:16px}
+.proj-card-sec{background:var(--card,#fff);border:1px solid rgba(0,0,0,.08);border-radius:16px;padding:20px}
+@media(max-width:900px){.proj-edit-wrap{grid-template-columns:1fr}.proj-edit-side{position:static}}
+
 .f-field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
 .f-field label{font-size:12px;font-weight:600;color:var(--ink2);}
 .f-input{background:var(--bg);border:1.5px solid rgba(0,0,0,.1);color:var(--ink);padding:11px 13px;border-radius:var(--r1);font-size:14px;width:100%;transition:border-color .18s;}
@@ -865,7 +871,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 61</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 62</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -3334,36 +3340,14 @@ function openProjForm(id){
   editingProjId=id||null;
   const projects=getProjects();
   const p=id?projects.find(x=>x.id===id):null;
-  document.getElementById('proj-modal-title').textContent=id?'Edit Project':'Add Project';
-  document.getElementById('proj-modal-body').innerHTML=
-    '<div class="f-row">'
-    +'<div class="f-field"><label>Project Name *</label><input class="f-input" id="jf-name" value="'+(p?.name||'')+'" placeholder="Always Sunday"></div>'
-    +'<div class="f-field"><label>Year</label><input class="f-input" id="jf-year" value="'+(p?.year||new Date().getFullYear())+'" placeholder="2024"></div>'
-    +'</div>'
-    +'<div class="f-field"><label>Location</label><input class="f-input" id="jf-loc" value="'+(p?.loc||'')+'" placeholder="Hyderabad, Telangana"></div>'
-    +'<div class="f-row">'
-    +'<div class="f-field"><label>Venue Type</label><input class="f-input" id="jf-type" value="'+(p?.type||'')+'" placeholder="Fine Dining / Café / QSR"></div>'
-    +'<div class="f-field"><label>Covers (seats)</label><input class="f-input" type="number" id="jf-covers" value="'+(p?.covers||'')+'" placeholder="60"></div>'
-    +'</div>'
-    +'<div class="f-field"><label>Products Used</label><textarea class="f-textarea" id="jf-products" placeholder="Dining Chairs, Round Tables, Bar Stools…">'+(p?.products||'')+'</textarea></div>'
-    +'<div class="f-section">Furniture linked \u2014 powers \u201cStart With This Setup\u201d</div>'
-    +'<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Link real catalogue products with quantities. Customers can load this exact list into a quote in one tap.</div>'
-    +'<div id="projlink-list"></div>'
-    +'<button class="spec-add-btn" onclick="projLinkPick()" style="margin:6px 0 4px">+ Link a product</button>'
-    +'<div id="projlink-total" style="font-size:12.5px;color:var(--ink2);font-weight:700;margin-top:6px"></div>'
-    +'<div class="f-section">Photos &amp; Media</div>'
-    +'<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Upload photos/videos (stored in Supabase Storage) or paste image/video/YouTube links. Shown on the project in the live app.</div>'
-    +'<div id="media-list">'+renderMediaRows(p?.media||[])+'</div>'
-    +'<input type="file" id="proj-media-file" accept="image/*,video/*" multiple style="display:none" onchange="uploadProjMedia(this)">'
-    +'<div style="display:flex;gap:8px;margin-bottom:14px">'
-    +'<button class="spec-add-btn" onclick="document.getElementById(\'proj-media-file\').click()" style="margin:0;flex:1">&#11014; Upload Photo/Video</button>'
-    +'<button class="spec-add-btn" onclick="addMediaRow()" style="margin:0;flex:1">+ Add URL</button>'
-    +'</div>'
-    +'<div class="f-section">Card Colour</div>'
-    +'<div class="f-field"><label>Card Colour</label><div style="display:flex;align-items:center;gap:10px"><input type="color" id="jf-color" value="'+(p?.color||'#C8860A')+'" style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer"><span id="jf-color-val" style="font-family:Poppins,monospace;font-size:12px;color:var(--ink3)">'+(p?.color||'#C8860A')+'</span></div></div>';
+  const mc=document.getElementById('main-content');
+  mc.classList.remove('mc-wide');
+  mc.innerHTML='<div class="page-hd" style="align-items:center">'+'<button onclick="projFormBack()" style="background:var(--c2);border:none;border-radius:10px;width:38px;height:38px;cursor:pointer;font-size:20px;color:var(--ink);margin-right:12px;flex:none">&#8592;</button>'+'<div><div class="page-title">'+(id?'Edit Project':'Add Project')+'</div><div class="page-sub">'+(id?'Update details, linked furniture and media':'Add a completed project to your portfolio')+'</div></div>'+'<button class="add-btn" onclick="saveProj()" style="margin-left:auto">Save Project</button>'+'</div>'+'<div class="proj-edit-wrap">'+'<div class="proj-edit-main">'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Project details</div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Project Name *</label><input class="f-input" id="jf-name" value="'+escA(p?.name||'')+'" placeholder="Always Sunday"></div>'+      '<div class="f-field"><label>Year</label><input class="f-input" id="jf-year" value="'+escA(p?.year||new Date().getFullYear())+'" placeholder="2024"></div>'+    '</div>'+    '<div class="f-field"><label>Location</label><input class="f-input" id="jf-loc" value="'+escA(p?.loc||'')+'" placeholder="Hyderabad, Telangana"></div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Venue Type</label><input class="f-input" id="jf-type" value="'+escA(p?.type||'')+'" placeholder="Fine Dining / Caf\u00e9 / QSR"></div>'+      '<div class="f-field"><label>Covers (seats)</label><input class="f-input" type="number" id="jf-covers" value="'+escA(p?.covers||'')+'" placeholder="60"></div>'+    '</div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Budget range</label><input class="f-input" id="jf-budget" value="'+escA(p?.budget||'')+'" placeholder="\u20b910\u201320L"></div>'+      '<div class="f-field"><label>Delivery timeline</label><input class="f-input" id="jf-timeline" value="'+escA(p?.timeline||'')+'" placeholder="10\u201314 days"></div>'+    '</div>'+    '<div class="f-field"><label>Products Used (short description)</label><textarea class="f-textarea" id="jf-products" placeholder="Dining Chairs, Round Tables, Bar Stools\u2026">'+escA(p?.products||'')+'</textarea></div>'+  '</div>'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Furniture linked \u2014 powers \u201cStart With This Setup\u201d</div>'+    '<div style="font-size:12.5px;color:var(--ink3);margin-bottom:12px">Link real catalogue products with quantities. Customers load this exact list into a quote in one tap.</div>'+    '<div id="projlink-list"></div>'+    '<div id="projlink-total" style="font-size:13px;color:var(--ink2);font-weight:800;margin:8px 0 12px"></div>'+    '<div id="projlink-picker"></div>'+    '<button class="spec-add-btn" id="projlink-addbtn" onclick="projLinkPickInline()" style="margin:2px 0 0">+ Link a product</button>'+  '</div>'+'</div>'+'<div class="proj-edit-side">'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Photos &amp; Media</div>'+    '<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Upload photos/videos or paste image/video/YouTube links. Shown on the project in the live app.</div>'+    '<div id="media-list">'+renderMediaRows(p?.media||[])+'</div>'+    '<input type="file" id="proj-media-file" accept="image/*,video/*" multiple style="display:none" onchange="uploadProjMedia(this)">'+    '<div style="display:flex;gap:8px;margin:10px 0 4px">'+      '<button class="spec-add-btn" onclick="document.getElementById(\'proj-media-file\').click()" style="margin:0;flex:1">&#11014; Upload</button>'+      '<button class="spec-add-btn" onclick="addMediaRow()" style="margin:0;flex:1">+ Add URL</button>'+    '</div>'+  '</div>'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Card Colour</div>'+    '<div style="display:flex;align-items:center;gap:10px"><input type="color" id="jf-color" value="'+(p?.color||'#C8860A')+'" style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer"><span id="jf-color-val" style="font-size:13px;color:var(--ink2)">'+(p?.color||'#C8860A')+'</span></div>'+    '<div style="font-size:12px;color:var(--ink3);margin-top:8px">Visible on the public projects page.</div>'+  '</div>'+  '<button class="add-btn" onclick="saveProj()" style="width:100%;justify-content:center;margin-top:4px">Save Project</button>'+  '<button class="btn-cancel" onclick="projFormBack()" style="width:100%;justify-content:center;margin-top:8px">Cancel</button>'+'</div>'+'</div>';
   document.getElementById('jf-color')?.addEventListener('input',function(){ document.getElementById('jf-color-val').textContent=this.value; });
-  document.getElementById('proj-overlay').classList.add('open'); projLinkLoad(id||null);
+  projLinkLoad(id||null);
+  mc.scrollTop=0;
 }
+function projFormBack(){ editingProjId=null; try{ navigate('projects'); }catch(e){ renderProjects(); } }
 var projMedia = [];
 function renderMediaRows(media){
   projMedia = media ? [...media] : [];
@@ -3388,7 +3372,7 @@ function removeMedia(i){
   projMedia.splice(i,1);
   document.getElementById('media-list').innerHTML=renderMediaRows(projMedia);
 }
-function closeProjForm(){ document.getElementById('proj-overlay').classList.remove('open'); }
+function closeProjForm(){ projFormBack(); }
 
 async function uploadProjMedia(input){
   const files=Array.from(input.files||[]); if(!files.length) return;
@@ -3426,8 +3410,30 @@ function projLinkLoad(pid){ _projLinks=[]; projLinkPaint(); if(!pid||!supa){ ret
 function projLinkPaint(){ var el=document.getElementById('projlink-list'); if(!el)return; if(!_projLinks.length){ el.innerHTML='<div style="font-size:12px;color:var(--ink3);padding:4px 0 8px">No products linked yet.</div>'; var tt0=document.getElementById('projlink-total'); if(tt0)tt0.textContent=''; return; } el.innerHTML=_projLinks.map(function(l,i){ var img=l.image?('<img src="'+escA(l.image)+'" style="width:38px;height:38px;border-radius:8px;object-fit:cover;flex:none;background:#eee">'):('<div style="width:38px;height:38px;border-radius:8px;background:var(--c2);flex:none"></div>'); return '<div class="spec-row" style="align-items:center;gap:8px">'+img+'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escA(l.name)+'</div><div style="font-size:11px;color:var(--ink3)">'+custMoney(l.price)+' / unit</div></div><input type="number" min="1" value="'+l.qty+'" onchange="projLinkQty('+i+',this.value)" style="width:64px;padding:6px 8px;border:1px solid rgba(0,0,0,.14);border-radius:7px;font-size:12.5px;font-family:inherit"><button onclick="projLinkDel('+i+')" class="spec-add-btn" style="margin:0;width:34px;padding:6px;color:#C62828">\u00d7</button></div>'; }).join(''); var tot=_projLinks.reduce(function(a,l){return a+l.qty*l.price;},0); var units=_projLinks.reduce(function(a,l){return a+(+l.qty||0);},0); var tt=document.getElementById('projlink-total'); if(tt)tt.textContent=units+' units \u00b7 est. '+custMoney(tot); }
 function projLinkQty(i,v){ if(_projLinks[i]){ _projLinks[i].qty=Math.max(1,parseInt(v)||1); projLinkPaint(); } }
 function projLinkDel(i){ _projLinks.splice(i,1); projLinkPaint(); }
-function projLinkPick(){ var prods=(loadProds()||[]).filter(function(p){ return !p.internal; }); ghForm({title:'Link a product', fields:[{key:'q',label:'Search catalogue',type:'text',placeholder:'Type a product name'}], submitLabel:'Done', note:'Tap a product to link it (qty 1). Adjust quantity in the list after.', render:function(box){ function paint(q){ q=(q||'').toLowerCase(); var have={}; _projLinks.forEach(function(l){have[l.product_id]=1;}); var list=prods.filter(function(p){return p.name.toLowerCase().indexOf(q)>-1;}).slice(0,40); box.innerHTML=list.map(function(p){ var added=have[p.id]; var img=p.image?('<img src="'+escA(p.image)+'" style="width:36px;height:36px;border-radius:7px;object-fit:cover;flex:none">'):('<div style="width:36px;height:36px;border-radius:7px;background:var(--c2);flex:none"></div>'); var tag=added?('<span style="font-size:11px;color:#1B7A4D;font-weight:700">linked</span>'):('<span style="font-size:16px;color:var(--g)">+</span>'); return '<div onclick="projLinkAdd(\''+p.id+'\')" style="display:flex;align-items:center;gap:9px;padding:8px;border-radius:10px;cursor:pointer;'+(added?'opacity:.5':'')+'">'+img+'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escA(p.name)+'</div><div style="font-size:11px;color:var(--ink3)">'+custMoney(p.price||0)+'</div></div>'+tag+'</div>'; }).join('')||'<div style="padding:12px;color:var(--ink3);font-size:12px">No matches.</div>'; } window._projPickPaint=paint; paint(''); var inp=document.getElementById('ghf-q'); if(inp){ inp.oninput=function(){ paint(this.value); }; } } }); }
-function projLinkAdd(pid){ var p=(loadProds()||[]).find(function(x){return x.id===pid;}); if(!p)return; if(_projLinks.some(function(l){return l.product_id===pid;})){ toast('Already linked','#C8860A'); return; } _projLinks.push({product_id:pid, qty:1, name:p.name, price:+p.price||0, image:p.image||''}); projLinkPaint(); if(window._projPickPaint){ var inp=document.getElementById('ghf-q'); window._projPickPaint(inp?inp.value:''); } toast('Linked '+p.name,'#1B7A4D'); }
+function projLinkPickInline(){
+  var box=document.getElementById('projlink-picker'); if(!box) return;
+  var btn=document.getElementById('projlink-addbtn');
+  if(box.getAttribute('data-open')==='1'){ box.innerHTML=''; box.removeAttribute('data-open'); if(btn)btn.textContent='+ Link a product'; return; }
+  box.setAttribute('data-open','1'); if(btn)btn.textContent='Close picker';
+  box.innerHTML='<div style="border:1px solid rgba(0,0,0,.1);border-radius:14px;padding:12px;margin:8px 0 6px;background:var(--c1)">'+'<input id="projpick-q" placeholder="Search catalogue\u2026" style="width:100%;padding:10px 12px;border:1px solid rgba(0,0,0,.14);border-radius:9px;font-size:13px;font-family:inherit;margin-bottom:10px;box-sizing:border-box">'+'<div id="projpick-results" style="max-height:340px;overflow-y:auto"></div>'+'</div>';
+  var inp=document.getElementById('projpick-q');
+  if(inp){ inp.oninput=function(){ projLinkPickPaint(this.value); }; inp.focus(); }
+  projLinkPickPaint('');
+}
+function projLinkPickPaint(q){
+  var res=document.getElementById('projpick-results'); if(!res) return;
+  q=(q||'').toLowerCase();
+  var prods=(loadProds()||[]).filter(function(p){ return !p.internal; });
+  var have={}; _projLinks.forEach(function(l){have[l.product_id]=1;});
+  var list=prods.filter(function(p){ return (p.name||'').toLowerCase().indexOf(q)>-1 || (p.id||'').toLowerCase().indexOf(q)>-1; }).slice(0,60);
+  res.innerHTML=list.map(function(p){
+    var added=have[p.id];
+    var img=p.image?('<img src="'+escA(p.image)+'" style="width:40px;height:40px;border-radius:8px;object-fit:cover;flex:none">'):('<div style="width:40px;height:40px;border-radius:8px;background:var(--c2);flex:none"></div>');
+    var tag=added?('<span style="font-size:11px;color:#1B7A4D;font-weight:800;flex:none">\u2713 linked</span>'):('<span style="font-size:12px;font-weight:800;color:var(--g);flex:none">+ Add</span>');
+    return '<div onclick="projLinkAdd(\''+escA(p.id)+'\')" style="display:flex;align-items:center;gap:10px;padding:9px;border-radius:10px;cursor:pointer;'+(added?'opacity:.55':'')+'" onmouseover="this.style.background=\'var(--c2)\'" onmouseout="this.style.background=\'\'">'+img+'<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escA(p.name)+'</div><div style="font-size:11px;color:var(--ink3)">'+custMoney(p.price||0)+'</div></div>'+tag+'</div>';
+  }).join('')||'<div style="padding:14px;color:var(--ink3);font-size:12.5px;text-align:center">No products match \u201c'+escA(q)+'\u201d</div>';
+}
+function projLinkAdd(pid){ var p=(loadProds()||[]).find(function(x){return x.id===pid;}); if(!p)return; if(_projLinks.some(function(l){return l.product_id===pid;})){ toast('Already linked','#C8860A'); return; } _projLinks.push({product_id:pid, qty:1, name:p.name, price:+p.price||0, image:p.image||''}); projLinkPaint(); var q=document.getElementById('projpick-q'); if(q){ projLinkPickPaint(q.value); } toast('Linked '+p.name,'#1B7A4D'); }
 function projLinkSaveCloud(pid){ if(!supa||!pid) return Promise.resolve(); return supa.from('project_products').delete().eq('project_id',pid).then(function(){ if(!_projLinks.length) return null; var rows=_projLinks.map(function(l,i){ return {project_id:pid, product_id:l.product_id, default_qty:l.qty, sort:i+1}; }); return supa.from('project_products').insert(rows); }).then(function(r){ if(r&&r.error){ toast('Furniture link save failed: '+r.error.message,'#C62828'); } }); }
 function saveProj(){
   const name=(document.getElementById('jf-name')?.value||'').trim();
@@ -3437,7 +3443,7 @@ function saveProj(){
   const media=projMedia.filter(u=>u.trim()); const proj={id:pid,name,loc:document.getElementById('jf-loc')?.value||'',type:document.getElementById('jf-type')?.value||'',covers:parseInt(document.getElementById('jf-covers')?.value)||0,year:document.getElementById('jf-year')?.value||'',color:document.getElementById('jf-color')?.value||'#C8860A',products:document.getElementById('jf-products')?.value||'',visible:true}; if(media.length) proj.media=media;
   if(editingProjId){ const idx=projects.findIndex(p=>p.id===editingProjId); if(idx>=0) projects[idx]=proj; else projects.push(proj); }
   else projects.push(proj);
-  lsSaveProjects(projects); syncProjectsCloud(projects); projLinkSaveCloud(pid); closeProjForm(); renderProjects(); toast('Project saved');
+  lsSaveProjects(projects); syncProjectsCloud(projects); projLinkSaveCloud(pid); toast('Project saved'); projFormBack();
 }
 
 /* ══════════════════════════════════════
