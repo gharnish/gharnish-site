@@ -108,7 +108,7 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ─── TOKENS ─── */
 :root{
@@ -5655,59 +5655,99 @@ function closeProject(){ S.selectedProject=null; render(); setTimeout(function()
 function renderProjectDetail(proj){
   if(!proj){ closeProject(); return; }
   var waMsg=encodeURIComponent('Hi! I saw the '+proj.name+' project on your site. I\u2019d like similar furniture for my space \u2014 please share options.');
+  var imgs=(proj.media||[]).filter(function(m){return ghMediaKind(m)==='image';});
+  var hero=imgs[0];
   var H=[];
-  H.push('<div class="detail-page">');
+  H.push('<div class="detail-page" style="background:var(--c1);min-height:100vh">');
+  // top bar
   H.push('<div style="display:flex;align-items:center;gap:10px;padding:12px 16px;position:sticky;top:0;background:rgba(24,18,12,.97);backdrop-filter:blur(8px);z-index:20;border-bottom:1px solid rgba(255,255,255,.08)">');
-  H.push('<button onclick="closeProject()" aria-label="Back" style="background:rgba(255,255,255,.12);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;color:#fff"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24" style="width:18px;height:18px"><path d="M19 12H5M12 5l-7 7 7 7"/></svg></button>');
-  H.push('<div style="font-size:15px;font-weight:700;color:#fff">Our Work</div>');
+  H.push('<button onclick="closeProject()" aria-label="Back" style="background:rgba(255,255,255,.12);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#fff;font-size:18px">\u2190</button>');
+  H.push('<div style="font-size:15px;font-weight:700;color:#fff;font-family:\'Fraunces\',serif">Our Work</div>');
   H.push('</div>');
-  // Hero
-  H.push('<div style="margin:16px;border-radius:20px;overflow:hidden;background:linear-gradient(140deg,'+proj.color+',rgba(0,0,0,.6));color:#fff;padding:26px 22px 22px;position:relative;min-height:150px;display:flex;flex-direction:column;justify-content:flex-end">');
-  H.push('<span style="position:absolute;top:16px;right:16px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.28);font-size:11px;font-weight:700;padding:4px 11px;border-radius:999px">'+proj.year+'</span>');
-  H.push('<div style="font-size:9px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin-bottom:7px">'+proj.type+'</div>');
-  H.push('<div style="font-size:28px;font-weight:800;letter-spacing:-.02em;line-height:1.05">'+proj.name+'</div>');
-  H.push('<div style="font-size:13px;opacity:.85;margin-top:6px">'+proj.loc+'</div>');
-  H.push('</div>');
-  // Media gallery (photos / videos)
-  if(proj.media && proj.media.length){
-    H.push('<div style="display:flex;gap:10px;overflow-x:auto;padding:0 16px 4px;margin-bottom:18px;scrollbar-width:none">');
-    proj.media.forEach(function(m){
-      var k=ghMediaKind(m);
-      if(k==='video'){
-        H.push('<video src="'+m+'" controls playsinline preload="metadata" style="flex:none;width:280px;height:185px;object-fit:cover;border-radius:14px;background:#000"></video>');
-      } else if(k==='youtube'||k==='vimeo'){
-        H.push('<div style="flex:none;width:300px;height:185px;border-radius:14px;overflow:hidden;background:#000"><iframe src="'+ghEmbedUrl(m)+'" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen loading="lazy"></iframe></div>');
-      } else if(k==='link'){
-        H.push('<a href="'+m+'" target="_blank" rel="noopener" style="flex:none;width:160px;height:185px;border-radius:14px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);display:flex;align-items:center;justify-content:center;color:#fff;text-decoration:none;font-size:13px;font-weight:700;text-align:center;padding:14px">View post &rarr;</a>');
-      } else {
-        H.push('<img src="'+m+'" loading="lazy" style="flex:none;width:240px;height:185px;object-fit:cover;border-radius:14px" onerror="this.remove()">');
-      }
+  // MAGAZINE HERO — full-bleed image or rich gradient, editorial overlay
+  var heroBg = hero
+    ? 'background-image:linear-gradient(180deg,rgba(23,19,16,.1) 0%,rgba(23,19,16,.35) 50%,rgba(23,19,16,.82) 100%),url('+hero+');background-size:cover;background-position:center'
+    : 'background:linear-gradient(150deg,'+proj.color+',rgba(23,19,16,.85))';
+  H.push('<div style="position:relative;'+heroBg+';color:#fff;min-height:340px;display:flex;flex-direction:column;justify-content:flex-end;padding:28px 20px 26px">');
+  H.push('<div style="max-width:760px;margin:0 auto;width:100%">');
+  H.push('<div style="font-size:10px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#f0d9a8;margin-bottom:9px">'+escH(proj.type||'')+(proj.year?' \u00b7 '+escH(proj.year):'')+'</div>');
+  H.push('<div style="font-family:\'Fraunces\',serif;font-size:clamp(32px,8vw,46px);font-weight:600;letter-spacing:-.02em;line-height:1.0">'+escH(proj.name)+'</div>');
+  if(proj.loc) H.push('<div style="font-size:14px;opacity:.9;margin-top:8px;display:flex;align-items:center;gap:6px"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'+escH(proj.loc)+'</div>');
+  H.push('</div></div>');
+  // FACTS ROW — editorial
+  H.push('<div style="max-width:760px;margin:0 auto;padding:22px 20px 0">');
+  var facts=[];
+  if(proj.covers) facts.push(['Seating', proj.covers+' covers']);
+  if(proj.budget) facts.push(['Budget', proj.budget]);
+  if(proj.timeline) facts.push(['Delivery', proj.timeline]);
+  if(proj.year) facts.push(['Year', String(proj.year)]);
+  if(facts.length){
+    H.push('<div style="display:flex;flex-wrap:wrap;gap:16px 34px;padding-bottom:22px;border-bottom:1px solid rgba(0,0,0,.08)">');
+    facts.forEach(function(f){
+      H.push('<div><div style="font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);font-weight:800;margin-bottom:2px">'+escH(f[0])+'</div><div style="font-size:16px;font-weight:800;color:var(--ink)">'+escH(f[1])+'</div></div>');
     });
     H.push('</div>');
   }
-  // Overview / description
-  if(proj.desc){
-    H.push('<div style="margin:0 16px 18px"><div style="font-size:11px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--g);margin-bottom:8px">The brief</div><div style="font-size:14px;line-height:1.62;color:var(--ink2)">'+proj.desc+'</div></div>');
+  // GALLERY (remaining media)
+  if(proj.media && proj.media.length){
+    H.push('<div style="display:flex;gap:11px;overflow-x:auto;padding:20px 0 4px;scrollbar-width:thin">');
+    proj.media.forEach(function(m){
+      var k=ghMediaKind(m);
+      if(k==='video'){ H.push('<video src="'+m+'" controls playsinline preload="metadata" style="flex:none;width:280px;height:200px;object-fit:cover;border-radius:16px;background:#000"></video>'); }
+      else if(k==='youtube'||k==='vimeo'){ H.push('<div style="flex:none;width:300px;height:200px;border-radius:16px;overflow:hidden;background:#000"><iframe src="'+ghEmbedUrl(m)+'" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>'); }
+      else if(k==='link'){ H.push('<a href="'+m+'" target="_blank" rel="noopener" style="flex:none;width:160px;height:200px;border-radius:16px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">View \u2197</a>'); }
+      else { H.push('<img src="'+m+'" loading="lazy" style="flex:none;width:260px;height:200px;object-fit:cover;border-radius:16px" onerror="this.remove()">'); }
+    });
+    H.push('</div>');
   }
-  // Stats
-  H.push('<div style="display:flex;gap:12px;margin:0 16px 18px">');
-  H.push('<div style="flex:1;background:var(--c1);border:1px solid rgba(0,0,0,.07);border-radius:14px;padding:14px;text-align:center"><div style="font-family:Poppins,sans-serif;font-size:24px;font-weight:800;color:var(--g)">'+proj.covers+'</div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-top:2px">Covers</div></div>');
-  H.push('<div style="flex:1;background:var(--c1);border:1px solid rgba(0,0,0,.07);border-radius:14px;padding:14px;text-align:center"><div style="font-family:Poppins,sans-serif;font-size:24px;font-weight:800;color:var(--ink)">'+proj.year+'</div><div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--ink3);margin-top:2px">Delivered</div></div>');
-  H.push('</div>');
-  // Furniture supplied
-  H.push('<div style="margin:0 16px 18px"><div style="font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px">Furniture supplied</div>');
-  (proj.products||[]).forEach(function(pr){
-    H.push('<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--c1);border:1px solid rgba(0,0,0,.06);border-radius:12px;margin-bottom:8px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;flex:none"><path d="M20 6L9 17l-5-5"/></svg><span style="font-size:13.5px;font-weight:600;color:var(--ink)">'+pr+'</span></div>');
-  });
+  // BRIEF
+  if(proj.desc){
+    H.push('<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:30px 0 12px">The brief</div>');
+    H.push('<p style="font-family:\'Fraunces\',serif;font-size:20px;font-weight:400;line-height:1.5;color:var(--ink);letter-spacing:-.01em;margin:0">'+escH(proj.desc)+'</p>');
+  }
+  // FURNITURE — real linked products if available, else text list
+  H.push('<div id="proj-furniture-slot">');
+  var textList=(proj.products||[]);
+  if(textList.length){
+    H.push('<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:30px 0 14px">Furniture supplied</div>');
+    H.push('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:11px">');
+    textList.forEach(function(pr){
+      H.push('<div style="display:flex;align-items:center;gap:11px;padding:12px 14px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:14px"><svg viewBox="0 0 24 24" fill="none" stroke="var(--sage,#7A8B6F)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><polyline points="20 6 9 17 4 12"/></svg><div style="font-size:13.5px;font-weight:700;color:var(--ink)">'+escH(pr)+'</div></div>');
+    });
+    H.push('</div>');
+  }
   H.push('</div>');
   // CTAs
-  H.push('<div style="margin:0 16px 24px;display:flex;gap:10px">');
-  H.push('<button onclick="startWithThisSetup(\''+proj.id+'\')" style="flex:1;background:var(--g);color:#fff;border:none;border-radius:999px;padding:14px;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><span style="font-size:15px">\u2728</span> Start With This Setup</button>');
-  H.push('<a href="https://wa.me/919059276667?text='+waMsg+'" target="_blank" style="flex:none;padding:0 18px;background:#25D366;color:#fff;border-radius:999px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13px;font-weight:700">Enquire</a>');
+  H.push('<div style="display:flex;gap:11px;margin:34px 0 24px">');
+  H.push('<button onclick="startWithThisSetup(\''+proj.id+'\')" style="flex:1;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;border:none;border-radius:999px;padding:15px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 10px 24px rgba(176,126,68,.3)"><span style="font-size:16px">\u2728</span> Start With This Setup</button>');
+  H.push('<a href="https://wa.me/919059276667?text='+waMsg+'" target="_blank" style="flex:none;padding:0 20px;background:#25D366;color:#fff;border-radius:999px;display:flex;align-items:center;justify-content:center;text-decoration:none;font-size:13.5px;font-weight:700">Enquire</a>');
   H.push('</div>');
   H.push('<div style="height:40px"></div>');
-  H.push('</div>');
+  H.push('</div>');   // close max-width wrap
+  H.push('</div>');   // close detail-page
   app.innerHTML=H.join('');
+  // Async: replace text list with real linked furniture (photos + qty + price) when linked
+  ghLoadProjFurniture(proj.id);
+}
+function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function ghLoadProjFurniture(pid){
+  if(!supa) return;
+  supa.from('project_products').select('product_id,default_qty,sort').eq('project_id',pid).order('sort').then(function(r){
+    if(r.error||!r.data||!r.data.length) return;
+    var byId={}; (PRODUCTS||[]).forEach(function(p){byId[p.id]=p;});
+    var rows=r.data.map(function(row){ return {p:byId[row.product_id], qty:row.default_qty||1}; }).filter(function(x){return x.p;});
+    if(!rows.length) return;
+    var slot=document.getElementById('proj-furniture-slot'); if(!slot) return;
+    var h='<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:30px 0 14px">Furniture used in this project</div>';
+    h+='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">';
+    rows.forEach(function(x){
+      var p=x.p;
+      var img=p.image?('<img src="'+p.image+'" style="width:54px;height:54px;border-radius:11px;object-fit:cover;flex:none;background:#eee">'):('<div style="width:54px;height:54px;border-radius:11px;background:var(--c2,#F2ECE1);flex:none"></div>');
+      h+='<div style="display:flex;align-items:center;gap:12px;padding:12px;background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:15px">'+img+'<div style="min-width:0"><div style="font-size:13.5px;font-weight:700;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escH(p.name)+'</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">'+x.qty+' \u00d7 \u20b9'+Number(p.price||0).toLocaleString('en-IN')+'</div></div></div>';
+    });
+    h+='</div>';
+    slot.innerHTML=h;
+  });
 }
 
 /* ─────────────── CORE ROUTER ─────────────── */
