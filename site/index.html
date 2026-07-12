@@ -1318,6 +1318,12 @@ input[type="number"]:focus{border-color:var(--g);outline:none;}
 .proj-scroll{display:flex;gap:12px;overflow-x:auto;padding:0 16px 4px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
 .proj-scroll::-webkit-scrollbar{display:none;}
 .journey-band{margin:8px 16px 4px}
+.jb-slim{display:flex;align-items:center;gap:12px;background:linear-gradient(150deg,var(--dark,#1A1208) 0%,#2A1F00 100%);border-radius:14px;padding:13px 16px;text-decoration:none;position:relative;overflow:hidden}
+.jb-slim-ic{flex:none;font-size:18px}
+.jb-slim-tx{flex:1;min-width:0;font-size:13px;color:rgba(255,255,255,.82);line-height:1.35}
+.jb-slim-tx b{color:#fff;font-weight:800}
+.jb-slim-go{flex:none;font-size:12.5px;font-weight:800;color:#E09A18;white-space:nowrap}
+@media(max-width:520px){.jb-slim-tx{font-size:12px}.jb-slim-go{font-size:11.5px}}
 .jb-inner{background:linear-gradient(150deg,var(--dark,#1A1208) 0%,#2A1F00 100%);border-radius:var(--r3,22px);padding:24px 22px;position:relative;overflow:hidden}
 .jb-inner::after{content:"";position:absolute;top:-70px;right:-50px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(200,134,10,.28),transparent 70%);pointer-events:none}
 .jb-copy{position:relative;max-width:640px}
@@ -1969,6 +1975,24 @@ body.detail-open #ai-fab{display:none}
 .mq-qa-line.mq-qa-total{border-top:1px solid rgba(0,0,0,.1);margin-top:6px;padding-top:8px;font-size:16px;font-weight:800;font-family:Poppins,sans-serif}
 .mq-qa-hint{font-size:12px;color:var(--gd);background:var(--gg);border-radius:8px;padding:7px 10px;margin-top:8px;font-weight:600}
 /* ── Finish swatches (polish + top) ── */
+.pdx-hrow{position:relative}
+.pdx-arrow{position:absolute;top:50%;transform:translateY(-50%);z-index:5;width:38px;height:38px;border-radius:50%;border:1px solid rgba(0,0,0,.1);background:rgba(255,255,255,.96);box-shadow:0 3px 14px rgba(0,0,0,.15);color:var(--ink);font-size:22px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.pdx-arrow:hover{background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.2)}
+.pdx-arrow-l{left:-6px}.pdx-arrow-r{right:-6px}
+@media(max-width:640px){.pdx-arrow{display:none}}
+.pdx-collage{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;grid-auto-rows:1fr}
+.pdx-collage>*{aspect-ratio:1/1;border-radius:14px;overflow:hidden;border:none;padding:0;cursor:pointer;background-size:cover;background-position:center;background-color:var(--c2);transition:transform .16s,box-shadow .16s}
+.pdx-col-img:hover{transform:scale(1.02);box-shadow:0 8px 24px rgba(0,0,0,.14)}
+.pdx-col-vid{aspect-ratio:1/1;grid-column:span 2;grid-row:span 2;background:#000}
+.pdx-col-vid video,.pdx-col-vid iframe{display:block}
+@media(max-width:520px){.pdx-collage{grid-template-columns:repeat(2,1fr)}.pdx-col-vid{grid-column:span 2;grid-row:span 1;aspect-ratio:16/10}}
+.gh-lb{position:fixed;inset:0;z-index:5000;background:rgba(15,12,9,.92);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .16s}
+.gh-lb.on{opacity:1}
+.gh-lb img{max-width:92vw;max-height:86vh;border-radius:10px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.gh-lb-x{position:absolute;top:18px;right:20px;background:rgba(255,255,255,.14);border:none;color:#fff;width:42px;height:42px;border-radius:50%;font-size:18px;cursor:pointer}
+.gh-lb-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.14);border:none;color:#fff;width:48px;height:48px;border-radius:50%;font-size:26px;cursor:pointer;line-height:1}
+.gh-lb-prev{left:16px}.gh-lb-next{right:16px}
+.gh-lb-count{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,.8);font-size:13px;font-weight:600}
 .pdx-wrap{max-width:1080px;margin:0 auto;padding-left:20px;padding-right:20px}
 .pdx-body{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:40px;margin-top:30px;align-items:start}
 .pdx-main{min-width:0}
@@ -2028,6 +2052,7 @@ body.detail-open #ai-fab{display:none}
   <nav class="dnav" aria-label="Primary navigation">
     <button class="bnav-btn dnav-link" data-tab="home">Home</button>
     <button class="bnav-btn dnav-link" data-tab="categories">Shop Furniture</button>
+    <button class="dnav-link" onclick="ghGoResidential()">Home Furniture</button>
     <button class="bnav-btn dnav-link" data-tab="calculator">Get an Estimate</button>
     <button class="bnav-btn dnav-link" data-tab="offers">Offers</button>
     <button class="bnav-btn dnav-link" data-tab="guides">Guides</button>
@@ -3170,6 +3195,22 @@ function goToCatalog(cat, priceRange){
 }
 
 function ghScrollToProjects(){ var el=document.getElementById('home-projects'); if(el){ el.scrollIntoView({behavior:'smooth',block:'start'}); } else { goToOurWork(); } }
+function ghLightbox(i){
+  var imgs=window._ghGallery||[]; if(!imgs.length) return; if(i<0)i=imgs.length-1; if(i>=imgs.length)i=0;
+  window._ghLbIdx=i;
+  var ov=document.getElementById('gh-lb'); if(ov) ov.remove();
+  ov=document.createElement('div'); ov.id='gh-lb'; ov.className='gh-lb';
+  ov.innerHTML='<button class="gh-lb-x" onclick="ghLbClose()">\u2715</button>'
+    +'<button class="gh-lb-nav gh-lb-prev" onclick="event.stopPropagation();ghLightbox('+(i-1)+')">\u2039</button>'
+    +'<img src="'+imgs[i]+'" onclick="event.stopPropagation()">'
+    +'<button class="gh-lb-nav gh-lb-next" onclick="event.stopPropagation();ghLightbox('+(i+1)+')">\u203a</button>'
+    +'<div class="gh-lb-count">'+(i+1)+' / '+imgs.length+'</div>';
+  ov.onclick=function(){ ghLbClose(); };
+  document.body.appendChild(ov);
+  requestAnimationFrame(function(){ ov.classList.add('on'); });
+}
+function ghLbClose(){ var ov=document.getElementById('gh-lb'); if(ov){ ov.classList.remove('on'); setTimeout(function(){ov.remove();},160); } }
+function ghBrowseCatalogue(){ try{ S.selectedProject=null; }catch(e){} if(typeof goToCatalog==='function'){ goToCatalog('all'); } else { S.tab='home'; S.homeView='catalog'; render(); } window.scrollTo({top:0,behavior:'smooth'}); }
 function goToOurWork(){ try{ if(location.pathname!=='/our-work'){ /* server page */ location.href='/our-work'; } }catch(e){ location.href='/our-work'; } }
 function goToLanding(){
   S.homeView='landing';
@@ -3735,15 +3776,25 @@ var RES_CAT_CARDS=[
 ];
 var GH_ALL=[];
 function ghApplySection(){ if(!GH_ALL.length && PRODUCTS.length){ GH_ALL=PRODUCTS.slice(); } var wantRes=(S.section==='residential'); var list=GH_ALL.filter(function(p){ return wantRes ? (p.section==='residential') : (p.section!=='residential'); }); PRODUCTS.length=0; list.forEach(function(p){ PRODUCTS.push(p); }); }
+function ghGoResidential(){ ghSetSection('residential'); try{ trackEvent('go_residential',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
 function ghSetSection(sec){ S.section=(sec==='residential')?'residential':'restaurant'; ghApplySection(); S.selectedProduct=null; S.selectedProject=null; S.tab='categories'; S.catView='list'; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section}); }catch(e){} render(); window.scrollTo(0,0); }
 var CAT_IMAGES={};
 var CATMETA={};
+function ghIsResCat(k){ return /^res-/.test(k||''); }
 function orderedCards(){
   var meta=CATMETA;
-  if(!meta || !Object.keys(meta).length) return CAT_CARDS;
+  var wantRes=(S.section==='residential');
+  if(!meta || !Object.keys(meta).length) return wantRes?[]:CAT_CARDS;
   var used={}; CAT_CARDS.forEach(function(c){ c.cats.forEach(function(k){ used[k]=1; }); });
-  var cards=CAT_CARDS.map(function(c){ var m=meta[c.cats[0]]||{}; return Object.assign({},c,{_order:(m.order!=null?m.order:999),_visible:(m.visible!==false),_name:(m.name||c.label)}); }).filter(function(c){ return c._visible; });
-  Object.keys(meta).forEach(function(k){ if(used[k]) return; var m=meta[k]; if(!m||m.visible===false) return; cards.push({key:k,label:m.name||k,sub:m.description||'',icon:'chair',cats:[k],_custom:true,_order:(m.order!=null?m.order:999),_visible:true,_name:m.name||k}); });
+  // restaurant section: base CAT_CARDS (all restaurant). residential section: none of the base cards.
+  var cards = wantRes ? [] : CAT_CARDS.map(function(c){ var m=meta[c.cats[0]]||{}; return Object.assign({},c,{_order:(m.order!=null?m.order:999),_visible:(m.visible!==false),_name:(m.name||c.label)}); }).filter(function(c){ return c._visible; });
+  Object.keys(meta).forEach(function(k){
+    if(used[k]) return; var m=meta[k]; if(!m||m.visible===false) return;
+    var isRes=ghIsResCat(k);
+    // only show residential cards in residential section, restaurant cards in restaurant section
+    if(wantRes !== isRes) return;
+    cards.push({key:k,label:m.name||k,sub:m.description||'',icon:'chair',cats:[k],_custom:true,_order:(m.order!=null?m.order:999),_visible:true,_name:m.name||k});
+  });
   cards.sort(function(a,b){ return (a._order!=null?a._order:999)-(b._order!=null?b._order:999); });
   return cards;
 }
@@ -3857,14 +3908,15 @@ function renderLanding(){
   // Plan My Table (Table Studio)
   H.push('<a class="hcard" href="table-estimator.html" onclick="event.preventDefault();ghOpenTab(\'tablestudio\')"><div class="hc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9h18"/><path d="M6 9v11M18 9v11M12 9v11"/><path d="M4 9l2-4h12l2 4"/></svg></div><div class="hc-tx"><div class="hc-k">Free Tool</div><div class="hc-t">Plan My Table</div><div class="hc-s">Base + top material \u2192 instant 2 / 4 / 6-seater prices</div></div><span class="hc-btn">Build \u2192</span></a>');
   // Plan Your Seating (Space Planner) — replaces the old stats strip
-  H.push('<a class="hcard" href="space-planner.html" onclick="event.preventDefault();ghOpenTab(\'spaceplanner\')"><div class="hc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18M12 3v18"/></svg></div><div class="hc-tx"><div class="hc-k">Free Tool</div><div class="hc-t">Plan Your Seating</div><div class="hc-s">Room size \u2192 auto layout, seat count &amp; table mix</div></div><span class="hc-btn">Plan \u2192</span></a>');
+  H.push('<a class="hcard" href="/our-work" onclick="event.preventDefault();goToOurWork()"><div class="hc-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-6 9 6v11a1 1 0 01-1 1H4a1 1 0 01-1-1z"/><path d="M9 22V12h6v10"/></svg></div><div class="hc-tx"><div class="hc-k">Real Projects</div><div class="hc-t">Get ideas from our finished projects</div><div class="hc-s">Browse caf\u00e9s, bars &amp; fine-dine \u2192 buy the look</div></div><span class="hc-btn">Browse \u2192</span></a>');
   // Download Catalogue (4th)
   H.push('<div class="hcard" onclick="downloadCatalog()"><div class="hc-ic"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div><div class="hc-tx"><div class="hc-t">Download Catalogue</div><div class="hc-s">Full product range as a PDF</div></div><svg class="hc-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></div>');
   H.push('</div>');
   H.push('</div>');
 
     // ── Design-from-a-restaurant journey (hero feature) ──
-  H.push('<div class="journey-band"><div class="jb-inner"><div class="jb-copy"><div class="jb-eyebrow">\u2728 Start with a real restaurant</div><div class="jb-title">Get ideas from restaurants we\u2019ve furnished \u2014 then build your quote in a tap</div><div class="jb-sub">Browse 150+ completed caf\u00e9s, bars &amp; fine-dine spaces. Open any project, tap <b>Start With This Setup</b>, and every piece loads into your quote. Adjust and request pricing.</div><div class="jb-actions"><a class="jb-cta" href="/our-work" onclick="event.preventDefault();ghScrollToProjects()">Explore restaurants \u2192</a><button class="jb-cta2" onclick="openCart()">View my quote</button></div><div class="jb-steps"><span><b>1</b> Browse projects</span><span class="jb-arw">\u2192</span><span><b>2</b> Start with a setup</span><span class="jb-arw">\u2192</span><span><b>3</b> Request pricing</span></div></div></div></div>');
+  H.push('<div class="journey-band"><a class="jb-slim" href="/our-work" onclick="event.preventDefault();goToOurWork()"><span class="jb-slim-ic">\u2728</span><span class="jb-slim-tx"><b>Start with a real restaurant</b> \u2014 browse finished projects &amp; buy the look</span><span class="jb-slim-go">Explore \u2192</span></a></div>');
+
 // ── Our Work / Projects ──
   H.push('<div class="hs" data-sec="projects" id="home-projects"><div class="hs-hd"><div><div class="hs-title">Get ideas from real restaurants</div><div class="hs-sub">Open a project \u2192 Start With This Setup \u2192 build your quote</div></div><a href="/our-work" class="hs-all" onclick="event.preventDefault();goToOurWork()" style="font-size:13px;font-weight:700;color:var(--g);text-decoration:none;white-space:nowrap">View all \u2192</a></div></div>');
   H.push('<div class="proj-scroll">');
@@ -3916,7 +3968,7 @@ function renderLanding(){
     H.push('</div></div>');
   });
   H.push('</div></div>');
-  H.push('<div style="margin:10px 16px 2px"><div onclick="ghSetSection(\'residential\')" style="cursor:pointer;border-radius:12px;padding:12px 16px;border:1.5px solid rgba(212,164,76,.45);background:rgba(212,164,76,.07);display:flex;align-items:center;gap:12px"><span style="font-size:17px;flex:none">\ud83c\udfe1</span><div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:800;color:var(--ink,#1a1208);letter-spacing:-.01em">Looking for home furniture? <span style="font-weight:600;color:var(--ink3,#6B5E4A)">Dining sets \u00b7 sofas \u00b7 beds \u00b7 centre &amp; side tables</span></div></div><span style="flex:none;font-size:12px;font-weight:800;color:#C8860A;white-space:nowrap">Residential \u2192</span></div></div>');
+  H.push('<div style="margin:14px 16px 4px"><div onclick="ghSetSection(\'residential\')" style="cursor:pointer;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(120deg,#1f1912,#2e2418);border:1px solid rgba(212,164,76,.35);padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 8px 26px rgba(31,25,18,.28)"><div style="width:52px;height:52px;border-radius:14px;background:rgba(212,164,76,.18);display:flex;align-items:center;justify-content:center;flex:none;font-size:26px">\ud83c\udfe1</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E7B85C;margin-bottom:4px">Now at Gharnish</div><div style="font-family:\'Fraunces\',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px">Home Furniture</div><div style="font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.4">Dining sets \u00b7 sofas \u00b7 beds \u00b7 centre &amp; side tables</div></div><span style="flex:none;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;font-size:13px;font-weight:800;padding:11px 18px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 16px rgba(176,126,68,.4)">Explore \u2192</span></div></div>');
 
   // Chairs by Price (always shown)
   H.push('<div class="hs" data-sec="price-range">');
@@ -5936,13 +5988,18 @@ function renderProjectDetail(proj){
   }
   if(proj.media && proj.media.length){
     H.push('<div style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--g);margin:0 0 12px">Gallery</div>');
-    H.push('<div style="display:flex;gap:11px;overflow-x:auto;padding-bottom:6px;scrollbar-width:thin">');
-    proj.media.forEach(function(m){
+    var gImgs=proj.media.filter(function(m){return ghMediaKind(m)==='image';});
+    var gVids=proj.media.filter(function(m){var k=ghMediaKind(m);return k==='video'||k==='youtube'||k==='vimeo';});
+    window._ghGallery=gImgs;
+    H.push('<div class="pdx-collage">');
+    // videos first (as wide tiles), then image collage
+    gVids.forEach(function(m){
       var k=ghMediaKind(m);
-      if(k==='video'){ H.push('<video src="'+m+'" controls playsinline preload="metadata" style="flex:none;width:280px;height:210px;object-fit:cover;border-radius:16px;background:#000"></video>'); }
-      else if(k==='youtube'||k==='vimeo'){ H.push('<div style="flex:none;width:300px;height:210px;border-radius:16px;overflow:hidden;background:#000"><iframe src="'+ghEmbedUrl(m)+'" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>'); }
-      else if(k==='link'){ H.push('<a href="'+m+'" target="_blank" rel="noopener" style="flex:none;width:160px;height:210px;border-radius:16px;background:linear-gradient(135deg,#833AB4,#FD1D1D,#FCB045);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px">View \u2197</a>'); }
-      else { H.push('<img src="'+m+'" loading="lazy" style="flex:none;width:280px;height:210px;object-fit:cover;border-radius:16px" onerror="this.remove()">'); }
+      if(k==='video'){ H.push('<div class="pdx-col-vid"><video src="'+m+'" controls playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover"></video></div>'); }
+      else { H.push('<div class="pdx-col-vid"><iframe src="'+ghEmbedUrl(m)+'" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe></div>'); }
+    });
+    gImgs.forEach(function(m,ix){
+      H.push('<button class="pdx-col-img" onclick="ghLightbox('+ix+')" style="background-image:url('+m+')"></button>');
     });
     H.push('</div>');
   }
@@ -6055,18 +6112,18 @@ function ghProjMoreSections(proj){
     ranked=ranked.slice(0,12);
 
     var H2=[];
-    H2.push('<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">You may also like</div><div class="hs-sub">Matched to this project \u2014 add to your quote</div></div><button onclick="S.tab=\'home\';S.homeView=\'catalog\';render()" class="mq-addbtn" style="padding:8px 14px;font-size:12.5px">+ Browse full catalogue</button></div>');
-    H2.push('<div class="prod-hscroll">');
+    H2.push('<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">You may also like</div><div class="hs-sub">Matched to this project \u2014 add to your quote</div></div><button onclick="ghBrowseCatalogue()" class="mq-addbtn" style="padding:8px 14px;font-size:12.5px">+ Browse full catalogue</button></div>');
+    H2.push('<div class="pdx-hrow"><button class="pdx-arrow pdx-arrow-l" onclick="ghScrollRow(this,-1)">\u2039</button><div class="prod-hscroll">');
     ranked.forEach(function(p){ H2.push(ghRelCard(p)); });
-    H2.push('</div></div>');
+    H2.push('</div><button class="pdx-arrow pdx-arrow-r" onclick="ghScrollRow(this,1)">\u203a</button></div></div>');
 
     // 3) CLEARANCE
     var clr=(PRODUCTS||[]).filter(function(p){ return (typeof CLEARANCE_IDS!=='undefined' && CLEARANCE_IDS && CLEARANCE_IDS[p.id]); }).slice(0,12);
     if(clr.length){
-      H2.push('<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">\uD83D\uDD25 Clearance \u2014 ready stock deals</div><div class="hs-sub">Limited quantities, dispatched fast</div></div></div>');
-      H2.push('<div class="prod-hscroll">');
+      H2.push('<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">\uD83D\uDD25 Clearance \u2014 ready stock deals</div><div class="hs-sub">Limited quantities, dispatched fast</div></div><button onclick="S.tab=\'offers\';S.selectedProject=null;render();window.scrollTo(0,0)" class="mq-addbtn" style="padding:8px 14px;font-size:12.5px">View all \u2192</button></div>');
+      H2.push('<div class="pdx-hrow"><button class="pdx-arrow pdx-arrow-l" onclick="ghScrollRow(this,-1)">\u2039</button><div class="prod-hscroll">');
       clr.forEach(function(p){ H2.push(ghRelCard(p)); });
-      H2.push('</div></div>');
+      H2.push('</div><button class="pdx-arrow pdx-arrow-r" onclick="ghScrollRow(this,1)">\u203a</button></div></div>');
     }
     var extra=document.getElementById('proj-related-slot');
     if(extra) extra.innerHTML=H2.join('');
@@ -6076,11 +6133,12 @@ function ghProjRelatedFallback(proj){
   var extra=document.getElementById('proj-related-slot'); if(!extra) return;
   var best=(PRODUCTS||[]).filter(function(p){return p.bestseller===true;}).slice(0,12);
   if(!best.length) best=(PRODUCTS||[]).slice(0,12);
-  var H2=['<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">You may also like</div><div class="hs-sub">Popular picks \u2014 add to your quote</div></div><button onclick="S.tab=\'home\';S.homeView=\'catalog\';render()" class="mq-addbtn" style="padding:8px 14px;font-size:12.5px">+ Browse full catalogue</button></div>','<div class="prod-hscroll">'];
+  var H2=['<div class="hs" style="margin-top:8px"><div class="hs-hd"><div><div class="hs-title">You may also like</div><div class="hs-sub">Popular picks \u2014 add to your quote</div></div><button onclick="ghBrowseCatalogue()" class="mq-addbtn" style="padding:8px 14px;font-size:12.5px">+ Browse full catalogue</button></div>','<div class="prod-hscroll">'];
   best.forEach(function(p){ H2.push(ghRelCard(p)); });
   H2.push('</div></div>');
   extra.innerHTML=H2.join('');
 }
+function ghScrollRow(btn,dir){ try{ var row=btn.closest('.pdx-hrow').querySelector('.prod-hscroll'); if(row){ row.scrollBy({left:dir*Math.max(240,row.clientWidth*0.7),behavior:'smooth'}); } }catch(e){} }
 function ghRelCard(p){
   var img=p.image?('<img src="'+p.image+'" loading="lazy">'):(typeof svgIcon==='function'?svgIcon(p.icon):'');
   var best=(p.bestseller===true)?'<span class="phcard-badge badge-best">&#9733;</span>':'';
