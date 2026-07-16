@@ -110,6 +110,17 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+
+/* Our Work — in-app projects list */
+.ow-hero{padding:26px 16px 18px;max-width:1080px;margin:0 auto}
+.ow-eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;color:var(--g);margin-bottom:7px}
+.ow-h1{font-family:Poppins,sans-serif;font-size:clamp(24px,4vw,34px);font-weight:800;letter-spacing:-.02em;margin:0 0 8px;line-height:1.1}
+.ow-sub{font-size:14.5px;color:var(--ink3);margin:0;max-width:620px;line-height:1.55}
+.ow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;padding:0 16px 8px;max-width:1080px;margin:0 auto}
+.ow-card{width:auto!important;flex:initial!important}
+.ow-empty{padding:44px 16px;text-align:center;color:var(--ink3);font-size:14px}
+.ow-cta{padding:22px 16px 36px;text-align:center}
+
 /* ─── TOKENS ─── */
 :root{
   --bg:   #FFFFFF;
@@ -3215,7 +3226,36 @@ function ghLightbox(i){
 }
 function ghLbClose(){ var ov=document.getElementById('gh-lb'); if(ov){ ov.classList.remove('on'); setTimeout(function(){ov.remove();},160); } }
 function ghBrowseCatalogue(){ try{ S.selectedProject=null; }catch(e){} if(typeof goToCatalog==='function'){ goToCatalog('all'); } else { S.tab='home'; S.homeView='catalog'; render(); } window.scrollTo({top:0,behavior:'smooth'}); }
-function goToOurWork(){ try{ if(location.pathname!=='/our-work'){ /* server page */ location.href='/our-work'; } }catch(e){ location.href='/our-work'; } }
+function renderOurWork(){
+  var app=document.getElementById('app'); if(!app) return;
+  var list=(typeof PROJECTS!=='undefined'?PROJECTS:[]).filter(function(p){ return p && p.visible!==false; });
+  var H=[];
+  H.push('<div class="home-wrap"><div class="ow-hero"><div class="ow-eyebrow">OUR WORK</div><h1 class="ow-h1">300+ restaurants, cafes &amp; hotels furnished</h1><p class="ow-sub">Browse finished projects, open any one, and build a quote from the exact pieces we supplied.</p></div>');
+  if(!list.length){
+    H.push('<div class="ow-empty">Projects are loading\u2026</div>');
+  } else {
+    H.push('<div class="ow-grid">');
+    list.forEach(function(pr){
+      var firstImg=(pr.media||[]).filter(function(m){ return (typeof ghMediaKind==='function'?ghMediaKind(m):'image')==='image'; })[0];
+      var topStyle=firstImg
+        ? 'background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.66)),url('+firstImg+');background-size:cover;background-position:center'
+        : 'background:linear-gradient(140deg,'+(pr.color||'#C8860A')+',rgba(0,0,0,.5))';
+      H.push('<a class="proj-card ow-card" href="/our-work/'+ghProjSlug(pr)+'" onclick="return ghProjNav(event,\''+pr.id+'\')">');
+      H.push('<div class="proj-top" style="'+topStyle+'">');
+      H.push('<span class="proj-year">'+(pr.year||'')+'</span>');
+      H.push('<div class="proj-name">'+(pr.name||'')+'</div>');
+      H.push('<div class="proj-type">'+(pr.type||'')+'</div>');
+      H.push('</div>');
+      H.push('<div class="proj-foot"><span>'+(pr.loc||'')+'</span><span class="proj-covers">'+(pr.covers||0)+' covers</span></div>');
+      H.push('</a>');
+    });
+    H.push('</div>');
+  }
+  H.push('<div class="ow-cta"><button class="mq-cta2" onclick="ghBrowseCatalogue()">+ Browse full catalogue</button></div>');
+  H.push('</div>');
+  app.innerHTML=H.join('');
+}
+function goToOurWork(){ S.selectedProject=null; S.selectedProduct=null; S.tab='ourwork'; try{ if(location.pathname!=='/our-work') history.pushState({},'','/our-work'); }catch(e){} render(); setTimeout(function(){window.scrollTo(0,0);},20); }
 function goToLanding(){
   S.homeView='landing';
   S.filters.cat='all';
@@ -6525,6 +6565,7 @@ function ghUrlFor(){
   if(S.tab==='categories'){ if(S.catView==='products'&&S.filters&&S.filters.cat) return '/category/'+ghSlug(S.filters.cat); return '/categories'; }
   if(S.tab==='home'){ return (S.homeView==='catalog')?'/shop':'/'; }
   if(S.tab==='account') return '/account';
+  if(S.tab==='ourwork') return '/our-work';
   if(S.tab==='offers') return '/offers';
   if(S.tab==='calculator') return '/estimate';
   if(S.tab==='tablestudio') return '/table-studio';
@@ -6554,7 +6595,7 @@ function ghResolveRoute(path){
   else if(seg[0]==='space-planner'){ S.tab='spaceplanner'; }
   else if(seg[0]==='guides'){ S.tab='blog'; S.guideSlug=(seg[1]||null); }
   else if(seg[0]==='cart'){ S.tab='cart'; }
-  else if(seg[0]==='our-work'){ if(seg[1]){ var _pj=(typeof PROJECTS!=='undefined'?PROJECTS:[]).find(function(x){return ghProjSlug(x)===seg[1];}); if(_pj){ S.selectedProject=_pj.id; S.tab='home'; } else { S._openProjectSlug=seg[1]; S.tab='home'; } } else { S.tab='home'; S.homeView='landing'; } }
+  else if(seg[0]==='our-work'){ if(seg[1]){ var _pj=(typeof PROJECTS!=='undefined'?PROJECTS:[]).find(function(x){return ghProjSlug(x)===seg[1];}); if(_pj){ S.selectedProject=_pj.id; S.tab='home'; } else { S._openProjectSlug=seg[1]; S.tab='home'; } } else { S.tab='ourwork'; } }
   
   else { S.tab='home'; S.homeView='landing'; }
   S._pendingPath=null; return true;
@@ -7075,6 +7116,7 @@ function render(){
   else if(S.tab==='spaceplanner') renderSpacePlannerTab();
   else if(S.tab==='blog') renderBlogTab();
   else if(S.tab==='cart') renderCart();
+  else if(S.tab==='ourwork'){ renderOurWork(); }
   else if(S.tab==='offers') renderOffers();
   else if(S.tab==='admin') renderAdmin();
   else if(S.tab==='account') renderAccountPage();
