@@ -3251,9 +3251,9 @@ function ghMapsReady(){
   if(_ghMapsP) return _ghMapsP;
   _ghMapsP=new Promise(function(res,rej){
     if(window.google&&window.google.maps){ res(); return; }
-    if(!GMAPS_KEY){ rej(new Error('no-key')); return; }
+    if(!GMAPS_KEY){ _ghMapsP=null; rej(new Error('no-key')); return; }
     var s=document.createElement('script');
-    s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_KEY)+'&loading=async';
+    s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_KEY)+'&v=weekly';
     s.async=true; s.defer=true;
     s.onload=function(){ res(); };
     s.onerror=function(){ _ghMapsP=null; rej(new Error('load-failed')); };

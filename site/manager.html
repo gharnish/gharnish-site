@@ -882,7 +882,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">MANAGER · 74</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">MANAGER · 75</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -3515,9 +3515,9 @@ function gmapsReady(){
   if(_gmapsLoading) return _gmapsLoading;
   _gmapsLoading=new Promise(function(res,rej){
     if(window.google&&window.google.maps&&window.google.maps.places){ res(); return; }
-    if(!GMAPS_KEY){ rej(new Error('no-key')); return; }
+    if(!GMAPS_KEY){ _gmapsLoading=null; rej(new Error('no-key')); return; }
     var s=document.createElement('script');
-    s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_KEY)+'&libraries=places&loading=async';
+    s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_KEY)+'&libraries=places&v=weekly';
     s.async=true; s.defer=true;
     s.onload=function(){ res(); };
     s.onerror=function(){ _gmapsLoading=null; rej(new Error('load-failed')); };
