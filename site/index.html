@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="referrer" content="no-referrer">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Gharnish | Commercial Furniture for Cafes, Restaurants & Hotels</title>
 <meta name="description" content="Explore commercial chairs, tables, stools and restaurant furniture from Gharnish. Build a furniture estimate and enquire directly on WhatsApp.">
@@ -4649,7 +4649,7 @@ function renderCategories(){
 /* ─────────────── PRODUCT DETAIL ─────────────── */
 function ytId(u){ if(!u) return ''; u=String(u); var m=u.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([A-Za-z0-9_-]{11})/); if(m) return m[1]; if(/^[A-Za-z0-9_-]{11}$/.test(u)) return u; return ''; }
 function ghShowImg(el){ var m=document.getElementById('det-main-img'); var img=el.querySelector('img'); var slot=document.getElementById('det-vid-slot'); if(slot){slot.innerHTML='';slot.style.display='none';} if(m){m.style.display='';} if(m&&img){m.src=img.src;} var ts=el.parentNode.querySelectorAll('.det-thumb'); ts.forEach(function(t){t.classList.remove('on');}); el.classList.add('on'); }
-function ghShowVid(el,id){ var slot=document.getElementById('det-vid-slot'); if(slot){ slot.innerHTML='<iframe width="100%" height="100%" style="border:none;position:absolute;inset:0" allow="autoplay; encrypted-media" allowfullscreen src="https://www.youtube.com/embed/'+id+'?autoplay=1&rel=0"></iframe>'; slot.style.display='block'; } var ts=el.parentNode.querySelectorAll('.det-thumb'); ts.forEach(function(t){t.classList.remove('on');}); el.classList.add('on'); }
+function ghShowVid(el,id){ var slot=document.getElementById('det-vid-slot'); if(slot){ slot.innerHTML='<iframe width="100%" height="100%" style="border:none;position:absolute;inset:0" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen src="https://www.youtube.com/embed/'+id+'?autoplay=1&rel=0"></iframe>'; slot.style.display='block'; } var ts=el.parentNode.querySelectorAll('.det-thumb'); ts.forEach(function(t){t.classList.remove('on');}); el.classList.add('on'); }
 function ghEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function faqSectionHTML(scope, p){
   var seeds, attrs='';
@@ -7533,10 +7533,10 @@ function ghMediaKind(u){
   return 'image';
 }
 function ghYtId(u){ var m=(u||'').match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{11})/i); return m?m[1]:''; }
-function ghPlayVid(el,emb){ if(!el||!emb) return; el.innerHTML='<iframe src="'+emb+'?autoplay=1&rel=0&modestbranding=1" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>'; el.style.cursor='default'; el.onclick=null; }
+function ghPlayVid(el,emb){ if(!el||!emb) return; var u=emb+(emb.indexOf('?')>-1?'&':'?')+'autoplay=1'; el.innerHTML='<iframe src="'+u+'" referrerpolicy="strict-origin-when-cross-origin" style="width:100%;height:100%;border:0" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>'; el.style.cursor='default'; el.onclick=null; }
 function ghEmbedUrl(u){
   var yt=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{11})/i);
-  if(yt) return 'https://www.youtube.com/embed/'+yt[1]+'?rel=0&modestbranding=1';
+  if(yt) return 'https://www.youtube-nocookie.com/embed/'+yt[1]+'?rel=0&modestbranding=1';
   var vm=u.match(/vimeo\.com\/(\d+)/i);
   if(vm) return 'https://player.vimeo.com/video/'+vm[1];
   return u;
