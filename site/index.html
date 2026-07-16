@@ -6699,10 +6699,15 @@ var GH_ORIGIN='https://gharnish.app';
 function ghProdSlug(p){ return ghSlug((p.name||'')+'-'+(p.id||'')); }
 function ghProjSlug(p){ return ghSlug((p.name||'')+'-'+(p.id||'')); }
 function ghProjNav(e,id){ try{ if(e && (e.metaKey||e.ctrlKey||e.shiftKey||e.button===1)) return true; if(e){ e.preventDefault(); } openProject(id); return false; }catch(err){ return true; } }
+function ghCatUrl(){
+  var c=(S.filters&&S.filters.cat)||'all';
+  if(!c||c==='all') return '/shop';
+  return '/shop/'+ghSlug(GH_CAT_URLKEY[c]||c);
+}
 function ghUrlFor(){
   if(S.selectedProduct){ var p=PRODUCTS.find(function(x){return x.id===S.selectedProduct;}); if(p) return '/product/'+ghProdSlug(p); }
-  if(S.tab==='categories'){ if(S.catView==='products'&&S.filters&&S.filters.cat) return '/category/'+ghSlug(S.filters.cat); return '/categories'; }
-  if(S.tab==='home'){ return (S.homeView==='catalog')?'/shop':'/'; }
+  if(S.tab==='categories'){ if(S.catView==='products') return ghCatUrl(); return '/categories'; }
+  if(S.tab==='home'){ return (S.homeView==='catalog')?ghCatUrl():'/'; }
   if(S.tab==='account') return '/account';
   if(S.tab==='ourwork') return '/our-work';
   if(S.tab==='offers') return '/offers';
@@ -6713,6 +6718,8 @@ function ghUrlFor(){
   if(S.tab==='cart') return '/cart';
   return '/';
 }
+var GH_CAT_FILTER={'indoor-chair':'indoor-chairs','table':'table-merged'};
+var GH_CAT_URLKEY={'indoor-chairs':'indoor-chair','table-merged':'table'};
 var GH_SHOP_ALIAS={
   'chairs':'indoor-chair', 'chair':'indoor-chair', 'indoor-chair':'indoor-chair',
   'stools':'indoor-chair', 'stool':'indoor-chair',
@@ -6734,7 +6741,7 @@ function ghResolveRoute(path){
     S._pendingPath=path; return false;   /* products not loaded yet — retry after fetch */
   }
   base();
-  if(seg[0]==='category' && seg[1]){ var _rc=(seg[1].indexOf('res-')===0); if(_rc!==(S.section==='residential')){ S.section=_rc?'residential':'restaurant'; ghApplySection(); } S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=seg[1]; }
+  if(seg[0]==='category' && seg[1]){ var _ck=GH_SHOP_ALIAS[seg[1]]||seg[1]; var _rc=(_ck.indexOf('res-')===0); if(_rc!==(S.section==='residential')){ S.section=_rc?'residential':'restaurant'; ghApplySection(); } S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=(GH_CAT_FILTER[_ck]||_ck); }
   else if(seg[0]==='categories'){ S.tab='categories'; S.catView='list'; }
   else if(seg[0]==='shop'){
     if(seg[1]==='residential'){
@@ -6746,7 +6753,7 @@ function ghResolveRoute(path){
       var _k=GH_SHOP_ALIAS[seg[1]]||seg[1];
       var _rs=(_k.indexOf('res-')===0);
       if(_rs!==(S.section==='residential')){ S.section=_rs?'residential':'restaurant'; ghApplySection(); }
-      S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=_k;
+      S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=(GH_CAT_FILTER[_k]||_k);
     } else {
       // bare /shop → full catalogue, clear any sticky category filter
       S.tab='home'; S.homeView='catalog'; if(S.filters) S.filters.cat='all';
