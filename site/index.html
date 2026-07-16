@@ -3493,7 +3493,8 @@ function ghSaveUser(u){
   GH_USER={name:u.name,mobile:u.mobile,city:u.city,email:u.email||''};
   try{ localStorage.setItem('gh_user',JSON.stringify(GH_USER)); }catch(e){}
   if(supa && u.mobile){ try{
-    var row={mobile:u.mobile,name:u.name,city:u.city,updated_at:new Date().toISOString()};
+    var row={mobile:u.mobile,name:u.name,city:u.city,updated_at:new Date().toISOString(),signup_source:'app'};
+    try{ if(!localStorage.getItem('gh_signup_stamped_'+u.mobile)){ row.app_signup_at=new Date().toISOString(); localStorage.setItem('gh_signup_stamped_'+u.mobile,'1'); } }catch(e){}
     if(u.email) row.email=u.email;
     supa.from('customers').upsert(row,{onConflict:'mobile'}).then(function(r){ if(r&&r.error&&u.email){ delete row.email; supa.from('customers').upsert(row,{onConflict:'mobile'}).then(function(){},function(){}); } },function(){});
   }catch(e){} }
