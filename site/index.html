@@ -2518,7 +2518,7 @@ function renderAdminForm(){
     ['table-base','Table Base'],['booth','Booth'],
     ['outdoor-chair','Outdoor Chair'],['outdoor-table','Outdoor Table']
   ];
-  var showSeats=['table-round','table-square','table-rect'].includes(f.cat);
+  var showSeats=['table-round','table-square','table-rect','restaurant-tables'].includes(f.cat);
   var showPriceRange=f.cat==='chair'||f.cat==='stool';
 
   app.innerHTML=
@@ -3924,7 +3924,7 @@ function catNav(el){
 var CAT_CARDS = [
   {key:'indoor-chair', label:'Indoor Chairs',  sub:'Dining & Lounge',     icon:'chair',    cats:['chair','stool']},
   {key:'outdoor-chair',label:'Outdoor Chairs', sub:'Patio & Garden',      icon:'outchair', cats:['outdoor-chair','outdoor-table']},
-  {key:'table',        label:'Tables',         sub:'Round, Sq & Rect',    icon:'recttable',cats:['table-round','table-square','table-rect']},
+  {key:'table',        label:'Restaurant Tables', sub:'Round, Square & Rectangular', icon:'recttable',cats:['table-round','table-square','table-rect','restaurant-tables']},
   {key:'table-base',   label:'Table Bases',    sub:'Pedestal & More',     icon:'recttable',cats:['table-base']},
   {key:'booth',        label:'Booth & Sofas',  sub:'Banquette Seating',   icon:'booth',    cats:['booth']},
   {key:'restaurant-set',label:'Restaurant Sets',sub:'Complete setups',    icon:'chair',    cats:['restaurant-set']},
@@ -3951,7 +3951,9 @@ function orderedCards(){
   if(!meta || !Object.keys(meta).length) return wantRes?[]:CAT_CARDS;
   var used={}; CAT_CARDS.forEach(function(c){ c.cats.forEach(function(k){ used[k]=1; }); });
   // restaurant section: base CAT_CARDS (all restaurant). residential section: none of the base cards.
-  var cards = wantRes ? [] : CAT_CARDS.map(function(c){ var m=meta[c.cats[0]]||{}; return Object.assign({},c,{_order:(m.order!=null?m.order:999),_visible:(m.visible!==false),_name:(m.name||c.label)}); }).filter(function(c){ return c._visible; });
+  var cards = wantRes ? [] : CAT_CARDS.map(function(c){ var mk=meta[c.key]||{}; var m=meta[c.cats[0]]||{}; // Only a single-category card may inherit its child's name; multi-cat cards keep their own label.
+    var nm = mk.name || ((c.cats.length===1) ? m.name : null) || c.label;
+    return Object.assign({},c,{_order:(mk.order!=null?mk.order:(m.order!=null?m.order:999)),_visible:((mk.visible!==undefined?mk.visible:m.visible)!==false),_name:nm}); }).filter(function(c){ return c._visible; });
   Object.keys(meta).forEach(function(k){
     if(used[k]) return; var m=meta[k]; if(!m||m.visible===false) return;
     var isRes=ghIsResCat(k);
@@ -4251,7 +4253,7 @@ function catFilterStock(){ S.filters.inStock=!S.filters.inStock; renderCatalog()
 /* ─────────────── PRICE RANGE FILTER (generic, category-adaptive) ─────────────── */
 var PRICE_BANDS=[['Under \u20b93k',0,2999],['\u20b93k\u20135k',3000,4999],['\u20b95k\u20138k',5000,7999],['\u20b98k\u201312k',8000,11999],['\u20b912k\u201318k',12000,17999],['\u20b918k\u201325k',18000,24999],['Above \u20b925k',25000,null]];
 function priceBandsFor(prods){ return PRICE_BANDS.filter(function(b){ return prods.some(function(p){ return p.price>=b[1] && (b[2]==null||p.price<=b[2]); }); }); }
-function catProductsFor(cat){ var T=['table-round','table-square','table-rect'],I=['chair','stool']; return PRODUCTS.filter(function(p){ if(cat==='table-merged')return T.some(function(c){return prodInCat(p,c);}); if(cat==='indoor-chairs')return I.some(function(c){return prodInCat(p,c);}); if(cat==='restaurant-set')return prodInCat(p,'restaurant-set'); if(cat==='all')return true; return prodInCat(p,cat); }); }
+function catProductsFor(cat){ var T=['table-round','table-square','table-rect','restaurant-tables'],I=['chair','stool']; return PRODUCTS.filter(function(p){ if(cat==='table-merged')return T.some(function(c){return prodInCat(p,c);}); if(cat==='indoor-chairs')return I.some(function(c){return prodInCat(p,c);}); if(cat==='restaurant-set')return prodInCat(p,'restaurant-set'); if(cat==='all')return true; return prodInCat(p,cat); }); }
 function catFilterPrice(mn,mx){ S.filters.priceMin=mn; S.filters.priceMax=mx; renderCatalog(); }
 /* seating attribute filters (chairs) */
 function catFilterArms(v){ S.filters.arms=v; renderCatalog(); }
@@ -4385,7 +4387,7 @@ function subcatsForFilter(cat){
   if(SUBCATS[cat]&&SUBCATS[cat].length) return SUBCATS[cat];
   var members=[];
   if(cat==='indoor-chairs') members=['chair','stool'];
-  else if(cat==='table-merged') members=['table-round','table-square','table-rect'];
+  else if(cat==='table-merged') members=['table-round','table-square','table-rect','restaurant-tables'];
   if(members.length){ var out=[]; members.forEach(function(m){ (SUBCATS[m]||[]).forEach(function(s){ out.push(s); }); }); return out; }
   return [];
 }
@@ -4408,7 +4410,7 @@ function subCircleRow(f){
 function renderCatalog(){
   var f=S.filters;
   var _mfsc=(document.querySelector('.mfsheet-body')||{}).scrollTop||0;
-  var TABLE_CATS=['table-round','table-square','table-rect'];
+  var TABLE_CATS=['table-round','table-square','table-rect','restaurant-tables'];
   var INDOOR_CATS=['chair','stool'];
   var SET_CATS=['restaurant-set'];
   var list=PRODUCTS.filter(function(p){
@@ -4553,7 +4555,7 @@ function getSmartRecommendations(tier, venueType, covers){
   }).filter(function(x){return x.score>0;}).sort(function(a,b){return b.score-a.score;});
   var result = {
     chairs: scored.filter(function(x){return x.p.cat==='chair'||x.p.cat==='stool';}).slice(0,10).map(function(x){return x.p;}),
-    tables: scored.filter(function(x){return ['table-round','table-square','table-rect'].includes(x.p.cat);}).slice(0,6).map(function(x){return x.p;}),
+    tables: scored.filter(function(x){return ['table-round','table-square','table-rect','restaurant-tables'].includes(x.p.cat);}).slice(0,6).map(function(x){return x.p;}),
     bases:  scored.filter(function(x){return x.p.cat==='table-base';}).slice(0,4).map(function(x){return x.p;}),
     booths: scored.filter(function(x){return x.p.cat==='booth';}).slice(0,4).map(function(x){return x.p;}),
     outdoor:scored.filter(function(x){return x.p.cat==='outdoor-chair';}).slice(0,4).map(function(x){return x.p;}),
@@ -5321,7 +5323,7 @@ function _renderCalculator(){
   if(PRODUCTS.length > 0){
     var venueTheme=({'fine-dining':'fine-dining','bar':'fine-dining','cafe':'cafe','qsr':'qsr','rooftop':'rooftop'})[c.venue]||'cafe';
     var chairCats=c.venue==='rooftop'?['outdoor-chair']:(c.venue==='bar'?['stool','chair']:['chair']);
-    var tableCats=c.venue==='rooftop'?['outdoor-table']:['table-round','table-square','table-rect'];
+    var tableCats=c.venue==='rooftop'?['outdoor-table']:['table-round','table-square','table-rect','restaurant-tables'];
     var sp4=sp['4a']||sp['2'];
     var targetChair=cpChair;                                  // live chair price for venue+tier
     var targetTable=(sp4&&sp4.price[c.tier])||8000;           // dominant 4-seater table at this tier
@@ -5647,7 +5649,7 @@ function smartPairings(p){
   else if(p.cat==='outdoor-table') wantCats=['outdoor-chair'];
   else if(isChair) wantCats=['table-round','table-square','table-rect','booth'];
   else if(p.cat==='booth') wantCats=['table-round','table-square','table-rect','chair'];
-  else if(p.cat==='table-base') wantCats=['table-round','table-square','table-rect'];
+  else if(p.cat==='table-base') wantCats=['table-round','table-square','table-rect','restaurant-tables'];
   else wantCats=['chair','table-base','booth'];
   var theme=(p.themes&&p.themes[0])||null;
   return (PRODUCTS||[]).filter(function(x){return x.id!==p.id && wantCats.indexOf(x.cat)>-1 && x.stock!==false;})
@@ -5943,7 +5945,7 @@ function downloadCatalog(scope){
   var items=null, title=null;
   if(scope==='current' && S.lastCatalogList && S.lastCatalogList.length){ items=S.lastCatalogList; title=S.lastCatalogTitle; }
   else if(scope && scope!=='all' && scope!=='current'){
-    var cats = (scope==='table') ? ['table-round','table-square','table-rect'] : [scope];
+    var cats = (scope==='table') ? ['table-round','table-square','table-rect','restaurant-tables'] : [scope];
     items=(PRODUCTS||[]).filter(function(p){return cats.indexOf(p.cat)>-1;});
     var lbl=(scope==='table'?'Tables':(CAT_LABEL[scope]||({'table-square':'Square Tables','table-base':'Table Bases','restaurant-set':'Restaurant Sets'}[scope])||scope));
     title=lbl+' Catalogue';
