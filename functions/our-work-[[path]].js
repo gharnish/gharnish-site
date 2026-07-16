@@ -27,7 +27,7 @@ function esc(s) {
 }
 function ytEmbed(u){
   const m = String(u||"").match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([\w-]{11})/i);
-  if(m) return "https://www.youtube.com/embed/"+m[1]+"?rel=0&modestbranding=1";
+  if(m) return "https://www.youtube-nocookie.com/embed/"+m[1]+"?rel=0&modestbranding=1";
   const v = String(u||"").match(/vimeo\.com\/(\d+)/i);
   if(v) return "https://player.vimeo.com/video/"+v[1];
   return "";
@@ -268,7 +268,7 @@ function renderDetail(p, links, origin) {
     gallery = '<div class="collage">';
     galVids.forEach(m => {
       const emb = ytEmbed(m);
-      if (emb) gallery += `<div class="col-vid"><iframe src="${esc(emb)}" loading="lazy" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen title="${esc(p.name)} video"></iframe></div>`;
+      if (emb) gallery += `<div class="col-vid"><iframe src="${esc(emb)}" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen title="${esc(p.name)} video"></iframe></div>`;
       else gallery += `<div class="col-vid"><video src="${esc(m)}" controls playsinline preload="metadata"></video></div>`;
     });
     galImgs.slice(0, 9).forEach(m => {
