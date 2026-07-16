@@ -880,7 +880,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 73</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 74</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -3923,11 +3923,8 @@ function renderSettings(){
 
     +sellerSettingsHTML()
     +mgrAccessHTML()
-    +'<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="display:none" onload="loadMgrEmails(mgrEmailsPaint)">'
     +'<div id="fin-slot"></div>'
-    +'<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="display:none" onload="loadFinishes(finRepaint)">'
     +'<div id="gm-slot"></div>'
-    +'<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="display:none" onload="loadGmapsKey(gmRepaint)">'
 
     +'<div class="settings-group"><div class="settings-label">WhatsApp Business</div>'
     +'<div class="settings-card">'
@@ -4029,8 +4026,11 @@ function renderSettings(){
     +'<div class="settings-row"><div class="settings-row-lbl"><b>Export All Products</b><span>Download as JSON file</span></div><button class="settings-save-btn" onclick="exportJSON()">Export JSON</button></div>'
     +'<div class="settings-row"><div class="settings-row-lbl"><b>Clear All Products</b><span style="color:var(--rst)">This will remove all products from localStorage</span></div><button style="background:rgba(198,40,40,.1);color:var(--rst);font-size:13px;font-weight:700;padding:9px 18px;border-radius:var(--rpill)" onclick="clearAllProds()">Clear Products</button></div>'
     +'</div></div>';
+  // Mount the async settings blocks (previously via a broken <img onload> hack)
+  try{ loadMgrEmails(mgrEmailsPaint); }catch(e){ console.warn('mgr emails',e); }
+  try{ loadFinishes(finRepaint); }catch(e){ console.warn('finishes',e); }
+  try{ loadGmapsKey(gmRepaint); }catch(e){ console.warn('gmaps',e); }
 }
-
 function saveSetting(key,inputId){
   const val=document.getElementById(inputId)?.value||'';
   const s=lsGetSettings(); s[key]=val; lsSaveSettings(s);
