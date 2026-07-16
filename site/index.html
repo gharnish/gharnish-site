@@ -308,10 +308,15 @@ main{max-width:480px;margin:0 auto;padding-top:calc(var(--nav) + 22px);overflow:
 .pcard-img svg{width:64px;height:64px;color:var(--gl);opacity:.9;position:relative;z-index:1;}
 .pcard-wish{
   position:absolute;top:8px;right:8px;z-index:2;
-  background:rgba(12,10,7,.7);border-radius:50%;
-  width:28px;height:28px;display:flex;align-items:center;justify-content:center;
-  color:var(--ink3);font-size:14px;
+  background:transparent;border:none;border-radius:0;
+  width:26px;height:26px;display:flex;align-items:center;justify-content:center;
+  color:rgba(26,21,16,.45);
 }
+.pcard-wish svg{width:19px;height:19px;display:block;
+  filter:drop-shadow(0 1px 2px rgba(255,255,255,.9))}
+.pcard-wish:hover{color:rgba(26,21,16,.75)}
+.pcard-wish.on{color:#C62828}
+.pcard-wish.on svg{fill:#C62828;stroke:#C62828}
 /* ── WISHLIST / SHORTLIST ── */
 .pcard-wish{cursor:pointer;transition:all .15s;}
 .pcard-wish.on{background:#fff;color:#C8860A;box-shadow:0 2px 9px rgba(0,0,0,.2);}
@@ -706,16 +711,12 @@ body.detail-open .bottom-nav{display:none!important}
 /* ─── PRODUCT DETAIL PAGE ─── */
 .detail-page{max-width:480px;margin:0 auto;padding-bottom:100px;}
 .detail-img-wrap{
-  background:linear-gradient(158deg,#FCFAF7 0%,#F3EFE9 55%,#EDE8E0 100%);
+  background:#FFFFFF;
   min-height:260px;display:flex;align-items:center;justify-content:center;
   position:relative;overflow:hidden;
-  border-radius:20px;border:none;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 1px 2px rgba(26,21,16,.04);
+  border-radius:16px;border:none;box-shadow:none;
 }
-.detail-img-bg{
-  position:absolute;inset:0;
-  background:radial-gradient(ellipse at 50% 62%,rgba(200,134,10,.10) 0%,transparent 60%);
-}
+.detail-img-bg{display:none}
 .detail-img-wrap svg{width:140px;height:140px;color:var(--gl);position:relative;z-index:1;}
 .detail-best-badge{
   position:absolute;top:16px;left:16px;z-index:3;
@@ -1735,7 +1736,7 @@ body.detail-open #ai-fab{display:none}
 @media(prefers-reduced-motion:reduce){.quiz-card{transition:none}}
 /* ───────── FILTER + SORT BAR ───────── */
 .cat-layout{max-width:1360px;margin:0 auto;}
-@media(min-width:1280px){.cat-main .p-grid{grid-template-columns:repeat(6,1fr);}.cat-main .cat-grid{grid-template-columns:repeat(6,1fr);}}
+@media(min-width:1280px){.cat-main .p-grid{grid-template-columns:repeat(5,1fr);}.cat-main .cat-grid{grid-template-columns:repeat(6,1fr);}}
 .cat-main .offers-grid{grid-template-columns:repeat(2,1fr);padding:0;}
 @media(min-width:700px){.cat-main .offers-grid{grid-template-columns:repeat(3,1fr);}}
 @media(min-width:1024px){.cat-main .offers-grid{grid-template-columns:repeat(5,1fr);}}
@@ -3149,15 +3150,11 @@ function homeCard(p){
   var _clrQty=(_isClr && typeof INVENTORY_QTY!=='undefined' && typeof INVENTORY_QTY[p.id]==='number')?INVENTORY_QTY[p.id]:null;
   return '<div class="pcard" id="pc-'+p.id+'">'
     +'<div class="pcard-img">'
-    +(_isClr
-      ? '<span class="pcard-badge" style="background:#C62828">CLEARANCE</span>'
-      : (isBestseller(p)
-        ? '<span class="pcard-badge bs-badge">&#9733; BESTSELLER</span>'
-        : (bc?'<span class="pcard-badge">'+bc+'</span>':'')))
+
     +(p.image
       ? '<img src="'+p.image+'" loading="lazy" style="width:100%;height:100%;object-fit:contain;padding:10px;position:relative;z-index:1" onerror="this.remove()">'
       : '<svg viewBox="0 0 64 64" style="width:64px;height:64px;color:#F0C56A;opacity:.9;position:relative;z-index:1"><use href="#ic-'+p.icon+'"/></svg>')
-    +'<span class="pcard-wish'+(wishHas(p.id)?' on':'')+'" data-wish="'+p.id+'" onclick="wishToggle(\''+p.id+'\',event)">&hearts;</span>'
+    +'<span class="pcard-wish'+(wishHas(p.id)?' on':'')+'" data-wish="'+p.id+'" onclick="wishToggle(\''+p.id+'\',event)" aria-label="Save">'+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 000-7.8z"/></svg>'+'</span>'
     +'</div>'
     +'<div class="pcard-info">'
     +'<div class="pcard-brand">GHARNISH</div>'
@@ -3168,7 +3165,7 @@ function homeCard(p){
     +(_offVal>0?'<span class="pcard-off">'+_offVal+'% OFF</span>':'')
     +'</div>'
     +'<div class="pcard-stock">'+availBadge(p)+'</div>'
-    +(p.cat==='chair'?'<button class="pcard-cmp'+(S.compare.indexOf(p.id)>-1?' on':'')+'" data-cmp="'+p.id+'" onclick="ghCompareToggle(\''+p.id+'\',event)">'+ghCmpLabel(S.compare.indexOf(p.id)>-1,true)+'</button>':'')
+    
     +'</div></div>';
 }
 
@@ -4794,7 +4791,7 @@ function renderProductDetail(pid){
   var _gal=(typeof GALLERY!=='undefined'&&GALLERY[p.id])?GALLERY[p.id]:{};
   var _imgs=[]; if(p.image)_imgs.push(p.image); (_gal.images||[]).forEach(function(u){if(u&&_imgs.indexOf(u)<0)_imgs.push(u);});
   if(_imgs.length){
-    H.push('<img id="det-main-img" src="' + _imgs[0] + '" style="position:relative;z-index:1;width:100%;height:100%;object-fit:contain;padding:12px">');
+    H.push('<img id="det-main-img" src="' + _imgs[0] + '" style="position:relative;z-index:1;width:100%;height:100%;object-fit:contain;padding:0">');
   } else {
     H.push('<svg viewBox="0 0 64 64" style="width:140px;height:140px;color:#F0C56A;position:relative;z-index:1"><use href="#ic-' + p.icon + '"/></svg>');
   }
@@ -4827,7 +4824,7 @@ function renderProductDetail(pid){
   else if(_q!==null){ _stockLine='<span class="sdot sdot-in"></span>'+(_q<=5?'Only '+_q+' Pc left':_q+' Pc Available')+' &mdash; ships in 2&ndash;7 days'; }
   else { _stockLine='<span class="sdot sdot-in"></span>In Stock &mdash; ships in 2&ndash;7 days'; }
   H.push('<div class="in-stock-wrap">'+_stockLine+'</div>');
-  if(p.cat==='chair'){ H.push('<button class="det-cmp'+(S.compare.indexOf(p.id)>-1?' on':'')+'" data-cmp="'+p.id+'" onclick="ghCompareToggle(\''+p.id+'\',event)">'+ghCmpLabel(S.compare.indexOf(p.id)>-1,false)+'</button>'); }
+
   H.push('<div class="detail-price-row">');
   H.push('<span class="detail-price">&#8377;' + p.price.toLocaleString('en-IN') + '</span>');
   if(d.pct > 0) H.push('<span class="detail-orig">&#8377;' + d.orig.toLocaleString('en-IN') + '</span><span class="detail-save">-' + d.pct + '%</span>');
@@ -6849,7 +6846,8 @@ function ghCompareToggle(id,ev){ if(ev){ev.stopPropagation();ev.preventDefault()
 function ghCompareClear(){ var ids=S.compare.slice(); S.compare=[]; ids.forEach(ghCompareSync); ghRenderCompareBar(); ghCompareClose(); }
 function ghCompareRemove(id){ var i=S.compare.indexOf(id); if(i>-1)S.compare.splice(i,1); ghCompareSync(id); ghRenderCompareBar(); if(S.compare.length){ ghCompareOpen(); } else { ghCompareClose(); } }
 function ghCompareStock(p){ var oo=((typeof ONORDER_IDS!=='undefined'&&ONORDER_IDS[p.id])||p.stock===false); if(oo)return 'On order'; var q=(typeof INVENTORY_QTY!=='undefined'&&typeof INVENTORY_QTY[p.id]==='number')?INVENTORY_QTY[p.id]:null; if(q===null)return 'In stock'; if(q<=0)return 'Sold out'; return q+' Pc available'; }
-function ghRenderCompareBar(){
+function ghRenderCompareBar(){ var _b=document.getElementById('cmp-bar'); if(_b) _b.remove(); return; }
+function _ghRenderCompareBar_disabled(){
   var el=document.getElementById('gh-compare-bar');
   if(!S.compare||!S.compare.length){ if(el) el.remove(); return; }
   if(!el){ el=document.createElement('div'); el.id='gh-compare-bar'; el.className='cmp-bar'; document.body.appendChild(el); }
@@ -7109,7 +7107,7 @@ function cfResultCard(r){
     +'<div class="cf-res-price">'+fmt(p.price)+'</div>'
     +(why?'<div class="cf-whys">'+why+'</div>':'')
     +'<div class="cf-res-acts"><button class="cf-view" onclick="cfClose();S.selectedProduct=\''+p.id+'\';render();window.scrollTo({top:0})">View</button>'
-    +((p.cat==='chair')?'<button class="cf-cmp" data-cmp="'+p.id+'" onclick="ghCompareToggle(\''+p.id+'\',event)">'+ghCmpLabel(S.compare.indexOf(p.id)>-1,false)+'</button>':'')
+    
     +'</div></div></div>';
 }
 function cfResults(){
