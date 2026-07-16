@@ -111,6 +111,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 
+/* Clearance marker — sits in the info row, never on the product photo */
+.pcard-clr{display:inline-block;background:#C62828;color:#fff;font-size:7.5px;font-weight:800;
+  letter-spacing:.07em;padding:2px 5px;border-radius:3px;margin-left:6px;vertical-align:middle;
+  line-height:1.2}
+
+
 /* Product detail — refined header bar */
 .dtl-bar{display:flex;align-items:center;gap:10px;padding:10px 16px;position:sticky;top:0;
   background:rgba(255,255,255,.88);backdrop-filter:blur(14px) saturate(1.4);
@@ -319,7 +325,7 @@ main{max-width:480px;margin:0 auto;padding-top:calc(var(--nav) + 22px);overflow:
 .pcard-wish.on svg{fill:#C62828;stroke:#C62828}
 /* ── WISHLIST / SHORTLIST ── */
 .pcard-wish{cursor:pointer;transition:all .15s;}
-.pcard-wish.on{background:#fff;color:#C8860A;box-shadow:0 2px 9px rgba(0,0,0,.2);}
+.pcard-wish.on{background:transparent;color:#C62828;box-shadow:none;}
 .phcard-wish{position:absolute;top:8px;right:8px;z-index:2;background:rgba(12,10,7,.5);border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.82);font-size:13px;cursor:pointer;transition:all .15s;}
 .phcard-wish.on{background:#fff;color:#C8860A;box-shadow:0 2px 9px rgba(0,0,0,.2);}
 .det-wish.on{color:#C8860A!important;background:rgba(200,134,10,.12)!important;}
@@ -1736,7 +1742,7 @@ body.detail-open #ai-fab{display:none}
 @media(prefers-reduced-motion:reduce){.quiz-card{transition:none}}
 /* ───────── FILTER + SORT BAR ───────── */
 .cat-layout{max-width:1360px;margin:0 auto;}
-@media(min-width:1280px){.cat-main .p-grid{grid-template-columns:repeat(5,1fr);}.cat-main .cat-grid{grid-template-columns:repeat(6,1fr);}}
+@media(min-width:1280px){.cat-main .p-grid{grid-template-columns:repeat(5,1fr);}.cat-main .cat-grid{grid-template-columns:repeat(5,1fr);}}
 .cat-main .offers-grid{grid-template-columns:repeat(2,1fr);padding:0;}
 @media(min-width:700px){.cat-main .offers-grid{grid-template-columns:repeat(3,1fr);}}
 @media(min-width:1024px){.cat-main .offers-grid{grid-template-columns:repeat(5,1fr);}}
@@ -3157,7 +3163,7 @@ function homeCard(p){
     +'<span class="pcard-wish'+(wishHas(p.id)?' on':'')+'" data-wish="'+p.id+'" onclick="wishToggle(\''+p.id+'\',event)" aria-label="Save">'+'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 00-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 00-7.8 7.8l1.1 1.1L12 21.2l7.8-7.7 1.1-1.1a5.5 5.5 0 000-7.8z"/></svg>'+'</span>'
     +'</div>'
     +'<div class="pcard-info">'
-    +'<div class="pcard-brand">GHARNISH</div>'
+    +'<div class="pcard-brand">GHARNISH'+(_isClr?'<span class="pcard-clr">CLEARANCE</span>':'')+'</div>'
     +'<div class="pcard-name">'+p.name+'</div>'
     +'<div class="pcard-price-row">'
     +'<span class="pcard-price">'+fmt(p.price)+'</span>'
