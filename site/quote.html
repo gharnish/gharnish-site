@@ -560,25 +560,28 @@ input,select,textarea{font-family:inherit;}
     .main{max-width:900px;margin:0 auto!important}
   }
 
-  /* Bottom nav — mirrors the customer app, with a raised (+) for new products */
-  .qa-bnav{position:fixed;left:0;right:0;bottom:0;z-index:70;height:62px;
-    background:rgba(255,255,255,.97);backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
-    border-top:1px solid rgba(26,21,16,.09);
-    display:flex;align-items:center;justify-content:space-around;
-    padding-bottom:env(safe-area-inset-bottom)}
-  .qa-bnav button{background:none;border:none;cursor:pointer;font-family:inherit;
-    display:flex;flex-direction:column;align-items:center;gap:3px;
-    font-size:10px;font-weight:700;color:var(--ink3);flex:1;padding:0}
-  .qa-bnav button svg{width:21px;height:21px;stroke-width:2}
-  .qa-bnav button.on{color:var(--g)}
-  .qa-bnav .qa-fab{flex:none;width:54px;height:54px;border-radius:50%;
-    background:linear-gradient(145deg,var(--gl),var(--g));color:#fff;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 6px 20px rgba(200,134,10,.45);margin-top:-22px;
-    font-size:30px;font-weight:300;line-height:1;gap:0}
-  .qa-fab-lbl{position:absolute;bottom:7px;font-size:9px;font-weight:800;color:var(--g)}
-  body{padding-bottom:62px}
+  /* Bottom nav — three columns, raised centre action */
+  .qa-bnav{position:fixed;left:0;right:0;bottom:0;z-index:70;
+    background:rgba(255,255,255,.96);backdrop-filter:blur(16px) saturate(1.3);
+    -webkit-backdrop-filter:blur(16px) saturate(1.3);
+    border-top:1px solid rgba(26,21,16,.08);
+    display:grid;grid-template-columns:1fr 1fr 1fr;align-items:end;
+    padding:0 4px calc(6px + env(safe-area-inset-bottom));height:auto}
+  .qa-nav-item{background:none;border:none;cursor:pointer;font-family:inherit;
+    display:flex;flex-direction:column;align-items:center;gap:4px;
+    font-size:10.5px;font-weight:600;color:var(--ink3);padding:9px 0 4px;
+    letter-spacing:.01em;transition:color .15s}
+  .qa-nav-item svg{width:20px;height:20px;stroke-width:1.8}
+  .qa-nav-item:active{color:var(--g)}
+  .qa-fab-col{display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:4px}
+  .qa-fab{width:50px;height:50px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 5px 16px rgba(200,134,10,.4);margin-top:-19px;
+    font-size:27px;font-weight:300;line-height:0;padding:0 0 3px;font-family:inherit;
+    transition:transform .12s}
+  .qa-fab:active{transform:scale(.94)}
+  .qa-fab-col span{font-size:10.5px;font-weight:700;color:var(--g);letter-spacing:.01em}
+  body{padding-bottom:74px}
 </style>
 </head>
 <body>
@@ -930,7 +933,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">QUOTE · 78</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">QUOTE · 79</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -1410,7 +1413,7 @@ function qStyle(){ if(document.getElementById('q-style'))return; var s=document.
   +'.q-item{border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--c1)}'
   +'.q-f{display:flex;flex-direction:column}'
   +'.q-f label{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px;font-weight:700}'
-  +'.q-listrow{display:flex;align-items:center;gap:10px;background:var(--c1);border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:13px 16px;box-shadow:var(--shadow);flex-wrap:wrap}@media(max-width:700px){.q-listrow{gap:7px 9px;padding:12px 13px}.q-listrow>div:first-child{flex:1 1 100%;min-width:0}.q-listrow .lead-badge{order:2;flex:none}.q-listrow>div:nth-child(3){order:3;min-width:0;flex:1;text-align:right}.q-listrow button{order:4;flex:none;font-size:11px;padding:6px 10px}}'
+  +'.q-listrow{display:flex;align-items:center;gap:10px;background:var(--c1);border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:13px 16px;box-shadow:var(--shadow);flex-wrap:wrap}@media(max-width:700px){.q-listrow{gap:8px;padding:13px;align-items:flex-start}.q-listrow>div:first-child{flex:1 1 100%!important;min-width:0!important;order:1}.q-listrow>div:first-child>div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.q-listrow .lead-badge{order:2;flex:none;align-self:center}.q-listrow>div:nth-child(3){order:2;min-width:0!important;flex:1 1 auto!important;text-align:right!important;align-self:center;font-size:14px!important}.q-listrow button{order:3;flex:none;font-size:11px!important;padding:6px 11px!important}.q-listrow>a{order:3;flex:none}}'
   +'.q-card{padding:18px}'
   +'.q-chips{display:flex;gap:7px;overflow-x:auto;margin:12px 0 2px;padding-bottom:4px;scrollbar-width:none}.q-chips::-webkit-scrollbar{display:none}'
   +'.q-chip{flex:none;background:transparent;border:1px solid rgba(23,19,16,.14);border-radius:999px;padding:7px 15px;font-size:11.5px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s}.q-chip:hover{border-color:var(--ink);color:var(--ink)}'
@@ -5863,13 +5866,14 @@ function lsSaveFeatured(obj){ localStorage.setItem('gh_featured',JSON.stringify(
     var n=document.createElement('div');
     n.id='qa-bnav'; n.className='qa-bnav';
     n.innerHTML=
-       '<button id="qa-nav-list" onclick="qaList()">'
-      +'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>'
+       '<button class="qa-nav-item" onclick="qaList()">'
+      +'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>'
       +'<span>Quotes</span></button>'
+      +'<div class="qa-fab-col">'
       +'<button class="qa-fab" onclick="qaAddProduct()" aria-label="Add product">+</button>'
-      +'<span class="qa-fab-lbl">Product</span>'
-      +'<button id="qa-nav-new" onclick="qaNew()">'
-      +'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15h6"/></svg>'
+      +'<span>Product</span></div>'
+      +'<button class="qa-nav-item" onclick="qaNew()">'
+      +'<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8z"/><path d="M14 3v5h5"/></svg>'
       +'<span>New quote</span></button>';
     document.body.appendChild(n);
   }
@@ -5904,7 +5908,14 @@ function lsSaveFeatured(obj){ localStorage.setItem('gh_featured',JSON.stringify(
     if(mc && window.MutationObserver){ var t=null; new MutationObserver(function(){ clearTimeout(t); t=setTimeout(strip,90); }).observe(mc,{childList:true,subtree:true}); }
   }catch(e){}
 
-  setInterval(strip, 1500);
+  function signedIn(){
+    var ls=document.getElementById('login-screen');
+    return !!(ls && ls.style.display==='none');
+  }
+  function tick(){ if(!signedIn()) return; strip(); topbar(); bnav(); }
+  document.addEventListener('DOMContentLoaded', tick);
+  setInterval(tick, 800);
+  setTimeout(tick, 300);
   if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('/service-worker.js'); }catch(e){} }
 })();
 </script>
