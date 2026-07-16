@@ -6713,6 +6713,16 @@ function ghUrlFor(){
   if(S.tab==='cart') return '/cart';
   return '/';
 }
+var GH_SHOP_ALIAS={
+  'chairs':'indoor-chair', 'chair':'indoor-chair', 'indoor-chair':'indoor-chair',
+  'stools':'indoor-chair', 'stool':'indoor-chair',
+  'tables':'table', 'table':'table',
+  'table-bases':'table-base', 'table-base':'table-base',
+  'outdoor':'outdoor-chair', 'outdoor-chair':'outdoor-chair',
+  'booth':'booth', 'sofas':'booth',
+  'sets':'restaurant-set', 'restaurant-set':'restaurant-set',
+  'office':'office-chairs', 'office-chairs':'office-chairs'
+};
 function ghResolveRoute(path){
   path=(path||'/').split('?')[0].split('#')[0].replace(/\/+$/,'')||'/';
   var seg=path.split('/').filter(Boolean);
@@ -6726,7 +6736,22 @@ function ghResolveRoute(path){
   base();
   if(seg[0]==='category' && seg[1]){ var _rc=(seg[1].indexOf('res-')===0); if(_rc!==(S.section==='residential')){ S.section=_rc?'residential':'restaurant'; ghApplySection(); } S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=seg[1]; }
   else if(seg[0]==='categories'){ S.tab='categories'; S.catView='list'; }
-  else if(seg[0]==='shop'){ S.tab='home'; S.homeView='catalog'; }
+  else if(seg[0]==='shop'){
+    if(seg[1]==='residential'){
+      // /shop/residential → the home-furniture category hub
+      if(S.section!=='residential'){ S.section='residential'; ghApplySection(); }
+      S.tab='categories'; S.catView='list';
+    } else if(seg[1]){
+      // /shop/<category> — accepts SEO bucket names and app keys alike
+      var _k=GH_SHOP_ALIAS[seg[1]]||seg[1];
+      var _rs=(_k.indexOf('res-')===0);
+      if(_rs!==(S.section==='residential')){ S.section=_rs?'residential':'restaurant'; ghApplySection(); }
+      S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=_k;
+    } else {
+      // bare /shop → full catalogue, clear any sticky category filter
+      S.tab='home'; S.homeView='catalog'; if(S.filters) S.filters.cat='all';
+    }
+  }
   else if(seg[0]==='account'){ S.tab='account'; }
   else if(seg[0]==='offers'){ S.tab='offers'; }
   else if(seg[0]==='estimate'){ S.tab='calculator'; }
