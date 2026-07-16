@@ -880,7 +880,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 75</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 76</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -3523,6 +3523,21 @@ function gmapsReady(){
   });
   return _gmapsLoading;
 }
+function gmShortLabel(p){
+  try{
+    var comps=p.address_components||[];
+    function pick(types){
+      for(var i=0;i<comps.length;i++){
+        for(var t=0;t<types.length;t++){ if((comps[i].types||[]).indexOf(types[t])>-1) return comps[i].long_name; }
+      }
+      return '';
+    }
+    var area=pick(['sublocality_level_1','sublocality','neighborhood']);
+    var city=pick(['locality','administrative_area_level_2']);
+    var out=[area,city].filter(Boolean).filter(function(v,i,a){return a.indexOf(v)===i;}).join(', ');
+    return out||city||area||'';
+  }catch(e){ return ''; }
+}
 function gmSetLatLng(lat,lng,addr,pid){
   var a=document.getElementById('jf-lat'), b=document.getElementById('jf-lng');
   var c=document.getElementById('jf-address'), d=document.getElementById('jf-placeid');
@@ -3546,13 +3561,15 @@ function gmInitForm(){
   if(!GMAPS_KEY){ var w=document.getElementById('jf-geo-warn'); if(w) w.style.display='block'; return; }
   gmapsReady().then(function(){
     var inp=document.getElementById('jf-loc'); if(!inp) return;
-    var ac=new google.maps.places.Autocomplete(inp,{fields:['geometry','formatted_address','place_id','name'],componentRestrictions:{country:'in'}});
+    var ac=new google.maps.places.Autocomplete(inp,{fields:['geometry','formatted_address','place_id','name','address_components'],componentRestrictions:{country:'in'}});
     ac.addListener('place_changed',function(){
       var p=ac.getPlace();
       if(!p||!p.geometry||!p.geometry.location){ toast('Pick a suggestion from the list','#C8860A'); return; }
       var lat=p.geometry.location.lat(), lng=p.geometry.location.lng();
       gmSetLatLng(lat,lng,p.formatted_address||'',p.place_id||'');
-      if(p.name && !document.getElementById('jf-loc').value) document.getElementById('jf-loc').value=p.name;
+      // The widget replaces the input with the full address — swap in a short "Area, City" label.
+      var shortLoc=gmShortLabel(p);
+      if(shortLoc) document.getElementById('jf-loc').value=shortLoc;
       gmShowMap(lat,lng);
     });
     var la=document.getElementById('jf-lat')?.value, ln=document.getElementById('jf-lng')?.value;

@@ -112,7 +112,7 @@
 <style>
 
 /* Projects map */
-.ow-map{height:300px;border-radius:16px;margin:0 16px 18px;max-width:1048px;border:1px solid var(--line);background:var(--c2)}
+.ow-map{height:300px;border-radius:16px;margin:0 auto 18px;max-width:1048px;border:1px solid var(--line);background:var(--c2)}
 .ow-near{display:inline-flex;align-items:center;gap:6px;margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
 .ow-near:disabled{opacity:.6;cursor:default}
 .ow-near-on{font-size:12px;color:#1B7A4D;font-weight:700;margin-left:10px}
@@ -128,7 +128,11 @@
 .ow-h1{font-family:Poppins,sans-serif;font-size:clamp(24px,4vw,34px);font-weight:800;letter-spacing:-.02em;margin:0 0 8px;line-height:1.1}
 .ow-sub{font-size:14.5px;color:var(--ink3);margin:0;max-width:620px;line-height:1.55}
 .ow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;padding:0 16px 8px;max-width:1080px;margin:0 auto}
-.ow-card{width:auto!important;flex:initial!important}
+.ow-card{width:auto!important;flex:initial!important;display:flex;flex-direction:column}
+.ow-card .proj-top{flex:1 0 auto}
+.ow-card .proj-foot{gap:10px}
+.ow-card .proj-foot>span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.ow-card .proj-covers{flex:none;white-space:nowrap}
 .ow-empty{padding:44px 16px;text-align:center;color:var(--ink3);font-size:14px}
 .ow-cta{padding:22px 16px 36px;text-align:center}
 
@@ -1806,9 +1810,9 @@ body.detail-open #ai-fab{display:none}
 .proj-card{flex:none;width:200px;background:var(--c1);border-radius:16px;overflow:hidden;border:1px solid rgba(0,0,0,.07);box-shadow:var(--shadow);cursor:pointer;transition:transform .15s ease}
 .proj-card:active{transform:scale(.98)}
 .proj-top{padding:16px;height:118px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;color:#fff}
-.proj-year{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.28);font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px}
-.proj-name{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
-.proj-type{font-size:10.5px;font-weight:600;color:rgba(255,255,255,.85);margin-top:3px;text-transform:uppercase;letter-spacing:.05em}
+.proj-year{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.3);color:#fff;font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;backdrop-filter:blur(2px)}
+.proj-name{font-size:17px;font-weight:800;letter-spacing:-.01em;line-height:1.1;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.proj-type{font-size:10.5px;font-weight:600;color:rgba(255,255,255,.92);margin-top:3px;text-transform:uppercase;letter-spacing:.05em;text-shadow:0 1px 3px rgba(0,0,0,.45)}
 .proj-foot{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;font-size:11px;color:var(--ink3)}
 .proj-covers{color:var(--g);font-weight:700}
 /* ───────── HIGHLIGHTS: bestseller + ready stock ───────── */
@@ -3315,6 +3319,16 @@ function ghRenderMap(hostId,list,opts){
     else { map.setCenter({lat:+list[0].lat,lng:+list[0].lng}); map.setZoom(opts.zoom||15); }
   }).catch(function(){ host.style.display='none'; });
 }
+function ghShortLoc(p){
+  var s=String((p&&p.loc)||'').trim();
+  if(!s) return '';
+  var parts=s.split(',').map(function(x){return x.trim();}).filter(Boolean);
+  if(parts.length<=2) return s;
+  // Drop trailing country/state/PIN noise, keep the two most specific place names
+  var drop=/^(india|telangana|karnataka|\d{6}|[a-z ]*\d{6})$/i;
+  while(parts.length>2 && drop.test(parts[parts.length-1])) parts.pop();
+  return parts.slice(-2).join(', ');
+}
 function renderOurWork(){
   var app=document.getElementById('app'); if(!app) return;
   var list=(typeof PROJECTS!=='undefined'?PROJECTS:[]).filter(function(p){ return p && p.visible!==false; });
@@ -3351,7 +3365,7 @@ function renderOurWork(){
       H.push('</div>');
       var dTxt='';
       if(GH_GEO && pr.lat!=null && pr.lng!=null){ var dk=ghDistKm(GH_GEO.lat,GH_GEO.lng,+pr.lat,+pr.lng); dTxt=(dk<1?(Math.round(dk*1000)+' m'):(dk.toFixed(dk<10?1:0)+' km'))+' away'; }
-      H.push('<div class="proj-foot"><span>'+(dTxt||pr.loc||'')+'</span><span class="proj-covers">'+(pr.covers||0)+' covers</span></div>');
+      H.push('<div class="proj-foot"><span>'+(dTxt||ghShortLoc(pr)||'')+'</span><span class="proj-covers">'+(pr.covers||0)+' covers</span></div>');
       H.push('</a>');
     });
     H.push('</div>');
@@ -4081,7 +4095,7 @@ function renderLanding(){
     H.push('<div class="proj-name">'+pr.name+'</div>');
     H.push('<div class="proj-type">'+pr.type+'</div>');
     H.push('</div>');
-    H.push('<div class="proj-foot"><span>'+pr.loc+'</span><span class="proj-covers">'+pr.covers+' covers</span></div>');
+    H.push('<div class="proj-foot"><span>'+ghShortLoc(pr)+'</span><span class="proj-covers">'+pr.covers+' covers</span></div>');
     H.push('</a>');
   });
   H.push('</div>');
