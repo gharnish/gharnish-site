@@ -6,6 +6,7 @@ User-agent: *
 Allow: /
 Disallow: /admin.html
 Disallow: /manager.html
+Disallow: /quote.html
 
 Sitemap: https://gharnish.app/sitemap.xml
 Sitemap: https://gharnish.app/sitemap-products.xml
