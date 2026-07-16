@@ -882,7 +882,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">MANAGER · 77</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">MANAGER · 78</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -1068,7 +1068,8 @@ function ghForm(opts){
   var m=document.getElementById('gh-form-modal'); if(!m){ m=document.createElement('div'); m.id='gh-form-modal'; m.className='qm-ov'; /* backdrop click no longer closes — prevents accidental data loss */ document.body.appendChild(m); }
   var body=(opts.fields||[]).map(function(f){
     var input;
-    if(f.type==='select'){ input='<select class="cust-in" id="ghf-'+f.key+'" style="margin:0"'+(f.oninput?' onchange="'+f.oninput+'"':'')+'>'+(f.options||[]).map(function(o){ return '<option value="'+escA(o[0])+'"'+(String(f.value)===String(o[0])?' selected':'')+'>'+escA(o[1])+'</option>'; }).join('')+'</select>'; }
+    if(f.type==='file'){ input='<div style="display:flex;gap:8px;align-items:center">'+'<img id="ghf-'+f.key+'-pv" src="" alt="" style="display:none;width:44px;height:44px;object-fit:cover;border-radius:8px;border:1px solid var(--line);flex:none">'+'<input type="file" id="ghf-'+f.key+'-file" accept="image/*" style="display:none" onchange="ghFormUpload(this,\''+f.key+'\')">'+'<button type="button" class="spec-add-btn" style="margin:0;flex:1" onclick="document.getElementById(\'ghf-'+f.key+'-file\').click()">\ud83d\udcf7 Choose / take photo</button>'+'<input type="hidden" id="ghf-'+f.key+'" value="">'+'</div><div id="ghf-'+f.key+'-st" style="font-size:11px;color:var(--ink3);margin-top:4px"></div>'; }
+  else if(f.type==='select'){ input='<select class="cust-in" id="ghf-'+f.key+'" style="margin:0"'+(f.oninput?' onchange="'+f.oninput+'"':'')+'>'+(f.options||[]).map(function(o){ return '<option value="'+escA(o[0])+'"'+(String(f.value)===String(o[0])?' selected':'')+'>'+escA(o[1])+'</option>'; }).join('')+'</select>'; }
     else if(f.type==='textarea'){ input='<textarea class="cust-in" id="ghf-'+f.key+'" style="margin:0;min-height:60px" placeholder="'+escA(f.placeholder||'')+'">'+escA(f.value||'')+'</textarea>'; }
     else { input='<input class="cust-in" id="ghf-'+f.key+'" type="'+(f.type||'text')+'" style="margin:0" placeholder="'+escA(f.placeholder||'')+'" value="'+escA(f.value==null?'':f.value)+'"'+(f.oninput?' oninput="'+f.oninput+'"':'')+'>'; }
     return '<div class="q-ff" style="margin-bottom:12px"><label>'+escA(f.label)+'</label>'+input+'</div>';
@@ -1080,6 +1081,22 @@ function ghForm(opts){
 }
 function ghFormClose(){ var m=document.getElementById('gh-form-modal'); if(m)m.classList.remove('open'); }
 function ghFormVal(k){ var e=document.getElementById('ghf-'+k); return e?e.value:''; }
+function ghFormUpload(input,key){
+  var f=(input.files||[])[0]; if(!f) return;
+  if(!supa){ toast('Connect Supabase to upload','#C62828'); return; }
+  if(f.size>10*1024*1024){ toast('Image is over 10MB','#C62828'); input.value=''; return; }
+  var st=document.getElementById('ghf-'+key+'-st'); if(st) st.textContent='Uploading\u2026';
+  var ext=(f.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+  var path='products/p-'+Date.now()+'.'+ext;
+  supa.storage.from('project-media').upload(path,f,{cacheControl:'3600',upsert:true,contentType:f.type||'image/jpeg'}).then(function(up){
+    if(up&&up.error){ if(st) st.textContent='Upload failed: '+up.error.message; toast('Upload failed','#C62828'); return; }
+    var pub=supa.storage.from('project-media').getPublicUrl(path);
+    var url=(pub&&pub.data&&pub.data.publicUrl)||'';
+    var hid=document.getElementById('ghf-'+key); if(hid) hid.value=url;
+    var pv=document.getElementById('ghf-'+key+'-pv'); if(pv&&url){ pv.src=url; pv.style.display='block'; }
+    if(st) st.textContent='\u2713 Photo attached';
+  },function(){ if(st) st.textContent='Upload failed'; toast('Upload failed','#C62828'); });
+}
 function ghFormDo(){ var vals={}; (_ghFormFields||[]).forEach(function(k){ vals[k]=ghFormVal(k); }); var r=_ghFormSubmit?_ghFormSubmit(vals):true; if(r!==false) ghFormClose(); }
 function ghConfirm(msg,onYes){ ghForm({title:'Please confirm', note:msg, fields:[], submitLabel:'Yes, continue', onSubmit:function(){ if(onYes)onYes(); }}); }
 function custAddPrompt(){
@@ -1345,7 +1362,7 @@ function qStyle(){ if(document.getElementById('q-style'))return; var s=document.
   +'.q-item{border:1px solid rgba(0,0,0,.08);border-radius:12px;padding:12px;margin-bottom:10px;background:var(--c1)}'
   +'.q-f{display:flex;flex-direction:column}'
   +'.q-f label{font-size:9px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px;font-weight:700}'
-  +'.q-listrow{display:flex;align-items:center;gap:12px;background:var(--c1);border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:13px 16px;box-shadow:var(--shadow)}'
+  +'.q-listrow{display:flex;align-items:center;gap:10px;background:var(--c1);border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:13px 16px;box-shadow:var(--shadow);flex-wrap:wrap}@media(max-width:700px){.q-listrow{gap:7px 9px;padding:12px 13px}.q-listrow>div:first-child{flex:1 1 100%;min-width:0}.q-listrow .lead-badge{order:2;flex:none}.q-listrow>div:nth-child(3){order:3;min-width:0;flex:1;text-align:right}.q-listrow button{order:4;flex:none;font-size:11px;padding:6px 10px}}'
   +'.q-card{padding:18px}'
   +'.q-chips{display:flex;gap:7px;overflow-x:auto;margin:12px 0 2px;padding-bottom:4px;scrollbar-width:none}.q-chips::-webkit-scrollbar{display:none}'
   +'.q-chip{flex:none;background:transparent;border:1px solid rgba(23,19,16,.14);border-radius:999px;padding:7px 15px;font-size:11.5px;font-weight:700;color:var(--ink2);cursor:pointer;white-space:nowrap;font-family:inherit;transition:all .15s}.q-chip:hover{border-color:var(--ink);color:var(--ink)}'
@@ -1465,6 +1482,7 @@ function qNewProduct(){
       {key:'cat',   label:'Category *', type:'select', options:catOpts},
       {key:'price', label:'Selling price \u20b9 *', type:'number', placeholder:'3200'},
       {key:'mat',   label:'Material (optional)', placeholder:'PVC / Metal frame'},
+      {key:'image', label:'Photo (optional)', type:'file'},
       {key:'qty',   label:'Quantity for this quote', type:'number', placeholder:'1'}
     ],
     submitLabel:'Create & add to quote',
@@ -1482,7 +1500,7 @@ function qNewProduct(){
       if(dupe){
         toast('\u201c'+dupe.name+'\u201d already exists \u2014 added that instead','#C8860A');
         var di=_quoteProds.indexOf(_quoteProds.find(function(p){return p.id===dupe.id;}));
-        if(di>-1){ for(var k=0;k<qty;k++) qAddProd(di); }
+        if(di>-1 && typeof _quote!=='undefined' && _quote && _quote.items && document.getElementById('q-prods')){ for(var k=0;k<qty;k++) qAddProd(di); }
         return;
       }
 
@@ -1490,17 +1508,19 @@ function qNewProduct(){
       var prod={ id:pid, name:name, cat:cat, icon:(typeof CAT_ICON_KEY!=='undefined'?(CAT_ICON_KEY[cat]||'chair'):'chair'),
                  tier:priceTier(price), price:price, stock:true,
                  material:(v.mat||'').trim(), themes:['cafe'], _custom:true };
+      if(v.image) prod.image=v.image;
       prods.push(prod);
       saveProds(prods);
 
       // Refresh the picker from the saved catalogue, then add to the quote
       _quoteProds=loadProds()||[];
+      var hasQuote=(typeof _quote!=='undefined' && _quote && _quote.items);
+      if(!hasQuote){ toast('\u201c'+name+'\u201d added to catalogue','#1B7A4D'); return; }
       var idx=_quoteProds.indexOf(_quoteProds.find(function(p){return p.id===pid;}));
-      if(idx>-1){ for(var j=0;j<qty;j++) qAddProd(idx); }
+      if(idx>-1 && document.getElementById('q-prods')){ for(var j=0;j<qty;j++) qAddProd(idx); }
       else {
-        // Fallback: still get it onto the quote even if the picker missed it
-        _quote.items.push({pid:pid,name:name,image:'',hsn:GH_SELLER.defaultHsn,tax:GH_SELLER.defaultGst,qty:qty,rate:price,per:'PCS'});
-        qRenderItems(); qRenderTotals();
+        _quote.items.push({pid:pid,name:name,image:prod.image||'',hsn:GH_SELLER.defaultHsn,tax:GH_SELLER.defaultGst,qty:qty,rate:price,per:'PCS'});
+        try{ qRenderItems(); qRenderTotals(); }catch(e){}
       }
       toast('\u201c'+name+'\u201d created \u00b7 added \u00d7'+qty,'#1B7A4D');
     }
