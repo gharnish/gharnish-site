@@ -880,7 +880,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 71</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 73</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -2435,11 +2435,12 @@ function renderProducts(){
     +selectionBar(null)
     // Toolbar
     +'<div class="tool-row">'
-    +'<div class="search-box"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="prod-search" placeholder="Search name or SKU…" value="'+(q)+'" oninput="renderProducts()"></div>'
+    +'<div class="search-box"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="prod-search" placeholder="Search name or SKU…" value="'+(q)+'" oninput="prodApplyFilter()"></div>'
     +'<select class="filter-sel" id="prod-cat-filter" onchange="renderProducts()"><option value="">All Categories</option>'+ALL_CATS.map(([k,v])=>'<option value="'+k+'" '+(cat===k?'selected':'')+'>'+v+'</option>').join('')+'<option value="__internal__" '+(cat==='__internal__'?'selected':'')+'>\ud83d\udd12 Internal / custom only</option><option value="__hidden__" '+(cat==='__hidden__'?'selected':'')+'>\ud83d\ude48 Hidden only</option></select>'
     +'<select class="filter-sel" id="prod-stk-filter" onchange="renderProducts()"><option value="">All Stock</option><option value="in" '+(stk==='in'?'selected':'')+'>In Stock</option><option value="out" '+(stk==='out'?'selected':'')+'>Coming Soon</option></select>'
     +'</div>'
     // Checkbox select all
+    +'<div id="prod-results">'
     +(filtered.length?
       '<div style="display:flex;align-items:center;gap:8px;padding:0 0 8px;font-size:12.5px;color:var(--ink3)">'
       +'<div class="prod-cb" id="select-all-cb" onclick="toggleSelectAll()"></div><span>Select all '+filtered.length+'</span>'
@@ -2449,9 +2450,13 @@ function renderProducts(){
       ? filtered.map((p,i)=>prodRow(p,i,filtered.length)).join('')
       : '<div class="empty-state"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg><div>No products found</div></div>'
     )
-    +'</div>';
+    +'</div></div>';
 
-  // Bind rows
+  prodBindRows(filtered, q, cat, stk);
+}
+
+function prodBindRows(filtered, q, cat, stk){
+
   var filtersActive = !!(q||cat||stk);
   var canReorder = reorderMode && !filtersActive;
   filtered.forEach(p=>{
@@ -2473,6 +2478,27 @@ function renderProducts(){
       }
     }
   });
+}
+
+function prodApplyFilter(){
+  var wrap=document.getElementById('prod-results'); if(!wrap){ renderProducts(); return; }
+  var prods=loadProds();
+  var q=(document.getElementById('prod-search')?.value||'').toLowerCase();
+  var cat=document.getElementById('prod-cat-filter')?.value||'';
+  var stk=document.getElementById('prod-stk-filter')?.value||'';
+  var filtered=prods.filter(function(p){
+    if(q&&!p.name.toLowerCase().includes(q)&&!(p.id||'').toLowerCase().includes(q)) return false;
+    if(cat==='__internal__'){ if(p.internal!==true) return false; } else if(cat==='__hidden__'){ if(p.hidden!==true) return false; } else if(cat&&p.cat!==cat) return false;
+    if(stk==='in'&&!p.stock) return false;
+    if(stk==='out'&&p.stock) return false;
+    return true;
+  });
+  var h=(filtered.length?'<div style="display:flex;align-items:center;gap:8px;padding:0 0 8px;font-size:12.5px;color:var(--ink3)"><div class="prod-cb" id="select-all-cb" onclick="toggleSelectAll()"></div><span>Select all '+filtered.length+'</span></div>':'')
+    +'<div class="prod-list">'
+    +(filtered.length ? filtered.map(function(p,i){return prodRow(p,i,filtered.length);}).join('') : '<div class="empty-state"><svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg><div>No products found</div></div>')
+    +'</div>';
+  wrap.innerHTML=h;
+  prodBindRows(filtered, q, cat, stk);
 }
 
 function pfToggleTools(e){ if(e){e.stopPropagation();} var m=document.getElementById('pf-tools-menu'); if(!m)return; var open=m.classList.toggle('open'); if(open){ setTimeout(function(){ document.addEventListener('click',pfCloseTools); },0); } else { document.removeEventListener('click',pfCloseTools); } }
@@ -3383,7 +3409,7 @@ function loadProjectsCloud(force){
   if(!supa) return; if(_projCloudLoaded && !force) return; _projCloudLoaded=true;
   supa.from('projects').select('*').then(function(r){
     if(r.error||!r.data) return;
-    var cloud=r.data.map(function(p){ return {id:p.id,name:p.name,loc:p.loc||'',type:p.type||'',covers:p.covers||0,year:p.year||'',color:p.color||'#C8860A',products:p.products||'',budget:p.budget||'',timeline:p.timeline||'',media:p.media||[],visible:p.visible!==false}; });
+    var cloud=r.data.map(function(p){ return {id:p.id,name:p.name,loc:p.loc||'',type:p.type||'',covers:p.covers||0,year:p.year||'',color:p.color||'#C8860A',products:p.products||'',budget:p.budget||'',timeline:p.timeline||'',media:p.media||[],visible:p.visible!==false,lat:(p.lat==null?null:+p.lat),lng:(p.lng==null?null:+p.lng),place_id:p.place_id||'',address:p.address||''}; });
     if(cloud.length){ lsSaveProjects(cloud); if(document.querySelector('.proj-list-adm')||document.querySelector('.proj-search-adm')){ renderProjects(); } }
   }, function(){});
 }
@@ -3418,14 +3444,158 @@ function renderProjects(){
     +'</div>';
 }
 
+var GMAPS_KEY='';
+var _gmapsLoading=null;
+function gmapsHTML(){
+  var k=GMAPS_KEY||'';
+  var masked=k?(k.slice(0,8)+'\u2026'+k.slice(-4)):'';
+  return '<div class="settings-group"><div class="settings-label">Google Maps</div>'
+    +'<div class="settings-card">'
+    +'<div style="font-size:12.5px;color:var(--ink3);margin-bottom:10px">Powers location autocomplete on projects and the customer-facing projects map. '
+    +'<b style="color:var(--ink2)">Restrict the key to your domains</b> (HTTP referrers: <code>gharnish.app/*</code>, <code>*.gharnish.app/*</code>) and enable <b style="color:var(--ink2)">Maps JavaScript API</b> + <b style="color:var(--ink2)">Places API</b> + <b style="color:var(--ink2)">Geocoding API</b>.</div>'
+    +'<div class="f-field"><label>Browser API key</label><input class="f-input" id="gm-key" value="'+escA(k)+'" placeholder="AIza\u2026" autocomplete="off"></div>'
+    +(k?'<div style="font-size:11.5px;color:#1B7A4D;font-weight:700;margin:6px 0">\u2713 Key set ('+escA(masked)+')</div>':'<div style="font-size:11.5px;color:#C8860A;margin:6px 0">No key yet \u2014 maps and autocomplete are off.</div>')
+    +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
+    +'<button class="add-btn" onclick="saveGmapsKey()" style="margin:0">Save key</button>'
+    +'<button class="spec-add-btn" onclick="gmGeocodeAll()" style="margin:0">\ud83d\udccd Geocode existing projects</button>'
+    +'</div>'
+    +'<div id="gm-geo-log" style="font-size:11.5px;color:var(--ink3);margin-top:9px"></div>'
+    +'</div></div>';
+}
+function gmRepaint(){ var el=document.getElementById('gm-slot'); if(el) el.innerHTML=gmapsHTML(); }
+// Backfill lat/lng for projects that only have text locations.
+function gmGeocodeAll(){
+  if(!GMAPS_KEY){ toast('Save an API key first','#C62828'); return; }
+  var log=document.getElementById('gm-geo-log');
+  var projects=getProjects().filter(function(p){ return (p.lat==null||p.lng==null) && (p.loc||'').trim(); });
+  if(!projects.length){ if(log) log.textContent='All projects already have a pin.'; return; }
+  ghConfirm('Look up coordinates for '+projects.length+' project(s) from their location text? You can fine-tune any pin afterwards by editing the project.', function(){
+    gmapsReady().then(function(){
+      var gc=new google.maps.Geocoder(), done=0, ok=0, i=0;
+      function next(){
+        if(i>=projects.length){
+          var all=getProjects(); lsSaveProjects(all); syncProjectsCloud(all);
+          if(log) log.innerHTML='<b style="color:#1B7A4D">Done \u2014 '+ok+' of '+projects.length+' pinned.</b> Re-check any that look off.';
+          toast('Geocoded '+ok+'/'+projects.length,'#1B7A4D'); return;
+        }
+        var p=projects[i++];
+        gc.geocode({address:p.loc,componentRestrictions:{country:'IN'}},function(res,status){
+          done++;
+          if(status==='OK'&&res&&res[0]){
+            var all=getProjects(); var t=all.find(function(x){return x.id===p.id;});
+            if(t){ t.lat=res[0].geometry.location.lat(); t.lng=res[0].geometry.location.lng(); t.address=res[0].formatted_address||''; t.place_id=res[0].place_id||''; }
+            lsSaveProjects(all); ok++;
+          }
+          if(log) log.textContent='Looking up\u2026 '+done+'/'+projects.length+' ('+ok+' found)';
+          setTimeout(next,220); // stay well under rate limits
+        });
+      }
+      next();
+    }).catch(function(){ toast('Google Maps failed to load','#C62828'); });
+  });
+}
+function loadGmapsKey(cb){
+  if(!supa){ if(cb)cb(); return; }
+  supa.from('app_settings').select('value').eq('key','gmaps_key').maybeSingle().then(function(r){
+    try{ var v=(r&&r.data)?r.data.value:''; if(typeof v==='string'&&v.charAt(0)==='"') v=JSON.parse(v); GMAPS_KEY=v||''; }catch(e){ GMAPS_KEY=''; }
+    if(cb)cb();
+  },function(){ if(cb)cb(); });
+}
+function saveGmapsKey(){
+  var k=(document.getElementById('gm-key')?.value||'').trim();
+  supa.from('app_settings').upsert({key:'gmaps_key',value:JSON.stringify(k)},{onConflict:'key'}).then(function(r){
+    if(r&&r.error){ toast('Save failed: '+r.error.message,'#C62828'); return; }
+    GMAPS_KEY=k; toast(k?'Google Maps key saved':'Key cleared','#1B7A4D'); gmRepaint();
+  },function(){ toast('Save failed','#C62828'); });
+}
+// Loads the Maps JS API once. Resolves when google.maps is ready.
+function gmapsReady(){
+  if(_gmapsLoading) return _gmapsLoading;
+  _gmapsLoading=new Promise(function(res,rej){
+    if(window.google&&window.google.maps&&window.google.maps.places){ res(); return; }
+    if(!GMAPS_KEY){ rej(new Error('no-key')); return; }
+    var s=document.createElement('script');
+    s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_KEY)+'&libraries=places&loading=async';
+    s.async=true; s.defer=true;
+    s.onload=function(){ res(); };
+    s.onerror=function(){ _gmapsLoading=null; rej(new Error('load-failed')); };
+    document.head.appendChild(s);
+  });
+  return _gmapsLoading;
+}
+function gmSetLatLng(lat,lng,addr,pid){
+  var a=document.getElementById('jf-lat'), b=document.getElementById('jf-lng');
+  var c=document.getElementById('jf-address'), d=document.getElementById('jf-placeid');
+  if(a) a.value=(lat==null?'':lat);
+  if(b) b.value=(lng==null?'':lng);
+  if(c && addr!=null) c.value=addr;
+  if(d && pid!=null) d.value=pid;
+  gmStatus();
+}
+function gmStatus(){
+  var el=document.getElementById('jf-geo-status'); if(!el) return;
+  var la=document.getElementById('jf-lat')?.value, ln=document.getElementById('jf-lng')?.value;
+  if(la&&ln){ el.innerHTML='<span style="color:#1B7A4D;font-weight:700">\u2713 Pinned</span> <span style="color:var(--ink3)">'+(+la).toFixed(5)+', '+(+ln).toFixed(5)+'</span> \u00b7 <a onclick="gmClearPin()" style="color:#C62828;cursor:pointer;font-weight:700">Clear</a>'; }
+  else { el.innerHTML='<span style="color:var(--ink3)">No pin yet \u2014 pick a suggestion, or use \u201cFind on map\u201d.</span>'; }
+}
+function gmClearPin(){ gmSetLatLng(null,null,'',''); var m=document.getElementById('jf-map'); if(m) m.style.display='none'; }
+// Attach Places Autocomplete to the Location field + live map preview
+var _gmMap=null,_gmMarker=null;
+function gmInitForm(){
+  gmStatus();
+  if(!GMAPS_KEY){ var w=document.getElementById('jf-geo-warn'); if(w) w.style.display='block'; return; }
+  gmapsReady().then(function(){
+    var inp=document.getElementById('jf-loc'); if(!inp) return;
+    var ac=new google.maps.places.Autocomplete(inp,{fields:['geometry','formatted_address','place_id','name'],componentRestrictions:{country:'in'}});
+    ac.addListener('place_changed',function(){
+      var p=ac.getPlace();
+      if(!p||!p.geometry||!p.geometry.location){ toast('Pick a suggestion from the list','#C8860A'); return; }
+      var lat=p.geometry.location.lat(), lng=p.geometry.location.lng();
+      gmSetLatLng(lat,lng,p.formatted_address||'',p.place_id||'');
+      if(p.name && !document.getElementById('jf-loc').value) document.getElementById('jf-loc').value=p.name;
+      gmShowMap(lat,lng);
+    });
+    var la=document.getElementById('jf-lat')?.value, ln=document.getElementById('jf-lng')?.value;
+    if(la&&ln) gmShowMap(+la,+ln);
+  }).catch(function(e){
+    var w=document.getElementById('jf-geo-warn'); if(w){ w.style.display='block'; w.textContent=(e&&e.message==='no-key')?'Add a Google Maps API key in Settings to enable location lookup.':'Google Maps failed to load \u2014 check the key and its referrer restrictions.'; }
+  });
+}
+function gmShowMap(lat,lng){
+  var host=document.getElementById('jf-map'); if(!host) return;
+  host.style.display='block';
+  gmapsReady().then(function(){
+    var pos={lat:+lat,lng:+lng};
+    if(!_gmMap){
+      _gmMap=new google.maps.Map(host,{center:pos,zoom:15,mapTypeControl:false,streetViewControl:false,fullscreenControl:false});
+      _gmMarker=new google.maps.Marker({position:pos,map:_gmMap,draggable:true});
+      _gmMarker.addListener('dragend',function(ev){ gmSetLatLng(ev.latLng.lat(),ev.latLng.lng()); toast('Pin moved','#1B7A4D'); });
+    } else { _gmMap.setCenter(pos); _gmMarker.setPosition(pos); }
+  }).catch(function(){});
+}
+// Geocode the typed text (for when you don't pick a suggestion)
+function gmFindOnMap(){
+  var q=(document.getElementById('jf-loc')?.value||'').trim();
+  if(!q){ toast('Type a location first','#C62828'); return; }
+  if(!GMAPS_KEY){ toast('Add a Google Maps API key in Settings','#C8860A'); return; }
+  gmapsReady().then(function(){
+    new google.maps.Geocoder().geocode({address:q,componentRestrictions:{country:'IN'}},function(res,status){
+      if(status!=='OK'||!res||!res[0]){ toast('Could not find that location','#C62828'); return; }
+      var g=res[0], lat=g.geometry.location.lat(), lng=g.geometry.location.lng();
+      gmSetLatLng(lat,lng,g.formatted_address||'',g.place_id||'');
+      gmShowMap(lat,lng); toast('Location pinned \u2713','#1B7A4D');
+    });
+  }).catch(function(){ toast('Google Maps failed to load','#C62828'); });
+}
 function openProjForm(id){
   editingProjId=id||null;
   const projects=getProjects();
   const p=id?projects.find(x=>x.id===id):null;
   const mc=document.getElementById('main-content');
   mc.classList.remove('mc-wide');
-  mc.innerHTML='<div class="page-hd" style="align-items:center">'+'<button onclick="projFormBack()" style="background:var(--c2);border:none;border-radius:10px;width:38px;height:38px;cursor:pointer;font-size:20px;color:var(--ink);margin-right:12px;flex:none">&#8592;</button>'+'<div><div class="page-title">'+(id?'Edit Project':'Add Project')+'</div><div class="page-sub">'+(id?'Update details, linked furniture and media':'Add a completed project to your portfolio')+'</div></div>'+'<button class="add-btn" onclick="saveProj()" style="margin-left:auto">Save Project</button>'+'</div>'+'<div class="proj-edit-wrap">'+'<div class="proj-edit-main">'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Project details</div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Project Name *</label><input class="f-input" id="jf-name" value="'+escA(p?.name||'')+'" placeholder="Always Sunday"></div>'+      '<div class="f-field"><label>Year</label><input class="f-input" id="jf-year" value="'+escA(p?.year||new Date().getFullYear())+'" placeholder="2024"></div>'+    '</div>'+    '<div class="f-field"><label>Location</label><input class="f-input" id="jf-loc" value="'+escA(p?.loc||'')+'" placeholder="Hyderabad, Telangana"></div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Venue Type</label><input class="f-input" id="jf-type" value="'+escA(p?.type||'')+'" placeholder="Fine Dining / Caf\u00e9 / QSR"></div>'+      '<div class="f-field"><label>Covers (seats)</label><input class="f-input" type="number" id="jf-covers" value="'+escA(p?.covers||'')+'" placeholder="60"></div>'+    '</div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Budget range</label><input class="f-input" id="jf-budget" value="'+escA(p?.budget||'')+'" placeholder="\u20b910\u201320L"></div>'+      '<div class="f-field"><label>Delivery timeline</label><input class="f-input" id="jf-timeline" value="'+escA(p?.timeline||'')+'" placeholder="10\u201314 days"></div>'+    '</div>'+    '<div class="f-field"><label>Products Used (short description)</label><textarea class="f-textarea" id="jf-products" placeholder="Dining Chairs, Round Tables, Bar Stools\u2026">'+escA(p?.products||'')+'</textarea></div>'+  '</div>'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Furniture linked \u2014 powers \u201cStart With This Setup\u201d</div>'+    '<div style="font-size:12.5px;color:var(--ink3);margin-bottom:12px">Link real catalogue products with quantities. Customers load this exact list into a quote in one tap.</div>'+    '<div id="projlink-list"></div>'+    '<div id="projlink-total" style="font-size:13px;color:var(--ink2);font-weight:800;margin:8px 0 12px"></div>'+    '<div id="projlink-picker"></div>'+    '<button class="spec-add-btn" id="projlink-addbtn" onclick="projLinkPickInline()" style="margin:2px 0 0">+ Link a product</button>'+  '</div>'+'</div>'+'<div class="proj-edit-side">'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Photos &amp; Media</div>'+    '<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Upload photos/videos or paste image/video/YouTube links. Shown on the project in the live app.</div>'+    '<div id="media-list">'+renderMediaRows(p?.media||[])+'</div>'+    '<input type="file" id="proj-media-file" accept="image/*,video/*" multiple style="display:none" onchange="uploadProjMedia(this)">'+    '<div style="display:flex;gap:8px;margin:10px 0 4px">'+      '<button class="spec-add-btn" onclick="document.getElementById(\'proj-media-file\').click()" style="margin:0;flex:1">&#11014; Upload</button>'+      '<button class="spec-add-btn" onclick="addMediaRow()" style="margin:0;flex:1">+ Add URL</button>'+    '</div>'+  '</div>'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Card Colour</div>'+    '<div style="display:flex;align-items:center;gap:10px"><input type="color" id="jf-color" value="'+(p?.color||'#C8860A')+'" style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer"><span id="jf-color-val" style="font-size:13px;color:var(--ink2)">'+(p?.color||'#C8860A')+'</span></div>'+    '<div style="font-size:12px;color:var(--ink3);margin-top:8px">Visible on the public projects page.</div>'+  '</div>'+  '<button class="add-btn" onclick="saveProj()" style="width:100%;justify-content:center;margin-top:4px">Save Project</button>'+  '<button class="btn-cancel" onclick="projFormBack()" style="width:100%;justify-content:center;margin-top:8px">Cancel</button>'+'</div>'+'</div>';
+  mc.innerHTML='<div class="page-hd" style="align-items:center">'+'<button onclick="projFormBack()" style="background:var(--c2);border:none;border-radius:10px;width:38px;height:38px;cursor:pointer;font-size:20px;color:var(--ink);margin-right:12px;flex:none">&#8592;</button>'+'<div><div class="page-title">'+(id?'Edit Project':'Add Project')+'</div><div class="page-sub">'+(id?'Update details, linked furniture and media':'Add a completed project to your portfolio')+'</div></div>'+'<button class="add-btn" onclick="saveProj()" style="margin-left:auto">Save Project</button>'+'</div>'+'<div class="proj-edit-wrap">'+'<div class="proj-edit-main">'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Project details</div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Project Name *</label><input class="f-input" id="jf-name" value="'+escA(p?.name||'')+'" placeholder="Always Sunday"></div>'+      '<div class="f-field"><label>Year</label><input class="f-input" id="jf-year" value="'+escA(p?.year||new Date().getFullYear())+'" placeholder="2024"></div>'+    '</div>'+    '<div class="f-field"><label>Location</label>'+'<div style="display:flex;gap:8px;align-items:center">'+'<input class="f-input" id="jf-loc" style="flex:1" value="'+escA(p?.loc||'')+'" placeholder="Start typing \u2014 e.g. Telusa, Kokapet" autocomplete="off">'+'<button type="button" class="spec-add-btn" onclick="gmFindOnMap()" style="margin:0;flex:none;white-space:nowrap">\ud83d\udccd Find on map</button>'+'</div>'+'<div id="jf-geo-status" style="font-size:11.5px;margin-top:6px"></div>'+'<div id="jf-geo-warn" style="display:none;font-size:11.5px;color:#C8860A;margin-top:5px;background:#FFF8E7;border-radius:7px;padding:7px 9px">Add a Google Maps API key in Settings to enable location lookup.</div>'+'<div id="jf-map" style="display:none;height:190px;border-radius:12px;margin-top:9px;border:1px solid var(--line)"></div>'+'<input type="hidden" id="jf-lat" value="'+escA(p?.lat==null?'':p.lat)+'">'+'<input type="hidden" id="jf-lng" value="'+escA(p?.lng==null?'':p.lng)+'">'+'<input type="hidden" id="jf-placeid" value="'+escA(p?.place_id||'')+'">'+'<input type="hidden" id="jf-address" value="'+escA(p?.address||'')+'">'+'</div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Venue Type</label><input class="f-input" id="jf-type" value="'+escA(p?.type||'')+'" placeholder="Fine Dining / Caf\u00e9 / QSR"></div>'+      '<div class="f-field"><label>Covers (seats)</label><input class="f-input" type="number" id="jf-covers" value="'+escA(p?.covers||'')+'" placeholder="60"></div>'+    '</div>'+    '<div class="f-row">'+      '<div class="f-field"><label>Budget range</label><input class="f-input" id="jf-budget" value="'+escA(p?.budget||'')+'" placeholder="\u20b910\u201320L"></div>'+      '<div class="f-field"><label>Delivery timeline</label><input class="f-input" id="jf-timeline" value="'+escA(p?.timeline||'')+'" placeholder="10\u201314 days"></div>'+    '</div>'+    '<div class="f-field"><label>Products Used (short description)</label><textarea class="f-textarea" id="jf-products" placeholder="Dining Chairs, Round Tables, Bar Stools\u2026">'+escA(p?.products||'')+'</textarea></div>'+  '</div>'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Furniture linked \u2014 powers \u201cStart With This Setup\u201d</div>'+    '<div style="font-size:12.5px;color:var(--ink3);margin-bottom:12px">Link real catalogue products with quantities. Customers load this exact list into a quote in one tap.</div>'+    '<div id="projlink-list"></div>'+    '<div id="projlink-total" style="font-size:13px;color:var(--ink2);font-weight:800;margin:8px 0 12px"></div>'+    '<div id="projlink-picker"></div>'+    '<button class="spec-add-btn" id="projlink-addbtn" onclick="projLinkPickInline()" style="margin:2px 0 0">+ Link a product</button>'+  '</div>'+'</div>'+'<div class="proj-edit-side">'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Photos &amp; Media</div>'+    '<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">Upload photos/videos or paste image/video/YouTube links. Shown on the project in the live app.</div>'+    '<div id="media-list">'+renderMediaRows(p?.media||[])+'</div>'+    '<input type="file" id="proj-media-file" accept="image/*,video/*" multiple style="display:none" onchange="uploadProjMedia(this)">'+    '<div style="display:flex;gap:8px;margin:10px 0 4px">'+      '<button class="spec-add-btn" onclick="document.getElementById(\'proj-media-file\').click()" style="margin:0;flex:1">&#11014; Upload</button>'+      '<button class="spec-add-btn" onclick="addMediaRow()" style="margin:0;flex:1">+ Add URL</button>'+    '</div>'+  '</div>'+  '<div class="proj-card-sec">'+    '<div class="f-section" style="margin-top:0">Card Colour</div>'+    '<div style="display:flex;align-items:center;gap:10px"><input type="color" id="jf-color" value="'+(p?.color||'#C8860A')+'" style="width:48px;height:40px;border:none;border-radius:8px;cursor:pointer"><span id="jf-color-val" style="font-size:13px;color:var(--ink2)">'+(p?.color||'#C8860A')+'</span></div>'+    '<div style="font-size:12px;color:var(--ink3);margin-top:8px">Visible on the public projects page.</div>'+  '</div>'+  '<button class="add-btn" onclick="saveProj()" style="width:100%;justify-content:center;margin-top:4px">Save Project</button>'+  '<button class="btn-cancel" onclick="projFormBack()" style="width:100%;justify-content:center;margin-top:8px">Cancel</button>'+'</div>'+'</div>';
   document.getElementById('jf-color')?.addEventListener('input',function(){ document.getElementById('jf-color-val').textContent=this.value; });
+  if(GMAPS_KEY) gmInitForm(); else loadGmapsKey(gmInitForm);
   projLinkLoad(id||null);
   mc.scrollTop=0;
 }
@@ -3482,7 +3652,10 @@ function syncProjectsCloud(projects){
   supa.from('projects').upsert(projects.map(p=>({
     id:p.id, name:p.name, loc:p.loc||'', type:p.type||'', covers:p.covers||0,
     year:String(p.year||''), color:p.color||'#C8860A', products:p.products||'',
-    media:p.media||[], visible:p.visible!==false
+    media:p.media||[], visible:p.visible!==false,
+    budget:p.budget||'', timeline:p.timeline||'',
+    lat:(p.lat==null?null:+p.lat), lng:(p.lng==null?null:+p.lng),
+    place_id:p.place_id||'', address:p.address||''
   }))).then(({error})=>{ if(error) toast('Cloud sync failed: '+error.message,'#C62828'); else toast('Synced to cloud'); });
 }
 function deleteProjectCloud(id){ if(supa) supa.from('projects').delete().eq('id',id).then(({error})=>{ if(error) console.warn('[GH] project cloud delete:',error.message); }); }
@@ -3522,7 +3695,7 @@ function saveProj(){
   if(!name){ toast('Name is required','#C62828'); return; }
   const projects=getProjects();
   const pid=editingProjId||('P'+String(Date.now()).slice(-4));
-  const media=projMedia.filter(u=>u.trim()); const proj={id:pid,name,loc:document.getElementById('jf-loc')?.value||'',type:document.getElementById('jf-type')?.value||'',covers:parseInt(document.getElementById('jf-covers')?.value)||0,year:document.getElementById('jf-year')?.value||'',color:document.getElementById('jf-color')?.value||'#C8860A',products:document.getElementById('jf-products')?.value||'',visible:true}; if(media.length) proj.media=media;
+  const media=projMedia.filter(u=>u.trim()); var _pv=(function(){var v=document.getElementById('jf-lat')?.value; return (v===''||v==null)?null:parseFloat(v);})();var _pg=(function(){var v=document.getElementById('jf-lng')?.value; return (v===''||v==null)?null:parseFloat(v);})();const proj={id:pid,name,loc:document.getElementById('jf-loc')?.value||'',type:document.getElementById('jf-type')?.value||'',covers:parseInt(document.getElementById('jf-covers')?.value)||0,year:document.getElementById('jf-year')?.value||'',color:document.getElementById('jf-color')?.value||'#C8860A',products:document.getElementById('jf-products')?.value||'',budget:document.getElementById('jf-budget')?.value||'',timeline:document.getElementById('jf-timeline')?.value||'',lat:(isNaN(_pv)?null:_pv),lng:(isNaN(_pg)?null:_pg),place_id:document.getElementById('jf-placeid')?.value||'',address:document.getElementById('jf-address')?.value||'',visible:true}; if(media.length) proj.media=media;
   if(editingProjId){ const idx=projects.findIndex(p=>p.id===editingProjId); if(idx>=0) projects[idx]=proj; else projects.push(proj); }
   else projects.push(proj);
   lsSaveProjects(projects); syncProjectsCloud(projects); projLinkSaveCloud(pid); toast('Project saved'); projFormBack();
@@ -3753,6 +3926,8 @@ function renderSettings(){
     +'<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="display:none" onload="loadMgrEmails(mgrEmailsPaint)">'
     +'<div id="fin-slot"></div>'
     +'<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="display:none" onload="loadFinishes(finRepaint)">'
+    +'<div id="gm-slot"></div>'
+    +'<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" style="display:none" onload="loadGmapsKey(gmRepaint)">'
 
     +'<div class="settings-group"><div class="settings-label">WhatsApp Business</div>'
     +'<div class="settings-card">'

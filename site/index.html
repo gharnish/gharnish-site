@@ -111,6 +111,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 
+/* Projects map */
+.ow-map{height:300px;border-radius:16px;margin:0 16px 18px;max-width:1048px;border:1px solid var(--line);background:var(--c2)}
+.ow-near{display:inline-flex;align-items:center;gap:6px;margin-top:12px;background:var(--ink);color:#fff;border:none;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+.ow-near:disabled{opacity:.6;cursor:default}
+.ow-near-on{font-size:12px;color:#1B7A4D;font-weight:700;margin-left:10px}
+.hm-map-wrap{position:relative;margin:12px 16px 0}
+.hm-map{height:230px;border-radius:16px;border:1px solid var(--line);background:var(--c2)}
+.hm-near{position:absolute;right:12px;bottom:12px;margin:0;box-shadow:0 4px 14px rgba(0,0,0,.25)}
+@media(max-width:640px){.ow-map{height:230px}.hm-map{height:190px}}
+
+
 /* Our Work — in-app projects list */
 .ow-hero{padding:26px 16px 18px;max-width:1080px;margin:0 auto}
 .ow-eyebrow{font-size:11px;letter-spacing:.14em;font-weight:800;color:var(--g);margin-bottom:7px}
@@ -3226,11 +3237,103 @@ function ghLightbox(i){
 }
 function ghLbClose(){ var ov=document.getElementById('gh-lb'); if(ov){ ov.classList.remove('on'); setTimeout(function(){ov.remove();},160); } }
 function ghBrowseCatalogue(){ try{ S.selectedProject=null; }catch(e){} if(typeof goToCatalog==='function'){ goToCatalog('all'); } else { S.tab='home'; S.homeView='catalog'; render(); } window.scrollTo({top:0,behavior:'smooth'}); }
+// ── Google Maps (customer) ──────────────────────────────
+var GMAPS_KEY='', _ghMapsP=null, GH_GEO=null;
+function ghLoadMapsKey(){
+  try{
+    if(typeof supa==='undefined'||!supa) return;
+    supa.from('app_settings').select('value').eq('key','gmaps_key').maybeSingle().then(function(r){
+      try{ var v=(r&&r.data)?r.data.value:''; if(typeof v==='string'&&v.charAt(0)==='"') v=JSON.parse(v); GMAPS_KEY=v||''; }catch(e){}
+    },function(){});
+  }catch(e){}
+}
+function ghMapsReady(){
+  if(_ghMapsP) return _ghMapsP;
+  _ghMapsP=new Promise(function(res,rej){
+    if(window.google&&window.google.maps){ res(); return; }
+    if(!GMAPS_KEY){ rej(new Error('no-key')); return; }
+    var s=document.createElement('script');
+    s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_KEY)+'&loading=async';
+    s.async=true; s.defer=true;
+    s.onload=function(){ res(); };
+    s.onerror=function(){ _ghMapsP=null; rej(new Error('load-failed')); };
+    document.head.appendChild(s);
+  });
+  return _ghMapsP;
+}
+function ghProjsWithGeo(){
+  return (typeof PROJECTS!=='undefined'?PROJECTS:[]).filter(function(p){
+    return p && p.visible!==false && p.lat!=null && p.lng!=null && !isNaN(+p.lat) && !isNaN(+p.lng);
+  });
+}
+// Great-circle distance in km
+function ghDistKm(a,b,c,d){
+  var R=6371, dLat=(c-a)*Math.PI/180, dLon=(d-b)*Math.PI/180;
+  var x=Math.sin(dLat/2)*Math.sin(dLat/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+// Ask the browser for location, then re-render. Never auto-prompts.
+function ghFindNearMe(){
+  if(!navigator.geolocation){ ghToast&&ghToast('Location not supported on this device'); return; }
+  var btn=document.getElementById('ow-near-btn'); if(btn){ btn.textContent='Locating\u2026'; btn.disabled=true; }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    GH_GEO={lat:pos.coords.latitude,lng:pos.coords.longitude};
+    if(S.tab==='ourwork') renderOurWork(); else render();
+  },function(){
+    if(btn){ btn.textContent='\ud83d\udccd Projects near me'; btn.disabled=false; }
+    alert('Could not get your location. Check location permission for this site.');
+  },{enableHighAccuracy:false,timeout:8000,maximumAge:600000});
+}
+// Renders pins into a container. list = projects with lat/lng.
+function ghRenderMap(hostId,list,opts){
+  opts=opts||{};
+  var host=document.getElementById(hostId); if(!host) return;
+  if(!list.length){ host.style.display='none'; return; }
+  ghMapsReady().then(function(){
+    var b=new google.maps.LatLngBounds();
+    var map=new google.maps.Map(host,{
+      mapTypeControl:false, streetViewControl:false, fullscreenControl:false,
+      zoom:opts.zoom||12, center:{lat:+list[0].lat,lng:+list[0].lng},
+      styles:[{featureType:'poi',elementType:'labels',stylers:[{visibility:'off'}]}]
+    });
+    var info=new google.maps.InfoWindow();
+    list.forEach(function(p){
+      var pos={lat:+p.lat,lng:+p.lng};
+      var mk=new google.maps.Marker({position:pos,map:map,title:p.name});
+      mk.addListener('click',function(){
+        info.setContent('<div style="font-family:Inter,sans-serif;min-width:150px"><div style="font-weight:800;font-size:14px;margin-bottom:2px">'+(p.name||'')+'</div><div style="font-size:12px;color:#6B5C40">'+(p.type||'')+(p.covers?(' \u00b7 '+p.covers+' covers'):'')+'</div><div style="font-size:12px;color:#6B5C40;margin-bottom:6px">'+(p.loc||'')+'</div><a href="/our-work/'+ghProjSlug(p)+'" onclick="event.preventDefault();ghLbCloseAll&&ghLbCloseAll();openProject(\''+p.id+'\')" style="color:#C8860A;font-weight:700;font-size:12.5px;cursor:pointer">Buy this look \u2192</a></div>');
+        info.open(map,mk);
+      });
+      b.extend(pos);
+    });
+    if(GH_GEO){
+      b.extend(GH_GEO);
+      new google.maps.Marker({position:GH_GEO,map:map,title:'You',
+        icon:{path:google.maps.SymbolPath.CIRCLE,scale:7,fillColor:'#1A73E8',fillOpacity:1,strokeColor:'#fff',strokeWeight:2}});
+    }
+    if(list.length>1||GH_GEO){ map.fitBounds(b,60); }
+    else { map.setCenter({lat:+list[0].lat,lng:+list[0].lng}); map.setZoom(opts.zoom||15); }
+  }).catch(function(){ host.style.display='none'; });
+}
 function renderOurWork(){
   var app=document.getElementById('app'); if(!app) return;
   var list=(typeof PROJECTS!=='undefined'?PROJECTS:[]).filter(function(p){ return p && p.visible!==false; });
   var H=[];
-  H.push('<div class="home-wrap"><div class="ow-hero"><div class="ow-eyebrow">OUR WORK</div><h1 class="ow-h1">300+ restaurants, cafes &amp; hotels furnished</h1><p class="ow-sub">Browse finished projects, open any one, and build a quote from the exact pieces we supplied.</p></div>');
+  var geo=ghProjsWithGeo();
+  if(GH_GEO){
+    list=list.slice().sort(function(a,b){
+      var da=(a.lat!=null&&a.lng!=null)?ghDistKm(GH_GEO.lat,GH_GEO.lng,+a.lat,+a.lng):1e9;
+      var db=(b.lat!=null&&b.lng!=null)?ghDistKm(GH_GEO.lat,GH_GEO.lng,+b.lat,+b.lng):1e9;
+      return da-db;
+    });
+  }
+  H.push('<div class="home-wrap"><div class="ow-hero"><div class="ow-eyebrow">OUR WORK</div><h1 class="ow-h1">300+ restaurants, cafes &amp; hotels furnished</h1><p class="ow-sub">Browse finished projects, open any one, and build a quote from the exact pieces we supplied.</p>');
+  if(geo.length){
+    H.push('<button id="ow-near-btn" class="ow-near" onclick="ghFindNearMe()">\ud83d\udccd Projects near me</button>');
+    if(GH_GEO) H.push('<span class="ow-near-on">Sorted by distance from you</span>');
+  }
+  H.push('</div>');
+  if(geo.length) H.push('<div id="ow-map" class="ow-map"></div>');
   if(!list.length){
     H.push('<div class="ow-empty">Projects are loading\u2026</div>');
   } else {
@@ -3246,7 +3349,9 @@ function renderOurWork(){
       H.push('<div class="proj-name">'+(pr.name||'')+'</div>');
       H.push('<div class="proj-type">'+(pr.type||'')+'</div>');
       H.push('</div>');
-      H.push('<div class="proj-foot"><span>'+(pr.loc||'')+'</span><span class="proj-covers">'+(pr.covers||0)+' covers</span></div>');
+      var dTxt='';
+      if(GH_GEO && pr.lat!=null && pr.lng!=null){ var dk=ghDistKm(GH_GEO.lat,GH_GEO.lng,+pr.lat,+pr.lng); dTxt=(dk<1?(Math.round(dk*1000)+' m'):(dk.toFixed(dk<10?1:0)+' km'))+' away'; }
+      H.push('<div class="proj-foot"><span>'+(dTxt||pr.loc||'')+'</span><span class="proj-covers">'+(pr.covers||0)+' covers</span></div>');
       H.push('</a>');
     });
     H.push('</div>');
@@ -3254,6 +3359,7 @@ function renderOurWork(){
   H.push('<div class="ow-cta"><button class="mq-cta2" onclick="ghBrowseCatalogue()">+ Browse full catalogue</button></div>');
   H.push('</div>');
   app.innerHTML=H.join('');
+  if(geo.length) ghRenderMap('ow-map',geo,{});
 }
 function goToOurWork(){ S.selectedProject=null; S.selectedProduct=null; S.tab='ourwork'; try{ if(location.pathname!=='/our-work') history.pushState({},'','/our-work'); }catch(e){} render(); setTimeout(function(){window.scrollTo(0,0);},20); }
 function goToLanding(){
@@ -3978,7 +4084,12 @@ function renderLanding(){
     H.push('<div class="proj-foot"><span>'+pr.loc+'</span><span class="proj-covers">'+pr.covers+' covers</span></div>');
     H.push('</a>');
   });
-  H.push('</div></div>');
+  H.push('</div>');
+  if(ghProjsWithGeo().length){
+    H.push('<div class="hm-map-wrap"><div id="home-map" class="hm-map"></div>'
+      +'<button id="ow-near-btn" class="ow-near hm-near" onclick="ghFindNearMe()">\ud83d\udccd Projects near me</button></div>');
+  }
+  H.push('</div>');
   // ── Picks for you + Recently viewed (free personalization) ──
   var ghPicks=getPicksForYou(), ghRecent=getRecentProducts();
   if(ghPicks.length){
@@ -4084,6 +4195,7 @@ function renderLanding(){
   H.push('</div>');
 
   app.innerHTML=H.join('');
+  try{ if(ghProjsWithGeo().length) ghRenderMap('home-map',ghProjsWithGeo(),{}); }catch(e){}
 
   applySectionOrder();
   // Bind phcard clicks
@@ -6000,6 +6112,9 @@ function openProject(id){
   if(!proj) return;
   S.selectedProject=proj; render(); setTimeout(function(){window.scrollTo(0,0);},30);
 }
+function ghPaintProjMap(proj){
+  try{ if(proj && proj.lat!=null && proj.lng!=null) ghRenderMap('pdx-map',[proj],{zoom:15}); }catch(e){}
+}
 function closeProject(){ S.selectedProject=null; try{ if(location.pathname.indexOf('/our-work/')===0){ history.pushState({},'', '/our-work'); } }catch(e){} render(); setTimeout(function(){window.scrollTo(0,0);},30); }
 
 function renderProjectDetail(proj){
@@ -6063,6 +6178,15 @@ function renderProjectDetail(proj){
     });
     H.push('</div></div>');
   }
+  // MAP
+  if(proj.lat!=null && proj.lng!=null){
+    H.push('<div class="pdx-card" style="padding:0;overflow:hidden">');
+    H.push('<div id="pdx-map" style="height:190px"></div>');
+    H.push('<div style="padding:11px 14px;font-size:12.5px;color:var(--ink3);display:flex;justify-content:space-between;gap:10px;align-items:center">');
+    H.push('<span>'+escH(proj.address||proj.loc||'')+'</span>');
+    H.push('<a href="https://www.google.com/maps/search/?api=1&query='+(+proj.lat)+','+(+proj.lng)+'" target="_blank" rel="noopener" style="color:var(--g);font-weight:700;white-space:nowrap;text-decoration:none">Directions \u2192</a>');
+    H.push('</div></div>');
+  }
   // FURNITURE
   H.push('<div class="pdx-card" id="proj-furniture-slot">');
   var textList=(proj.products||[]);
@@ -6085,6 +6209,7 @@ function renderProjectDetail(proj){
   app.innerHTML=H.join('');
   ghLoadProjFurniture(proj.id);
   ghProjMoreSections(proj);
+  ghPaintProjMap(proj);
 }
 function escH(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function ghProjMoreSections(proj){
@@ -7376,7 +7501,10 @@ async function loadProjectsFromSupabase(){
         covers:parseInt(r.covers)||0, year:String(r.year||''),
         color:r.color||'#C8860A',
         products:(typeof r.products==='string'?r.products.split(',').map(function(s){return s.trim();}).filter(Boolean):(r.products||[])),
-        media:(typeof r.media==='string'?(function(){try{return JSON.parse(r.media);}catch(e){return [];}})():(r.media||[]))
+        media:(typeof r.media==='string'?(function(){try{return JSON.parse(r.media);}catch(e){return [];}})():(r.media||[])),
+        budget:r.budget||'', timeline:r.timeline||'',
+        lat:(r.lat==null?null:+r.lat), lng:(r.lng==null?null:+r.lng),
+        address:r.address||'', place_id:r.place_id||''
       };
     });
     if(mapped.length){ PROJECTS.length=0; mapped.forEach(function(p){PROJECTS.push(p);}); render(); }
@@ -7402,6 +7530,7 @@ function ghEmbedUrl(u){
 
 loadProductsFromSupabase();
 loadProjectsFromSupabase();
+ghLoadMapsKey();
 (async function loadBulkTiersFromSupabase(){
   if(!supa) return;
   try{
