@@ -9,6 +9,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* Job-sheet editable rows */
+.js-nm{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:13px;font-weight:600;font-family:inherit;color:var(--ink)}
+.js-desc{width:100%;border:1px solid var(--line);border-radius:7px;padding:6px 8px;font-size:11.5px;font-family:inherit;color:var(--ink2);margin-top:4px;resize:vertical;min-height:34px;line-height:1.35}
+.js-add{width:100%;margin-top:10px;background:var(--c2);border:1px dashed var(--line);border-radius:9px;padding:10px;font-size:12.5px;font-weight:700;color:var(--ink2);cursor:pointer;font-family:inherit}
+
 /* Loading list overlay */
 .ll-ov{position:fixed;inset:0;z-index:200;background:rgba(20,16,10,.55);display:none;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
 .ll-card{background:var(--c1);width:100%;max-width:560px;max-height:90vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;box-shadow:0 -8px 40px rgba(0,0,0,.3)}
@@ -948,7 +953,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">QUOTE · 83</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">QUOTE · 84</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -1883,14 +1888,15 @@ function vendLoadProduction(){
   Promise.all([
     supa.from('customer_orders').select('*').in('status',['Confirmed','In production','Ready']).then(function(r){return r.data||[];},function(){return [];}),
     supa.from('customers').select('mobile,name').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('vendor_payments').select('*').eq('vendor_id',_curVend.id).order('created_at',{ascending:false}).then(function(r){return r.data||[];},function(){return [];})
+    supa.from('vendor_payments').select('*').eq('vendor_id',_curVend.id).order('created_at',{ascending:false}).then(function(r){return r.data||[];},function(){return [];}),
+    supa.from('production_stages').select('*').then(function(r){return r.data||[];},function(){return [];})
   ]).then(function(res){
-    var orders=res[0], nameBy={}, vpays=res[2]; res[1].forEach(function(c){nameBy[c.mobile]=c.name;});
+    var orders=res[0], nameBy={}, vpays=res[2]; _runOrders=orders; _prodStages={}; (res[3]||[]).forEach(function(r){ _prodStages[r.line_key]=r; }); res[1].forEach(function(c){nameBy[c.mobile]=c.name;});
     var payable=0, blocks=[];
-    orders.forEach(function(o){ var m=parseMeta(o); if(!m||!m.items)return; var mine=[]; m.items.forEach(function(itX){ vendorParts(itX.pid,itX).forEach(function(pp){ if(String(pp.vid)===String(_curVend.id)) mine.push({it:itX,part:pp.part}); }); }); if(!mine.length)return; var sub=0; var rows=mine.map(function(mp){ var it=mp.it; var land=itemLandingPart(it,mp.part); var qn=+it.qty||0; sub+=land*qn; return '<div style="display:flex;gap:8px;padding:3px 0"><span style="flex:1;font-size:12.5px;color:var(--ink)">'+escA(it.name)+partLabel(mp.part)+'</span><span style="font-size:12px;color:var(--ink3);font-weight:600">x'+qn+(land?(' \u00b7 '+custMoney(land*qn)):' \u00b7 cost not set')+'</span></div>'; }).join(''); payable+=sub; blocks.push('<div class="cust-row" style="flex-direction:column;align-items:stretch;gap:2px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-weight:700;font-size:13px;color:var(--ink)">'+escA(o.title||'Order')+' \u00b7 '+escA(nameBy[o.mobile]||o.mobile)+'</span><span class="lead-badge" style="background:#D979061f;color:#D97706">'+escA(o.status)+'</span></div>'+rows+'</div>'); });
+    orders.forEach(function(o){ var m=parseMeta(o); if(!m||!m.items)return; var mine=[]; m.items.forEach(function(itX){ vendorParts(itX.pid,itX).forEach(function(pp){ if(String(pp.vid)===String(_curVend.id)) mine.push({it:itX,part:pp.part}); }); }); if(!mine.length)return; var sub=0; var rows=mine.map(function(mp){ var it=mp.it; var land=itemLandingPart(it,mp.part); var qn=+it.qty||0; sub+=land*qn; var stg=stageOf(o.id,it.pid,mp.part); var sc=STAGE_COL[stg]||'#888'; return '<div style="display:flex;gap:8px;padding:5px 0;align-items:center">'+(it.image?'<img src="'+escA(it.image)+'" style="width:30px;height:30px;border-radius:6px;object-fit:contain;background:var(--c2);flex:none">':'<span style="width:30px;height:30px;flex:none"></span>')+'<span style="flex:1;min-width:0;font-size:12.5px;color:var(--ink)">'+escA(it.name)+partLabel(mp.part)+(it.desc?('<span style="display:block;font-size:11px;color:var(--ink3)">'+escA(it.desc)+'</span>'):'')+'</span>'+'<span style="font-size:12px;color:var(--ink3);font-weight:600;white-space:nowrap">x'+qn+'</span>'+'<span class="pstage-tag" style="background:'+sc+'1a;color:'+sc+'">'+stg+'</span>'+'</div>'; }).join(''); payable+=sub; blocks.push('<div class="cust-row" style="flex-direction:column;align-items:stretch;gap:2px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-weight:700;font-size:13px;color:var(--ink)">'+escA(o.title||'Order')+' \u00b7 '+escA(nameBy[o.mobile]||o.mobile)+'</span><span class="lead-badge" style="background:#D979061f;color:#D97706">'+escA(o.status)+'</span></div>'+rows+'</div>'); });
     var paid=vpays.reduce(function(a,p){return a+(+p.amount||0);},0); var bal=payable-paid;
     var payHtml='<div class="cust-sec"><h4>Payments to vendor <button onclick="vendPay()" class="cust-hbtn" style="margin-left:auto;background:var(--g);color:#fff;padding:5px 12px;font-size:11px">+ Record</button></h4><div style="display:flex;gap:16px;margin-bottom:10px;font-size:12.5px;flex-wrap:wrap"><span style="color:var(--ink3)">Payable <b style="color:var(--ink)">'+custMoney(payable)+'</b></span><span style="color:#1B7A4D">Paid <b>'+custMoney(paid)+'</b></span><span style="color:'+(bal>0?'#C62828':'#1B7A4D')+';font-weight:700">Balance '+custMoney(bal)+'</span></div>'+(vpays.length?vpays.map(function(p){return '<div class="cust-row"><div style="flex:1"><div style="font-weight:700;color:#1B7A4D">'+custMoney(p.amount)+'</div><div style="font-size:11px;color:var(--ink3)">'+escA(p.mode||'')+' \u00b7 '+custDate(p.created_at)+'</div></div><button onclick="vendDelPay('+p.id+')" style="background:none;border:none;color:#C62828;cursor:pointer;font-size:15px">\u00d7</button></div>';}).join(''):'<div style="color:var(--ink3);font-size:12px;padding:4px 0">No payments recorded yet.</div>')+'</div>';
-    el.innerHTML='<div class="cust-sec"><h4>Confirmed &amp; processing for you</h4>'+(blocks.length?blocks.join(''):'<div style="color:var(--ink3);font-size:12.5px;padding:6px 0">No confirmed / in-production orders with your products right now.</div>')+'</div>'+payHtml;
+    el.innerHTML='<div class="cust-sec"><h4>Confirmed &amp; processing for you</h4>'+(blocks.length?'<div class="pline-actions" style="margin:2px 0 12px"><button class="pload-btn" onclick="runLoadingList('+_curVend.id+')">\ud83d\udce6 Create loading list</button><button class="pjob-btn" onclick="runVendorSheet('+_curVend.id+')">\u2193 Job sheet</button></div>':'')+(blocks.length?blocks.join(''):'<div style="color:var(--ink3);font-size:12.5px;padding:6px 0">No confirmed / in-production orders with your products right now.</div>')+'</div>'+payHtml;
   });
 }
 function vendPay(){ if(!_curVend||!supa)return; ghForm({title:'Pay '+(_curVend.name||'vendor'), fields:[{key:'amount',label:'Amount \u20b9',type:'number'},{key:'mode',label:'Mode',type:'select',options:[['UPI','UPI'],['Bank','Bank'],['Cash','Cash']]}], submitLabel:'Record payment', onSubmit:function(v){ var amt=parseFloat(v.amount)||0; if(amt<=0){toast('Enter an amount','#C62828');return false;} supa.from('vendor_payments').insert({vendor_id:_curVend.id,amount:amt,mode:v.mode||'UPI',created_at:new Date().toISOString()}).then(function(r){ if(r&&r.error){toast('Failed: '+r.error.message,'#C62828');return;} toast('Payment recorded','#1B7A4D'); vendLoadProduction(); }); }}); }
@@ -1926,15 +1932,16 @@ function stageSet(orderId,pid,part,vid,stage,qty){
   _prodStages[key]=row; // optimistic
   if(supa){ supa.from('production_stages').upsert(row,{onConflict:'order_id,line_key'}).then(function(r){ if(r&&r.error) toast('Stage save failed: '+r.error.message,'#C62828'); },function(){ toast('Stage save failed','#C62828'); }); }
 }
+function stageRefresh(){ var rw=document.getElementById('run-wrap'); var vp=document.getElementById('vend-production'); if(rw){ runLoad(); } else if(vp && typeof vendLoadProduction==='function'){ vendLoadProduction(); } }
 function stageAdvance(orderId,pid,part,vid){
   var cur=stageOf(orderId,pid,part); var i=STAGE_ORDER.indexOf(cur);
   var next=STAGE_ORDER[Math.min(i+1,STAGE_ORDER.length-1)];
-  stageSet(orderId,pid,part,vid,next); runLoad();
+  stageSet(orderId,pid,part,vid,next); stageRefresh();
 }
 function stageBack(orderId,pid,part,vid){
   var cur=stageOf(orderId,pid,part); var i=STAGE_ORDER.indexOf(cur);
   var prev=STAGE_ORDER[Math.max(i-1,0)];
-  stageSet(orderId,pid,part,vid,prev); runLoad();
+  stageSet(orderId,pid,part,vid,prev); stageRefresh();
 }
 function runLoad(){
   var el=document.getElementById('run-wrap');
@@ -2209,34 +2216,101 @@ function llBuildPDF(L,picked){
     toast('Loading list downloaded','#1B7A4D');
     // Advance the loaded lines to Forwarded
     picked.forEach(function(p){ stageSet(p.orderId,p.pid,p.part,L.vid,'Forwarded'); });
-    llClose(); runLoad();
+    llClose(); stageRefresh();
   }).catch(function(e){ toast('PDF error: '+((e&&e.message)||e),'#C62828'); });
 }
 
 function runVendorSheet(vid){
-  var v=VENDORS.find(function(x){return String(x.id)===String(vid);});
-  var lines=[], summary={};
-  (_runOrders||[]).forEach(function(o){ var m=parseMeta(o); if(m&&m.items){ m.items.forEach(function(it){ vendorParts(it.pid,it).forEach(function(pp){ if(String(pp.vid)===String(vid)){ var q=+it.qty||0; var nm=(it.name||'')+partLabel(pp.part); lines.push([nm, String(q), (_runNameBy[o.mobile]||('+91 '+o.mobile)), (o.title||''), (o.delivery_date||'\u2014')]); summary[nm]=(summary[nm]||0)+q; } }); }); } });
-  if(!lines.length){ toast('No items in production for this vendor','#C8860A'); return; }
-  toast('Building production sheet\u2026');
+  var g=vendAggByVid(vid);
+  if(!g || !g.lines.length){ toast('No items in production for this vendor','#C8860A'); return; }
+  // Build an editable job-sheet model. Pull the description that was typed on the quote line.
+  var lines=g.lines.map(function(ln){
+    return {orderId:ln.orderId,pid:ln.pid,part:ln.part,name:ln.name,image:ln.image,qty:ln.qty,
+            cust:ln.cust,ref:ln.ref,desc:jsDescFor(ln.orderId,ln.pid)||'',include:true,_custom:false};
+  });
+  _jobSheet={vid:vid,vendor:(g.name||'Vendor'),lines:lines};
+  jobSheetRender();
+}
+function jsDescFor(orderId,pid){
+  var o=(_runOrders||[]).find(function(x){ return String(x.id)===String(orderId); });
+  if(!o) return '';
+  var m=parseMeta(o); if(!m||!m.items) return '';
+  var it=m.items.find(function(x){ return String(x.pid)===String(pid); });
+  return (it&&it.desc)||'';
+}
+var _jobSheet=null;
+function jobSheetRender(){
+  var J=_jobSheet; if(!J) return;
+  var host=document.getElementById('jobsheet-ov');
+  if(!host){ host=document.createElement('div'); host.id='jobsheet-ov'; host.className='ll-ov'; document.body.appendChild(host); }
+  var rows=J.lines.map(function(ln,i){
+    return '<div class="ll-row'+(ln.include?'':' ll-off')+'">'
+      +'<label class="ll-chk"><input type="checkbox" '+(ln.include?'checked':'')+' onchange="jsToggle('+i+',this.checked)"></label>'
+      +(ln.image?'<img src="'+escA(ln.image)+'" class="ll-img">':'<span class="ll-img"></span>')
+      +'<div class="ll-mid"><input class="js-nm" value="'+escA(ln.name)+'" placeholder="Product name" oninput="jsSet('+i+',\'name\',this.value)">'
+      +'<textarea class="js-desc" placeholder="Description / specs (optional)" oninput="jsSet('+i+',\'desc\',this.value)">'+escA(ln.desc||'')+'</textarea>'
+      +(ln.cust?'<div class="ll-sub">'+escA(ln.cust)+(ln.ref?(' \u00b7 Ref '+escA(ln.ref)):'')+'</div>':'')
+      +'</div>'
+      +'<div class="ll-qty"><button onclick="jsQty('+i+',-1)">\u2212</button><input type="number" min="0" value="'+ln.qty+'" onchange="jsQtySet('+i+',this.value)"><button onclick="jsQty('+i+',1)">+</button></div>'
+      +'</div>';
+  }).join('');
+  var nInc=J.lines.filter(function(x){return x.include;}).length;
+  host.innerHTML='<div class="ll-card"><div class="ll-hd"><div><div class="ll-title">Job sheet</div>'
+    +'<div class="ll-vend">'+escA(J.vendor)+' \u00b7 '+nInc+' item(s)</div></div>'
+    +'<button class="ll-x" onclick="jsClose()">\u00d7</button></div>'
+    +'<div class="ll-body">'+rows+'<button class="js-add" onclick="jsAddRow()">+ Add item</button></div>'
+    +'<div class="ll-foot"><button class="ll-cancel" onclick="jsClose()">Cancel</button>'
+    +'<button class="ll-go" onclick="jsGeneratePDF()">\ud83d\udcc4 Download job sheet</button></div></div>';
+  host.style.display='flex';
+}
+function jsToggle(i,on){ if(_jobSheet&&_jobSheet.lines[i]){ _jobSheet.lines[i].include=!!on; jobSheetRender(); } }
+function jsQty(i,d){ var ln=_jobSheet&&_jobSheet.lines[i]; if(!ln) return; ln.qty=Math.max(0,(+ln.qty||0)+d); jobSheetRender(); }
+function jsQtySet(i,v){ var ln=_jobSheet&&_jobSheet.lines[i]; if(!ln) return; ln.qty=Math.max(0,parseInt(v)||0); }
+function jsSet(i,k,v){ var ln=_jobSheet&&_jobSheet.lines[i]; if(ln) ln[k]=v; }
+function jsAddRow(){ if(!_jobSheet) return; _jobSheet.lines.push({orderId:'',pid:'',part:'',name:'',image:'',qty:1,cust:'',ref:'',desc:'',include:true,_custom:true}); jobSheetRender(); }
+function jsClose(){ var h=document.getElementById('jobsheet-ov'); if(h) h.style.display='none'; _jobSheet=null; }
+function jsGeneratePDF(){
+  var J=_jobSheet; if(!J) return;
+  var picked=J.lines.filter(function(x){ return x.include && (x.name||'').trim(); });
+  if(!picked.length){ toast('Add at least one named item','#C8860A'); return; }
+  toast('Building job sheet\u2026');
   ghLoadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js').then(function(){ return ghLoadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js'); }).then(function(){
-    try{
-      var JS=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF; var doc=new JS({unit:'pt',format:'a4'}); var W=doc.internal.pageSize.getWidth(); var M=36; var y=46;
-      var GOLD=[196,132,16], INK=[38,34,26], SOFT=[247,243,236];
-      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor.apply(doc,INK); doc.text('PRODUCTION SHEET',M,y);
-      doc.setFontSize(12); doc.setTextColor.apply(doc,GOLD); doc.text((v?v.name:'Vendor'),M,y+18);
-      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(110,110,110); doc.text('Gharnish \u00b7 '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),W-M,y,{align:'right'}); if(v&&v.phone) doc.text('Vendor: +91 '+v.phone,W-M,y+14,{align:'right'});
-      y+=34;
-      var sumBody=Object.keys(summary).map(function(k){return [k,String(summary[k])];});
-      doc.autoTable({ startY:y, margin:{left:M,right:M}, head:[['Product','Total Qty to make']], body:sumBody, theme:'grid', headStyles:{fillColor:GOLD,textColor:[255,255,255],fontSize:9,fontStyle:'bold'}, bodyStyles:{fontSize:9.5,textColor:INK}, columnStyles:{1:{halign:'right',cellWidth:120}} });
-      y=doc.lastAutoTable.finalY+18;
-      doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor.apply(doc,INK); doc.text('Order breakdown',M,y); y+=6;
-      doc.autoTable({ startY:y+4, margin:{left:M,right:M}, head:[['Product','Qty','For (customer)','Order','Deliver by']], body:lines, theme:'striped', headStyles:{fillColor:SOFT,textColor:INK,fontSize:8.5,fontStyle:'bold'}, bodyStyles:{fontSize:8.5,textColor:INK}, columnStyles:{1:{halign:'center',cellWidth:34},4:{cellWidth:80}} });
-      var yend=doc.lastAutoTable.finalY+30; doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(130,130,130); doc.text('Internal production sheet \u2014 Gharnish. Confirm quantities before starting.',M,yend);
-      doc.save('production-'+((v?v.name:'vendor').replace(/[^a-z0-9]+/gi,'-'))+'.pdf');
-      toast('Sheet downloaded','#1B7A4D');
-    }catch(e){ toast('PDF error: '+((e&&e.message)||e),'#C62828'); }
-  }).catch(function(){ toast('Could not load PDF library','#C62828'); });
+    return Promise.all(picked.map(function(p){ return llLoadImg(p.image); })).then(function(imgs){
+      var JS=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF; var doc=new JS({unit:'pt',format:'a4'});
+      var W=doc.internal.pageSize.getWidth(); var M=36; var y=46; var GOLD=[196,132,16], INK=[38,34,26];
+      doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor.apply(doc,INK); doc.text('PRODUCTION / JOB SHEET',M,y);
+      doc.setFontSize(12); doc.setTextColor.apply(doc,GOLD); doc.text(J.vendor,M,y+18);
+      var tot=picked.reduce(function(a,p){return a+(+p.qty||0);},0);
+      doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(110,110,110);
+      doc.text('Gharnish \u00b7 '+new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})+' \u00b7 '+picked.length+' item(s) \u00b7 '+tot+' pcs',M,y+34);
+      y+=50;
+      var body=picked.map(function(p,i){
+        var d=p.name+(p.desc?('\n'+p.desc):'')+(p.cust?('\n\u2192 '+p.cust+(p.ref?(' \u00b7 Ref '+p.ref):'')):'');
+        return [i+1,'',d,String(p.qty)];
+      });
+      doc.autoTable({
+        startY:y, margin:{left:M,right:M},
+        head:[['#','Photo','Product & specification','Qty']],
+        body:body, theme:'grid',
+        headStyles:{fillColor:GOLD,textColor:[255,255,255],fontSize:10,cellPadding:6},
+        bodyStyles:{fontSize:10,cellPadding:6,minCellHeight:52,valign:'middle'},
+        columnStyles:{0:{cellWidth:24,halign:'center'},1:{cellWidth:56},2:{cellWidth:'auto'},3:{cellWidth:40,halign:'center',fontStyle:'bold'}},
+        didParseCell:function(d){ if(d.section==='body' && d.column.index===2 && d.row.raw){ } },
+        didDrawCell:function(d){
+          if(d.section==='body' && d.column.index===1){
+            var im=imgs[d.row.index];
+            if(im){ var pad=4, cw=d.cell.width-pad*2, ch=d.cell.height-pad*2; var r=Math.min(cw/im.w,ch/im.h); var dw=im.w*r, dh=im.h*r; try{ doc.addImage(im.data,'JPEG',d.cell.x+(d.cell.width-dw)/2,d.cell.y+(d.cell.height-dh)/2,dw,dh); }catch(e){} }
+          }
+        }
+      });
+      var yend=doc.lastAutoTable.finalY+34;
+      doc.setDrawColor(200,200,200); doc.line(M,yend,M+180,yend); doc.line(W-M-180,yend,W-M,yend);
+      doc.setFontSize(9); doc.setTextColor(120,120,120);
+      doc.text('Issued by',M,yend+14); doc.text('Received by (vendor)',W-M-180,yend+14);
+      doc.save('job-sheet-'+(J.vendor.replace(/[^a-z0-9]+/gi,'-').toLowerCase())+'.pdf');
+      toast('Job sheet downloaded','#1B7A4D'); jsClose();
+    });
+  }).catch(function(e){ toast('PDF error: '+((e&&e.message)||e),'#C62828'); });
 }
 function custToggleManual(){ var el=document.getElementById('cust-manual'); if(el) el.style.display=(el.style.display==='none'||!el.style.display)?'block':'none'; }
 function custSyncLeads(){
