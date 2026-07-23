@@ -928,7 +928,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 85</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 86</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -964,7 +964,7 @@ function bindNav(){
 
 /* ══════════ CUSTOMERS CRM (Phase 2) ══════════ */
 var _CUSTOMERS=[], _custQuery='', _curCust=null, _custData={orders:[],payments:[],messages:[],activity:[],notes:[]};
-var _custUnread={}, _custGlobalChannel=null, _custStatusFilter='';
+var _custUnread={}, _custGlobalChannel=null, _custStatusFilter='', _custAppOnly=false;
 var _custView='list', _custOrdersAll=[], _custPaymentsAll=[], _custAggLoaded=false;
 var LEAD_SOURCES=['WhatsApp','Instagram','Google','Walk-in','Referral','Website','Other'];
 var CUST_STATUS=['Quotation','Confirmed','In production','Ready','Delivered','Cancelled'];
@@ -1199,7 +1199,7 @@ function custRenderDetail(){
   h+='<div style="margin-top:12px;padding-top:12px;border-top:1px dashed rgba(0,0,0,.12)"><button class="cust-add-btn" onclick="custOpenBuilder()" style="width:100%;padding:12px">\ud83d\udcc4 Create itemised quotation / invoice</button><button onclick="custToggleManual()" style="background:none;border:none;color:var(--ink3);font-size:11.5px;cursor:pointer;margin-top:9px;text-decoration:underline;display:block;width:100%;text-align:center">or log an order manually</button><div id="cust-manual" style="display:none;margin-top:10px"><input class="cust-in" id="ord-title" placeholder="Title (e.g. 40 caf\u00e9 chairs + 10 tables)"><div style="display:flex;gap:7px"><select class="cust-in" id="ord-status" style="flex:1;margin-bottom:0">'+CUST_STATUS.map(function(s){return '<option>'+s+'</option>';}).join('')+'</select><input class="cust-in" id="ord-amount" type="number" placeholder="Amount \u20b9" style="flex:1;margin-bottom:0"></div><input class="cust-in" id="ord-invoice" placeholder="Invoice URL (optional)" style="margin-top:7px"><button class="cust-add-btn" onclick="custAddOrder()" style="width:100%;padding:10px;background:var(--c2);color:var(--ink2)">+ Log order</button></div></div></div>';
   h+='<div class="cust-sec"><h4>Payments <span class="amt">'+custMoney(totalPaid)+' received</span> <button onclick="custReqPay()" style="margin-left:auto;background:var(--g);color:#fff;border:none;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer">Request via WhatsApp</button></h4>';
   h+=d.payments.length?d.payments.map(function(p){ return '<div class="cust-row"><div style="flex:1"><div style="font-weight:700;font-size:13.5px;color:#1B7A4D">'+custMoney(p.amount)+'</div><div style="font-size:11.5px;color:var(--ink3)">'+escA(p.mode||'')+(p.note?(' \u00b7 '+escA(p.note)):'')+' \u00b7 '+custDate(p.created_at)+'</div></div><button onclick="custDelPayment('+p.id+')" style="background:none;border:none;color:#C62828;cursor:pointer;font-size:17px;line-height:1">\u00d7</button></div>'; }).join(''):'<div style="color:var(--ink3);font-size:12.5px;padding:2px 0 10px">No payments recorded.</div>';
-  h+='<div style="margin-top:10px;padding-top:12px;border-top:1px dashed rgba(0,0,0,.12)"><select class="cust-in" id="pay-order" style="margin-bottom:7px"><option value="">Allocate to order (optional)</option>'+((_custData.orders||[]).filter(function(oo){return oo.status!=='Quotation'&&oo.status!=='Cancelled';}).map(function(oo){return '<option value="'+oo.id+'">'+escA((oo.title||oo.status||'Order'))+' \u00b7 '+custMoney(oo.amount||0)+(oo.status==='Delivered'?' \u00b7 delivered':'')+'</option>';}).join(''))+'</select><div style="display:flex;gap:7px"><input class="cust-in" id="pay-amount" type="number" placeholder="Amount \u20b9" style="flex:1;margin-bottom:0"><select class="cust-in" id="pay-mode" style="flex:1;margin-bottom:0"><option>UPI</option><option>Bank transfer</option><option>Cash</option><option>Cheque</option><option>Card</option><option>Advance</option></select></div><input class="cust-in" id="pay-note" placeholder="Note (optional)" style="margin-top:7px"><button class="cust-add-btn" onclick="custAddPayment()" style="width:100%;padding:11px">+ Record payment</button></div></div>';
+  h+='<div style="margin-top:10px;padding-top:12px;border-top:1px dashed rgba(0,0,0,.12)"><select class="cust-in" id="pay-order" style="margin-bottom:7px"><option value="">Allocate to order (optional)</option>'+((_custData.orders||[]).filter(function(oo){return oo.status!=='Quotation'&&oo.status!=='Cancelled';}).map(function(oo){return '<option value="'+oo.id+'">'+escA((oo.title||oo.status||'Order'))+' \u00b7 '+custMoney(oo.amount||0)+(oo.status==='Delivered'?' \u00b7 delivered':'')+'</option>';}).join(''))+'</select><div style="display:flex;gap:7px"><input class="cust-in" id="pay-amount" type="number" placeholder="Amount \u20b9" style="flex:1;margin-bottom:0"><select class="cust-in" id="pay-mode" style="flex:1;margin-bottom:0"><option>UPI</option><option>Bank transfer</option><option>Cash</option><option>Cheque</option><option>Card</option><option>Advance</option></select></div><input class="cust-in" id="pay-date" type="date" value="'+new Date().toISOString().slice(0,10)+'" style="margin-top:7px" title="Payment date"><input class="cust-in" id="pay-note" placeholder="Note (optional)" style="margin-top:7px"><button class="cust-add-btn" onclick="custAddPayment()" style="width:100%;padding:11px">+ Record payment</button></div></div>';
   h+='<div class="cust-sec"><h4>Messages</h4><div class="cust-msg-wrap" id="cust-msgs">'+(d.messages.length?d.messages.map(function(m){ return '<div class="cust-msg '+(m.sender==='admin'?'admin':'client')+'">'+escA(m.text)+'<span class="t">'+(m.sender==='admin'?'You':(String(_curCust.name||'Client').split(' ')[0]))+' \u00b7 '+custDate(m.created_at)+'</span></div>'; }).join(''):'<div style="color:var(--ink3);font-size:12.5px;text-align:center;padding:14px">No messages yet. Say hello \u2014 it shows in their account.</div>')+'</div><div style="display:flex;gap:8px"><input class="cust-in" id="msg-text" placeholder="Message to client\u2026" style="flex:1;margin-bottom:0" onkeydown="if(event.key===\'Enter\')custSendMsg()"><button class="cust-add-btn" onclick="custSendMsg()">Send</button></div></div>';
   h+='</div></div>';
   b.innerHTML=h;
@@ -1218,7 +1218,26 @@ function custDelOrder(id){ ghConfirm('Delete this order?',function(){ supa.from(
 function custAddPayment(){
   var amount=parseFloat(document.getElementById('pay-amount').value)||0; if(amount<=0){ toast('Enter payment amount','#C62828'); return; }
   var mode=document.getElementById('pay-mode').value; var note=(document.getElementById('pay-note').value||'').trim();
-  var ordEl=document.getElementById('pay-order'); var oid=(ordEl&&ordEl.value)?+ordEl.value:null; payInsert({mobile:_curCust.mobile,amount:amount,mode:mode,note:note||null,order_id:oid,created_at:new Date().toISOString()},function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Payment recorded','#1B7A4D'); custLoadDetail(_curCust.mobile); });
+  var ordEl=document.getElementById('pay-order'); var oid=(ordEl&&ordEl.value)?+ordEl.value:null; var pd=document.getElementById('pay-date'); var cat=(pd&&pd.value)?new Date(pd.value+'T12:00:00').toISOString():new Date().toISOString(); payInsert({mobile:_curCust.mobile,amount:amount,mode:mode,note:note||null,order_id:oid,created_at:cat},function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Payment recorded','#1B7A4D'); custLoadDetail(_curCust.mobile); });
+}
+function custEditPayment(id){
+  if(!supa){toast('Connect Supabase','#C62828');return;}
+  supa.from('customer_payments').select('*').eq('id',id).maybeSingle().then(function(r){
+    var p=r&&r.data; if(!p){ toast('Payment not found','#C62828'); return; }
+    ghForm({title:'Edit payment', fields:[
+      {key:'amount',label:'Amount \u20b9',type:'number',value:p.amount},
+      {key:'mode',label:'Mode',type:'select',options:[['UPI','UPI'],['Bank transfer','Bank transfer'],['Cash','Cash'],['Cheque','Cheque'],['Advance','Advance']],value:p.mode||'UPI'},
+      {key:'date',label:'Date',type:'date',value:(p.created_at||'').slice(0,10)},
+      {key:'note',label:'Note',value:p.note||''}
+    ], submitLabel:'Save changes', onSubmit:function(v){
+      var amt=parseFloat(v.amount)||0; if(amt<=0){ toast('Enter a valid amount','#C62828'); return false; }
+      var cat=v.date?new Date(v.date+'T12:00:00').toISOString():p.created_at;
+      supa.from('customer_payments').update({amount:amt,mode:v.mode,note:(v.note||'').trim()||null,created_at:cat}).eq('id',id).then(function(r2){
+        if(r2&&r2.error){ toast('Update failed: '+r2.error.message,'#C62828'); return; }
+        toast('Payment updated','#1B7A4D'); custLoadDetail(_curCust.mobile);
+      },function(){ toast('Update failed','#C62828'); });
+    }});
+  },function(){ toast('Could not load payment','#C62828'); });
 }
 function custDelPayment(id){ ghConfirm('Delete this payment?',function(){ supa.from('customer_payments').delete().eq('id',id).then(function(){ custLoadDetail(_curCust.mobile); }); }); }
 function custSendMsg(){
@@ -1423,7 +1442,7 @@ function qStyle(){ if(document.getElementById('q-style'))return; var s=document.
   +'.q-qty button{width:24px;height:24px;border-radius:6px;border:none;background:var(--g);color:#fff;font-size:15px;font-weight:800;cursor:pointer;line-height:1}'
   +'.q-qty span{font-weight:800;font-size:13px;min-width:18px}'
   +'.q-stepper{display:flex;align-items:center;border:1.5px solid rgba(0,0,0,.12);border-radius:8px;overflow:hidden;height:34px}'
-  +'.q-stepper button{width:28px;height:34px;border:none;background:var(--c2);color:var(--ink2);font-size:16px;cursor:pointer;font-weight:700}'
+  +'.q-stepper input{width:56px}.q-stepper button{width:28px;height:34px;border:none;background:var(--c2);color:var(--ink2);font-size:16px;cursor:pointer;font-weight:700}'
   +'.qb{max-width:1120px}'
   +'.q-fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:13px}'
   +'.q-ff{display:flex;flex-direction:column}'
@@ -1609,6 +1628,8 @@ function qDel(i){ _quote.items.splice(i,1); qRenderItems(); qRenderTotals(); }
 function qItemSet(i,k,v){ if(!_quote.items[i])return; _quote.items[i][k]=(k==='name'||k==='hsn'||k==='per'||k==='desc')?v:(parseFloat(v)||0); var amt=(+_quote.items[i].qty||0)*(+_quote.items[i].rate||0); var an=document.getElementById('qi-'+i); if(an)an.textContent=custMoney(amt); qRenderTotals(); }
 function qToggleDesc(i){ if(_quote.items[i]){ _quote.items[i]._showDesc=!_quote.items[i]._showDesc; qRenderItems(); }
 function qToggleLam(i){ if(_quote.items[i]){ _quote.items[i]._showLam=!_quote.items[i]._showLam; qRenderItems(); } } }
+function qItemSetLive(i,v){ if(!_quote.items[i])return; _quote.items[i].qty=Math.max(0,parseFloat(v)||0); var amt=(+_quote.items[i].qty||0)*(+_quote.items[i].rate||0); var an=document.getElementById('qi-'+i); if(an)an.textContent=custMoney(amt); qRenderTotals(); }
+function qItemQtyCommit(i,v){ if(!_quote.items[i])return; var q=Math.max(0,parseFloat(v)||0); _quote.items[i].qty=q; if(q===0){ _quote.items.splice(i,1); } qRenderItems(); qRenderProducts(); qRenderTotals(); }
 function qItemQty(i,d){ if(!_quote.items[i])return; _quote.items[i].qty=Math.max(0,(+_quote.items[i].qty||0)+d); if(_quote.items[i].qty===0){ _quote.items.splice(i,1); } qRenderItems(); qRenderProducts(); qRenderTotals(); }
 function qRenderItems(){
   var el=document.getElementById('q-items'); if(!el)return;
@@ -1619,7 +1640,7 @@ function qRenderItems(){
       +'<input class="cust-in q-name" style="margin:0" placeholder="Item name" value="'+escA(it.name)+'" oninput="qItemSet('+idx+',\'name\',this.value)">'
       +'<div class="q-cell"><label>HSN/SAC</label><input class="cust-in" style="margin:0;width:92px" value="'+escA(it.hsn)+'" oninput="qItemSet('+idx+',\'hsn\',this.value)"></div>'
       +'<div class="q-cell"><label>GST %</label><input class="cust-in" style="margin:0;width:58px" type="number" value="'+it.tax+'" oninput="qItemSet('+idx+',\'tax\',this.value)"></div>'
-      +'<div class="q-cell"><label>Qty</label><div class="q-stepper"><button onclick="qItemQty('+idx+',-1)">\u2212</button><input class="cust-in" type="number" style="width:44px;margin:0;text-align:center;border:none;border-radius:0" value="'+it.qty+'" oninput="qItemSet('+idx+',\'qty\',this.value);qRenderProducts()"><button onclick="qItemQty('+idx+',1)">+</button></div></div>'
+      +'<div class="q-cell"><label>Qty</label><div class="q-stepper"><button onclick="qItemQty('+idx+',-1)">\u2212</button><input class="cust-in" type="number" inputmode="numeric" min="0" style="width:56px;margin:0;text-align:center;border:none;border-radius:0" value="'+it.qty+'" oninput="qItemSetLive('+idx+',this.value)" onchange="qItemQtyCommit('+idx+',this.value)"><button onclick="qItemQty('+idx+',1)">+</button></div></div>'
       +'<div class="q-cell"><label>Rate \u20b9</label><input class="cust-in" style="margin:0;width:94px" type="number" value="'+it.rate+'" oninput="qItemSet('+idx+',\'rate\',this.value)"></div>'
       +'<div class="q-cell"><label>Per</label><input class="cust-in" style="margin:0;width:58px" value="'+escA(it.per||'PCS')+'" oninput="qItemSet('+idx+',\'per\',this.value)"></div>'
       +'<div class="q-cell" style="align-items:flex-end;margin-left:auto"><label>Amount</label><span id="qi-'+idx+'" class="q-amt">'+custMoney(amt)+'</span></div>'
