@@ -1585,7 +1585,7 @@ async function custBuildQuotePDF(items){
   function _sv(p){ return _quote.editId?supa.from('customer_orders').update(p).eq('id',_quote.editId):supa.from('customer_orders').insert(Object.assign({created_at:new Date().toISOString()},p)); }
   function _saveOrder(url){
     var meta={items:items.map(function(it){return {pid:it.pid||'',name:it.name,desc:it.desc||'',laminate:it.laminate||'',image:it.image||'',hsn:it.hsn,tax:it.tax,qty:it.qty,rate:it.rate,per:it.per};}),docType:_quote.docType,transport:+_quote.transport||0,labour:+_quote.labour||0,company:_quote.company||'',gstin:_quote.gstin||'',billing:_quote.billing||'',shipTo:_quote.shipTo||'',reference:_quote.reference||'',posCode:_quote.posCode,name:_quote.name||_curCust.name||'',mobile:_curCust.mobile,quoteNo:_quote.quoteNo};
-    var payload={mobile:_curCust.mobile,title:_quote.quoteNo+' \u00b7 '+items.length+' item(s)',status:(_quote.docType==='Tax Invoice'?'Invoice':'Quotation'),amount:Math.round(t.grand),invoice_url:url||null,meta:meta};
+    var payload={mobile:_curCust.mobile,title:_quote.quoteNo+' \u00b7 '+items.length+' item(s)',status:((_quote.editId&&['Confirmed','In production','Ready','Delivered'].indexOf(_quote._editStatus)>-1)?_quote._editStatus:(_quote.docType==='Tax Invoice'?'Invoice':'Quotation')),amount:Math.round(t.grand),invoice_url:url||null,meta:meta};
     _sv(payload).then(function(r){ if(r&&r.error&&payload.meta){ delete payload.meta; _sv(payload).then(_fin,_fin); } else { _fin(r); } },function(){ if(payload.meta){ delete payload.meta; _sv(payload).then(_fin,_fin); } else { _fin({error:{message:'save failed'}}); } });
   }
   supa.storage.from('project-media').upload(path,blob,{cacheControl:'3600',upsert:true,contentType:'application/pdf'}).then(function(up){
@@ -1932,7 +1932,7 @@ function qEditQuote(order){
   qReset();
   if(m&&m.items){ _quote=Object.assign(_quote,m); (_quote.items||[]).forEach(function(it){ delete it._img; delete it._showDesc; }); }
   else { _quote.mobile=order.mobile||''; var c=(_CUSTOMERS||[]).find(function(x){return x.mobile===order.mobile;}); if(c){ _quote.name=c.name||''; _quote.company=c.company||''; _quote.gstin=c.gstin||''; _quote.billing=c.billing_address||c.city||''; _quote.shipTo=c.billing_address||''; _quote.posCode=c.state_code||'36'; } toast('Older quote \u2014 re-add the items, then Update','#C8860A'); }
-  _quote.editId=order.id; _quote.quoteNo=(m&&m.quoteNo)||(order.title||'').split(' ')[0]; _quote.docType=(order.status==='Invoice')?'Tax Invoice':'Quotation'; _quote.date=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  _quote.editId=order.id; _quote._editStatus=order.status||''; _quote.quoteNo=(m&&m.quoteNo)||(order.title||'').split(' ')[0]; _quote.docType=(order.status==='Invoice')?'Tax Invoice':'Quotation'; _quote.date=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
   renderQuoteBuilder();
 }
 function salesStat(l,v,c){ return '<div class="an-stat"><div class="v"'+(c?' style="color:'+c+'"':'')+'>'+v+'</div><div class="l">'+l+'</div></div>'; }
