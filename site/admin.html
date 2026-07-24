@@ -9,6 +9,23 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+/* Sales dashboard — balanced 2-col grid, no empty space */
+.sales-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:16px;align-items:start;margin-bottom:0}
+.sales-col-l,.sales-col-r{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media(max-width:900px){.sales-grid{grid-template-columns:1fr}}
+#sales-pend-list{max-height:520px;overflow:auto}
+
+/* Edit customer profile modal */
+.ecp-card{max-width:560px}
+.ecp-body{max-height:70vh;overflow:auto}
+.ecp-field{margin-bottom:11px}
+.ecp-field label{display:block;font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:4px}
+.ecp-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ecp-sec{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--ink3);margin:16px 0 9px;padding-top:12px;border-top:1px solid var(--line)}
+.ecp-addr{background:var(--c2);border-radius:12px;padding:12px}
+.ecp-hint{font-size:11px;color:#C8860A;line-height:1.4;margin-top:6px}
+.ecp-copy{background:var(--g);color:#fff;border:none;border-radius:999px;padding:5px 12px;font-size:11.5px;font-weight:700;cursor:pointer;font-family:inherit}
+
 /* Transactions list — its own clean card rows (isolated from quote-list mobile rules) */
 .txn-row{display:flex;align-items:center;gap:12px;background:var(--c1);border:1px solid rgba(0,0,0,.07);border-radius:12px;padding:12px 15px;box-shadow:var(--shadow);margin-bottom:9px}
 .txn-row>div:first-child{flex:1;min-width:0}
@@ -935,7 +952,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 88</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 89</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -1154,6 +1171,64 @@ function ghFormUpload(input,key){
 }
 function ghFormDo(){ var vals={}; (_ghFormFields||[]).forEach(function(k){ vals[k]=ghFormVal(k); }); var r=_ghFormSubmit?_ghFormSubmit(vals):true; if(r!==false) ghFormClose(); }
 function ghConfirm(msg,onYes){ ghForm({title:'Please confirm', note:msg, fields:[], submitLabel:'Yes, continue', onSubmit:function(){ if(onYes)onYes(); }}); }
+function _addrGet(c,which){ var a=c&&c[which]; if(a&&typeof a==='object') return a; return {line1:'',line2:'',pincode:'',city:(which==='billing'?(c&&c.city||''):''),state_code:(which==='billing'?(c&&c.state_code||''):''),country:'India'}; }
+function _stateOpts(sel){ return '<option value="">Select State</option>'+GST_STATES.map(function(s){ return '<option value="'+s[0]+'"'+(String(s[0])===String(sel)?' selected':'')+'>'+s[0]+'-'+s[1]+'</option>'; }).join(''); }
+function _addrBlock(which,a){ var L=which==='billing'?'b':'s';
+  return '<div class="ecp-addr"><div class="ecp-field"><label>Country</label><input class="cust-in" id="ecp-'+L+'-country" value="'+escA(a.country||'India')+'"></div>'
+   +'<div class="ecp-field"><label>Address Line 1'+(which==='billing'?' <span style="color:#C62828">*</span>':'')+'</label><input class="cust-in" id="ecp-'+L+'-line1" placeholder="Address Line 1" value="'+escA(a.line1||'')+'"></div>'
+   +'<div class="ecp-field"><label>Address Line 2</label><input class="cust-in" id="ecp-'+L+'-line2" placeholder="Address Line 2" value="'+escA(a.line2||'')+'"></div>'
+   +'<div class="ecp-row2"><div class="ecp-field"><label>Pincode</label><input class="cust-in" id="ecp-'+L+'-pincode" placeholder="Pincode" value="'+escA(a.pincode||'')+'"></div>'
+   +'<div class="ecp-field"><label>City</label><input class="cust-in" id="ecp-'+L+'-city" placeholder="City" value="'+escA(a.city||'')+'"></div></div>'
+   +'<div class="ecp-field"><label>State'+(which==='billing'?' <span style="color:#C62828">*</span>':'')+'</label><select class="cust-in" id="ecp-'+L+'-state">'+_stateOpts(a.state_code||'')+'</select></div>'
+   +(which==='billing'?'<div class="ecp-hint">Billing State (like 36-Telangana) decides CGST+SGST vs IGST on the invoice. Ignore if you don\'t have GST.</div>':'')
+   +'</div>';
+}
+function custEditProfile(){
+  var c=_curCust; if(!c){ return; }
+  var bill=_addrGet(c,'billing'), ship=_addrGet(c,'shipping');
+  var host=document.getElementById('ecp-ov');
+  if(!host){ host=document.createElement('div'); host.id='ecp-ov'; host.className='ll-ov'; document.body.appendChild(host); }
+  host.innerHTML='<div class="ll-card ecp-card"><div class="ll-hd"><div><div class="ll-title">Edit customer</div><div class="ll-vend">'+escA(c.name||c.mobile)+'</div></div><button class="ll-x" onclick="ecpClose()">\u00d7</button></div>'
+    +'<div class="ll-body ecp-body">'
+    +'<div class="ecp-field"><label>Name <span style="color:#C62828">*</span></label><input class="cust-in" id="ecp-name" value="'+escA(c.name||'')+'"></div>'
+    +'<div class="ecp-row2"><div class="ecp-field"><label>Phone</label><input class="cust-in" id="ecp-mobile" value="'+escA(c.mobile||'')+'" disabled style="opacity:.6"></div>'
+    +'<div class="ecp-field"><label>Email</label><input class="cust-in" id="ecp-email" placeholder="name@example.com" value="'+escA(c.email||'')+'"></div></div>'
+    +'<div class="ecp-sec">Company details (optional)</div>'
+    +'<div class="ecp-field"><label>GSTIN</label><input class="cust-in" id="ecp-gstin" placeholder="29AABCT1332L000" value="'+escA(c.gstin||'')+'"></div>'
+    +'<div class="ecp-field"><label>Company name</label><input class="cust-in" id="ecp-company" placeholder="Company name" value="'+escA(c.company||'')+'"></div>'
+    +'<div class="ecp-sec">Billing address</div>'+_addrBlock('billing',bill)
+    +'<div class="ecp-sec" style="display:flex;align-items:center;justify-content:space-between">Shipping address<button class="ecp-copy" onclick="ecpCopyBilling()">\u2398 Same as Billing</button></div>'+_addrBlock('shipping',ship)
+    +'</div>'
+    +'<div class="ll-foot"><button class="ll-cancel" onclick="ecpClose()">Cancel</button><button class="ll-go" onclick="ecpSave()">Save and update</button></div></div>';
+  host.style.display='flex';
+}
+function ecpCopyBilling(){
+  ['country','line1','line2','pincode','city'].forEach(function(k){ var b=document.getElementById('ecp-b-'+k), sEl=document.getElementById('ecp-s-'+k); if(b&&sEl) sEl.value=b.value; });
+  var bs=document.getElementById('ecp-b-state'), ss=document.getElementById('ecp-s-state'); if(bs&&ss) ss.value=bs.value;
+  toast('Billing copied to shipping','#1B7A4D');
+}
+function _addrRead(L){ function g(k){ var e=document.getElementById('ecp-'+L+'-'+k); return e?(e.value||'').trim():''; }
+  return {line1:g('line1'),line2:g('line2'),pincode:g('pincode'),city:g('city'),state_code:g('state'),country:g('country')||'India'}; }
+function _addrText(a){ return [a.line1,a.line2,[a.city,a.pincode].filter(Boolean).join(' ')].filter(Boolean).join(', '); }
+function ecpSave(){
+  var name=(document.getElementById('ecp-name').value||'').trim();
+  if(!name){ toast('Name is required','#C62828'); return; }
+  var bill=_addrRead('b'), ship=_addrRead('s');
+  if(!bill.line1){ toast('Billing Address Line 1 is required','#C62828'); return; }
+  if(!bill.state_code){ toast('Billing State is required','#C62828'); return; }
+  var email=(document.getElementById('ecp-email').value||'').trim();
+  var gstin=(document.getElementById('ecp-gstin').value||'').trim();
+  var company=(document.getElementById('ecp-company').value||'').trim();
+  var upd={ name:name, email:email||null, gstin:gstin||null, company:company||null,
+    billing:bill, shipping:ship,
+    billing_address:_addrText(bill)||null, state_code:bill.state_code||null,
+    city:bill.city||null, updated_at:new Date().toISOString() };
+  supa.from('customers').update(upd).eq('mobile',_curCust.mobile).then(function(r){
+    if(r&&r.error){ toast('Save failed: '+r.error.message,'#C62828'); return; }
+    Object.assign(_curCust,upd); toast('Customer updated','#1B7A4D'); ecpClose(); custLoadDetail(_curCust.mobile);
+  },function(){ toast('Save failed','#C62828'); });
+}
+function ecpClose(){ var h=document.getElementById('ecp-ov'); if(h) h.style.display='none'; }
 function custAddPrompt(){
   if(!supa){ toast('Connect Supabase first','#C62828'); return; }
   ghForm({title:'Add customer', fields:[{key:'name',label:'Name',type:'text'},{key:'mobile',label:'Mobile (10 digits)',type:'text'},{key:'city',label:'City (optional)',type:'text'}], submitLabel:'Save customer', onSubmit:function(v){ var name=(v.name||'').trim(); var mobile=(v.mobile||'').replace(/\D/g,''); if(!name){ toast('Name required','#C62828'); return false; } if(mobile.length!==10){ toast('Enter a valid 10-digit mobile','#C62828'); return false; } supa.from('customers').upsert({mobile:mobile,name:name,city:(v.city||'').trim(),signup_source:'admin',updated_at:new Date().toISOString()},{onConflict:'mobile'}).then(function(r){ if(r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Customer saved','#1B7A4D'); custLoad(); }); }});
@@ -1191,7 +1266,7 @@ function custRenderDetail(){
   var status=c.lead_status||'New'; var col=LEAD_COLOR[status]||'#2563EB';
   var fu=c.next_followup||''; var overdue=fu && (new Date(fu) < new Date(new Date().toDateString()));
   var h='';
-  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap"><button onclick="custBack()" class="cust-backbtn">\u2190 All customers</button><a href="https://wa.me/91'+escA(c.mobile)+'" target="_blank" class="cust-hbtn" style="background:#25D366;color:#fff">WhatsApp</a><a href="tel:+91'+escA(c.mobile)+'" class="cust-hbtn" style="background:var(--c2);color:var(--ink)">Call</a><label class="cust-hbtn" style="background:var(--c2);color:var(--ink);cursor:pointer">Photo<input type="file" accept="image/*" style="display:none" onchange="custUploadPhoto(this)"></label><button onclick="custDeleteCustomer()" class="cust-hbtn" style="background:#C6282815;color:#C62828;margin-left:auto">Delete</button></div>';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap"><button onclick="custBack()" class="cust-backbtn">\u2190 All customers</button><a href="https://wa.me/91'+escA(c.mobile)+'" target="_blank" class="cust-hbtn" style="background:#25D366;color:#fff">WhatsApp</a><a href="tel:+91'+escA(c.mobile)+'" class="cust-hbtn" style="background:var(--c2);color:var(--ink)">Call</a><label class="cust-hbtn" style="background:var(--c2);color:var(--ink);cursor:pointer">Photo<input type="file" accept="image/*" style="display:none" onchange="custUploadPhoto(this)"></label><button onclick="custEditProfile()" class="cust-hbtn" style="background:var(--g);color:#fff;margin-left:auto">\u270e Edit profile</button><button onclick="custDeleteCustomer()" class="cust-hbtn" style="background:#C6282815;color:#C62828">Delete</button></div>';
   h+='<div class="cust-hero">'+custAvatar(c,52)+'<div style="flex:1;min-width:0"><div style="font-family:Poppins,sans-serif;font-weight:800;font-size:20px;color:var(--ink)">'+escA(c.name||'Unknown')+'</div><div style="font-size:13px;color:var(--ink3)">+91 '+escA(c.mobile)+(c.city?' \u00b7 '+escA(c.city):'')+(c.email?' \u00b7 '+escA(c.email):'')+'</div></div><span class="lead-badge" style="background:'+col+'1f;color:'+col+'">'+escA(status)+'</span></div>';
   h+='<div class="cust-cols"><div>';
   h+='<div class="cust-sec"><h4>Lead status</h4><select class="cust-in" onchange="custSetStatus(this.value)">'+LEAD_STATUS.map(function(s){return '<option'+(s===status?' selected':'')+'>'+s+'</option>';}).join('')+'</select><label style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;display:block;margin:8px 0 4px">Next follow-up</label><input class="cust-in" type="date" value="'+escA(fu)+'" onchange="custSetFollowup(this.value)"'+(overdue?' style="border-color:#C62828;margin-bottom:2px"':'')+'>'+(overdue?'<div style="font-size:11.5px;color:#C62828;font-weight:700">Follow-up overdue</div>':'')+'<label style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;display:block;margin:8px 0 4px">Source</label><select class="cust-in" onchange="custSetSource(this.value)"><option value="">\u2014</option>'+LEAD_SOURCES.map(function(s){return '<option'+(s===(c.lead_source||'')?' selected':'')+'>'+s+'</option>';}).join('')+'</select><label style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;display:block;margin:6px 0 4px">Owner</label><input class="cust-in" value="'+escA(c.owner||'')+'" placeholder="Team member" onchange="custSetOwner(this.value)"></div>';
@@ -1293,7 +1368,9 @@ async function custNextQuoteNo(){ return ghNextCounter('gh_quote_no',2221,'GHQ')
 async function custNextInvNo(){ return ghNextCounter('gh_inv_no',1000,'GHI'); }
 
 function stateName(code){ var s=GST_STATES.find(function(x){return x[0]===code;}); return s?s[1]:''; }
-function custOpenBuilder(){ qReset(); var c=_curCust||{}; _quote.name=c.name||''; _quote.mobile=c.mobile||''; _quote.company=c.company||''; _quote.gstin=c.gstin||''; _quote.billing=c.billing_address||''; if(c.state_code) _quote.posCode=c.state_code; try{ currentPage='quotations'; document.querySelectorAll('.nav-item,.mnav-btn').forEach(function(el){ el.classList.toggle('active', el.dataset&&el.dataset.page==='quotations'); }); var mc=document.getElementById('main-content'); if(mc) mc.classList.remove('mc-wide'); }catch(e){} renderQuoteBuilder(); var mc2=document.getElementById('main-content'); if(mc2) mc2.scrollTop=0; }
+function _custBillText(c){ if(c&&c.billing&&typeof c.billing==='object'){ var a=c.billing; var t=[a.line1,a.line2,[a.city,a.pincode].filter(Boolean).join(' ')].filter(Boolean).join(', '); if(t) return t; } return (c&&c.billing_address)||(c&&c.city)||''; }
+function _custShipText(c){ if(c&&c.shipping&&typeof c.shipping==='object'){ var a=c.shipping; var t=[a.line1,a.line2,[a.city,a.pincode].filter(Boolean).join(' ')].filter(Boolean).join(', '); if(t) return t; } return _custBillText(c); }
+function custOpenBuilder(){ qReset(); var c=_curCust||{}; _quote.name=c.name||''; _quote.mobile=c.mobile||''; _quote.company=c.company||''; _quote.gstin=c.gstin||''; _quote.billing=_custBillText(c); _quote.shipTo=_custShipText(c); var _bsc=(c.billing&&c.billing.state_code)||c.state_code; if(_bsc) _quote.posCode=_bsc; try{ currentPage='quotations'; document.querySelectorAll('.nav-item,.mnav-btn').forEach(function(el){ el.classList.toggle('active', el.dataset&&el.dataset.page==='quotations'); }); var mc=document.getElementById('main-content'); if(mc) mc.classList.remove('mc-wide'); }catch(e){} renderQuoteBuilder(); var mc2=document.getElementById('main-content'); if(mc2) mc2.scrollTop=0; }
 function custQuoteOpen(){
   _quoteReturn='detail';
   _quoteProds=(typeof loadProds==='function')?(loadProds()||[]):[];
@@ -1676,7 +1753,7 @@ function qTotalsRowsHTML(t,intra){
 }
 function qRenderTotals(){ var t=custQuoteTotals(); var intra=(_quote.posCode===GH_SELLER.stateCode); var el=document.getElementById('q-totals'); if(!el)return; el.innerHTML=qTotalsRowsHTML(t,intra); return; el.innerHTML='<div style="display:flex;justify-content:space-between;padding:2px 0"><span>Taxable</span><b>'+custMoney(t.taxable)+'</b></div>'+(intra?'<div style="display:flex;justify-content:space-between;padding:2px 0;color:var(--ink3)"><span>CGST</span><span>'+custMoney(t.tax/2)+'</span></div><div style="display:flex;justify-content:space-between;padding:2px 0;color:var(--ink3)"><span>SGST</span><span>'+custMoney(t.tax/2)+'</span></div>':'<div style="display:flex;justify-content:space-between;padding:2px 0;color:var(--ink3)"><span>IGST</span><span>'+custMoney(t.tax)+'</span></div>')+'<div style="display:flex;justify-content:space-between;padding:7px 0 0;border-top:1px solid rgba(0,0,0,.1);margin-top:5px;font-size:16px;font-family:Poppins,sans-serif;font-weight:800"><span>Total</span><span>'+custMoney(t.grand)+'</span></div>'; }
 function qCustSearch(v){ var box=document.getElementById('q-custresults'); if(!box)return; v=(v||'').trim().toLowerCase(); if(!v){box.style.display='none';return;} if(!_CUSTOMERS.length && supa){ supa.from('customers').select('*').then(function(r){_CUSTOMERS=r.data||[];qCustSearch(v);},function(){}); return; } var m=_CUSTOMERS.filter(function(c){return (c.name||'').toLowerCase().indexOf(v)>-1||(c.mobile||'').indexOf(v)>-1;}).slice(0,7); box.innerHTML=(m.length?m.map(function(c){return '<div class="q-pres" onmousedown="qPickCust(\''+escA(c.mobile)+'\')"><span style="flex:1;font-size:12.5px">'+escA(c.name||'Unknown')+'</span><span style="font-size:11px;color:var(--ink3)">+91 '+escA(c.mobile)+'</span></div>';}).join(''):'<div style="padding:8px;color:var(--ink3);font-size:12px">No match</div>'); box.style.display='block'; }
-function qPickCust(mobile){ var c=_CUSTOMERS.find(function(x){return x.mobile===mobile;}); if(!c)return; _quote.name=c.name||''; _quote.mobile=c.mobile||''; _quote.company=c.company||''; _quote.gstin=c.gstin||''; _quote.billing=c.billing_address||c.city||''; _quote.shipTo=c.billing_address||''; _quote.posCode=c.state_code||'36'; renderQuoteBuilder(); }
+function qPickCust(mobile){ var c=_CUSTOMERS.find(function(x){return x.mobile===mobile;}); if(!c)return; _quote.name=c.name||''; _quote.mobile=c.mobile||''; _quote.company=c.company||''; _quote.gstin=c.gstin||''; _quote.billing=_custBillText(c); _quote.shipTo=_custShipText(c); _quote.posCode=((c.billing&&c.billing.state_code)||c.state_code)||'36'; renderQuoteBuilder(); }
 function qGenerate(){
   var mob=(_quote.mobile||'').replace(/\D/g,'');
   if(!_quote.name||_quote.name.trim().length<2){ toast('Enter customer name','#C62828'); return; }
@@ -1799,23 +1876,15 @@ function salesRender(orders,payments,customers){
   var pend=Object.keys(byCust).map(function(m){return {mobile:m,name:nameBy[m]||('+91 '+m),bal:byCust[m].ord-byCust[m].paid};}).filter(function(x){return x.bal>0.5;}).sort(function(a,b){return b.bal-a.bal;});
   var _sfin=orders.filter(function(o){return o.status!=='Quotation'&&o.status!=='Cancelled';}).reduce(function(a,o){ var f=orderFinancials(o); a.sales+=f.sales; a.spend+=f.spend; a.profit+=f.profit; return a; },{sales:0,spend:0,profit:0});
   var h=ghRangeBar('sales',_salesFrom,_salesTo);
-  h+='<div class="an-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">'
-    +salesStat('Total sales',custMoney(totalOrders))
-    +salesStat('Collected',custMoney(collected),'#1B7A4D')
-    +salesStat('Pending',custMoney(pending),'#C62828')
-    +salesStat('Today',custMoney(todaySales),'#7C3AED')
-    +salesStat('Tax invoices',custMoney(totalInv))
-    +salesStat('Forecast / mo',custMoney(forecast),'#2563EB')
-    +salesStat('Spend',custMoney(_sfin.spend),'#C62828')
-    +salesStat('Profit',custMoney(_sfin.profit),_sfin.profit>=0?'#1B7A4D':'#C62828')
-    +'</div>';
+  h+='<div class="an-grid" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">'+salesStat('Total sales',custMoney(totalOrders))+salesStat('Collected',custMoney(collected),'#1B7A4D')+salesStat('Pending',custMoney(pending),'#C62828')+salesStat('Today',custMoney(todaySales),'#7C3AED')+salesStat('Tax invoices',custMoney(totalInv))+salesStat('Forecast / mo',custMoney(forecast),'#2563EB')+salesStat('Spend',custMoney(_sfin.spend),'#C62828')+salesStat('Profit',custMoney(_sfin.profit),_sfin.profit>=0?'#1B7A4D':'#C62828')+'</div>';
   h+='<div class="cust-sec"><h4>Daily collections (last 14 days)</h4>'+salesBar(days,maxD)+'</div>';
-  var leadBy={}; LEAD_STATUS.forEach(function(s){leadBy[s]=0;}); customers.forEach(function(c){var s=c.lead_status||'New'; leadBy[s]=(leadBy[s]||0)+1;}); var ltot=customers.length||1;
-  h+='<div class="cust-cols" style="margin-bottom:0"><div class="cust-sec"><h4>Lead pipeline</h4>'+LEAD_STATUS.map(function(s){ var n=leadBy[s]||0; var pct=Math.round(n/ltot*100); return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--ink2);font-weight:600">'+s+'</span><span style="color:var(--ink3)">'+n+'</span></div><div style="height:8px;background:var(--c2);border-radius:99px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+LEAD_COLOR[s]+'"></div></div></div>'; }).join('')+'</div>';
-  h+='<div class="cust-sec"><h4>Pending payments <span style="margin-left:auto;font-weight:800;color:#C62828">'+custMoney(pending)+'</span></h4>'+(pend.length?pend.map(function(p){ return '<div class="cust-row" data-s="'+ghSKey(p.name,p.mobile)+'" style="cursor:pointer" onclick="openCustomer(\''+escA(p.mobile)+'\')"><div style="flex:1"><div style="font-weight:700;font-size:13.5px;color:var(--ink)">'+escA(p.name)+'</div><div style="font-size:11.5px;color:var(--ink3)">+91 '+escA(p.mobile)+'</div></div><div style="font-weight:800;color:#C62828">'+custMoney(p.bal)+'</div></div>'; }).join(''):'<div style="color:var(--ink3);font-size:13px;padding:14px">No pending balances \u2014 all collected.</div>')+'</div></div>';
+  var leadBy={}; LEAD_STATUS.forEach(function(s){leadBy[s]=0;}); customers.forEach(function(c){ var st=c.lead_status||'New'; if(leadBy[st]==null)leadBy[st]=0; leadBy[st]++; }); var ltot=customers.length||1;
+  var leadHtml='<div class="cust-sec"><h4>Lead pipeline <span style="margin-left:auto;font-weight:700;color:var(--ink3);font-size:12px">'+customers.length+' total</span></h4>'+LEAD_STATUS.map(function(s){ var n=leadBy[s]||0; var pct=Math.round(n/ltot*100); return '<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span style="color:var(--ink2);font-weight:600">'+s+'</span><span style="color:var(--ink3)">'+n+' \u00b7 '+pct+'%</span></div><div style="height:8px;background:var(--c2);border-radius:99px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+LEAD_COLOR[s]+'"></div></div></div>'; }).join('')+'</div>';
+  var pendHtml='<div class="cust-sec"><h4>Pending payments <span style="margin-left:auto;font-weight:800;color:#C62828">'+custMoney(pending)+'</span></h4>'+(pend.length?'<div id="sales-pend-list">'+pend.map(function(p){ return '<div class="cust-row" data-s="'+ghSKey(p.name,p.mobile)+'" style="cursor:pointer" onclick="openCustomer(\''+escA(p.mobile)+'\')"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13.5px;color:var(--ink)">'+escA(custSafeLabel(p.name,''))+'</div><div style="font-size:11.5px;color:var(--ink3)">+91 '+escA(p.mobile)+'</div></div><div style="font-weight:800;color:#C62828;white-space:nowrap">'+custMoney(p.bal)+'</div></div>'; }).join('')+'</div>':'<div style="color:var(--ink3);font-size:13px;padding:14px">No pending balances \u2014 all collected.</div>')+'</div>';
   var soldTop=qTallyProducts(orders.filter(function(o){return o.status!=='Quotation'&&o.status!=='Cancelled';})).slice(0,6);
-  h+='<div class="cust-sec"><h4>Most sold products</h4>'+qProdBarsProfit(soldTop)+'</div>';
-  h+='<div class="cust-sec"><h4>Recent orders &amp; quotes</h4>'+(orders.length?orders.slice().sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);}).slice(0,10).map(function(o){ return '<div class="cust-row" style="cursor:pointer" onclick="openCustomer(\''+escA(o.mobile)+'\')"><div style="flex:1"><div style="font-weight:700;font-size:13.5px;color:var(--ink)">'+escA(o.title||o.status||'Order')+'</div><div style="font-size:11.5px;color:var(--ink3)">'+escA(nameBy[o.mobile]||('+91 '+o.mobile))+' \u00b7 '+custDate(o.created_at)+'</div></div><div style="font-weight:800;color:var(--ink)">'+custMoney(o.amount||0)+'</div></div>'; }).join(''):'<div style="color:var(--ink3);font-size:13px;padding:14px">No orders yet.</div>')+'</div>';
+  var soldHtml='<div class="cust-sec"><h4>Most sold products</h4>'+qProdBarsProfit(soldTop)+'</div>';
+  h+='<div class="sales-grid"><div class="sales-col-l">'+pendHtml+'</div><div class="sales-col-r">'+leadHtml+soldHtml+'</div></div>';
+  h+='<div class="cust-sec"><h4>Recent orders &amp; quotes</h4>'+(orders.length?orders.slice().sort(function(a,b){return new Date(b.created_at)-new Date(a.created_at);}).slice(0,10).map(function(o){ var col=o.status==='Delivered'?'#1B7A4D':(o.status==='Invoice'?'#7C3AED':(o.status==='Quotation'?'#C8860A':'#2563EB')); return '<div class="cust-row" style="cursor:pointer" onclick="openCustomer(\''+escA(o.mobile)+'\')"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px;color:var(--ink)">'+escA(custSafeLabel(nameBy[o.mobile],o.title))+'</div><div style="font-size:11.5px;color:var(--ink3)">'+escA(o.title||'')+' \u00b7 '+custDate(o.created_at)+'</div></div><span class="lead-badge" style="background:'+col+'1f;color:'+col+';margin-right:8px">'+escA(o.status)+'</span><div style="font-weight:800;color:var(--ink)">'+custMoney(o.amount||0)+'</div></div>'; }).join(''):'<div style="color:var(--ink3);font-size:13px;padding:14px">No orders yet.</div>')+'</div>';
   el.innerHTML=h;
 }
 var VENDORS=[], PRODUCT_VENDORS={}, PRODUCT_COSTS={}, VENDOR_DEFAULTS={base:'',top:''}, _curVend=null, _vendQuery='', _vendEdit=false;
