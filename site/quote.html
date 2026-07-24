@@ -1552,7 +1552,7 @@ async function custBuildQuotePDF(items){
   y+=60;
   doc.setFont('helvetica','bold'); doc.setFontSize(7.5); doc.setTextColor.apply(doc,INK); doc.text('Notes',M,y); doc.setFont('helvetica','normal'); doc.setTextColor.apply(doc,GREY); doc.text(doc.splitTextToSize(GH_SELLER.notes,W/2-M-14),M,y+11);
   doc.setFont('helvetica','bold'); doc.setTextColor.apply(doc,INK); doc.text('Terms & Conditions',W/2,y); doc.setFont('helvetica','normal'); doc.setTextColor.apply(doc,GREY); var ty=y+11; GH_SELLER.terms.forEach(function(tt){ var ls=doc.splitTextToSize('\u2022 '+tt,W/2-M); doc.text(ls,W/2,ty); ty+=ls.length*8.6; });
-  var blob=doc.output('blob'); var path='quotes/'+_curCust.mobile+'-'+_quote.quoteNo+'.pdf';
+  var blob=doc.output('blob'); var path='quotes/'+_curCust.mobile+'-'+_quote.quoteNo+'-'+Date.now()+'.pdf';
   function _fin(r){ if(r&&r.error){ toast('PDF made, record failed: '+r.error.message,'#C62828'); } else { toast(_quote.quoteNo+(_quote.editId?' updated':' created')+' \u2713','#1B7A4D'); } if(_quoteReturn==='page'){ qReset(); renderQuotations(); } else { custQuoteClose(); custLoadDetail(_curCust.mobile); } }
   function _sv(p){ return _quote.editId?supa.from('customer_orders').update(p).eq('id',_quote.editId):supa.from('customer_orders').insert(Object.assign({created_at:new Date().toISOString()},p)); }
   function _saveOrder(url){
