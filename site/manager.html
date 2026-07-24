@@ -2087,8 +2087,8 @@ function stageAdvance(orderId,pid,part,vid){
   var next=STAGE_ORDER[Math.min(i+1,STAGE_ORDER.length-1)];
   stageSet(orderId,pid,part,vid,next); stageRefresh();
 }
-function runStageSel(it){ var cur=it.stage||'Assigned'; var c=STAGE_COL[cur]||'#888'; return '<select class="cust-in" style="margin:0;width:124px;flex:none;padding:4px 6px;font-size:11px;font-weight:700;color:'+c+'" onchange="runStageSet(this,\''+escA(it.orderId)+'\',\''+escA(it.pid||'')+'\',\''+escA(it.part||'')+'\','+(it.vid||'null')+',this.value)">'+STAGE_ORDER.map(function(s){return '<option value="'+s+'"'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>'; }
-function runStageSet(sel,orderId,pid,part,vid,stage){ stageSet(orderId,pid,part,(vid==null?null:vid),stage); if(sel&&sel.style)sel.style.color=STAGE_COL[stage]||'#888'; toast('Status \u2192 '+stage,'#1B7A4D'); }
+function runStageSel(it){ var cur=it.stage||'Assigned'; var c=STAGE_COL[cur]||'#888'; var lk=ghLineKey(it.orderId,it.pid,it.part); return '<select class="cust-in gh-stage-sel" data-lk="'+escA(lk)+'" style="margin:0;width:124px;flex:none;padding:4px 6px;font-size:11px;font-weight:700;color:'+c+'" onchange="runStageSet(this,\''+escA(it.orderId)+'\',\''+escA(it.pid||'')+'\',\''+escA(it.part||'')+'\','+(it.vid||'null')+',this.value)">'+STAGE_ORDER.map(function(s){return '<option value="'+s+'"'+(s===cur?' selected':'')+'>'+s+'</option>';}).join('')+'</select>'; }
+function runStageSet(sel,orderId,pid,part,vid,stage){ stageSet(orderId,pid,part,(vid==null?null:vid),stage); var lk=ghLineKey(orderId,pid,part); var col=STAGE_COL[stage]||'#888'; try{ var all=document.querySelectorAll('select.gh-stage-sel[data-lk="'+lk+'"]'); for(var i=0;i<all.length;i++){ all[i].value=stage; all[i].style.color=col; } }catch(e){ if(sel&&sel.style)sel.style.color=col; } toast('Status → '+stage,'#1B7A4D'); }
 function stageBack(orderId,pid,part,vid){
   var cur=stageOf(orderId,pid,part); var i=STAGE_ORDER.indexOf(cur);
   var prev=STAGE_ORDER[Math.max(i-1,0)];
@@ -2134,14 +2134,14 @@ function runRender(nameBy,photoBy,payments,delivered){
   h+=runPendingHtml(delivered||[], _runOrders.concat(delivered||[]), payments||[], nameBy);
   h+='<div class="cust-sec"><h4>Production by vendor</h4>'+(vendKeys.length?vendKeys.map(function(key){ var g=vendAgg[key]; var vd=g.vid?VENDORS.find(function(x){return String(x.id)===String(g.vid);}):null;
     var pill=function(st){ var c=STAGE_COL[st]||'#888'; var n=g.stageCount[st]||0; return n?'<span class="pstage-pill" style="background:'+c+'1a;color:'+c+'">'+st+' '+n+'</span>':''; };
-    var lineRows=g.lines.map(function(ln){ var c=STAGE_COL[ln.stage]||'#888'; var canFwd=ln.stage!=='Delivered'; var canBack=ln.stage!=='Assigned';
+    var lineRows=g.lines.map(function(ln){ var c=STAGE_COL[ln.stage]||'#888'; var canFwd=false; var canBack=false;
       return '<div class="pline">'
         +(ln.image?'<img src="'+escA(ln.image)+'" class="pline-img">':'<span class="pline-img"></span>')
         +'<div class="pline-mid"><div class="pline-nm">'+escA(ln.name)+'</div>'
         +'<div class="pline-sub">'+escA(ln.cust||'')+(ln.ref?(' \u00b7 '+escA(ln.ref)):'')+'</div></div>'
         +'<div class="pline-right">'
         +'<span class="pline-qty">\u00d7'+ln.qty+'</span>'
-        +'<span class="pstage-tag" style="background:'+c+'1a;color:'+c+'">'+ln.stage+'</span>'
+        +runStageSel(ln)
         +'<span class="pline-btns">'
         +(canBack?'<button class="pstage-nav" title="Move back" onclick="stageBack(\''+escA(ln.orderId)+'\',\''+escA(ln.pid)+'\',\''+escA(ln.part||'')+'\','+(g.vid||'null')+')">\u2039</button>':'')
         +(canFwd?'<button class="pstage-nav fwd" title="Advance" onclick="stageAdvance(\''+escA(ln.orderId)+'\',\''+escA(ln.pid)+'\',\''+escA(ln.part||'')+'\','+(g.vid||'null')+')">\u203a</button>':'')
