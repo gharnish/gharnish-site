@@ -808,6 +808,7 @@ function ensureSupa(){
   try{
     if(typeof window.supabase !== 'undefined' && window.supabase.createClient){
       supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      _ghPatchSupaWrites(supa);
     } else {
       SUPA_INIT_ERR = 'lib-missing';
     }
@@ -816,6 +817,50 @@ function ensureSupa(){
     console.warn('[GH-ADMIN] Supabase init failed:', e);
   }
   return supa;
+}
+
+/* ══ SHARED DATA CACHE (load-time optimization) ══
+   customer_orders / customer_payments / customers are read on almost every page.
+   Cache full-table reads for a short TTL, coalesce concurrent fetches, and
+   auto-invalidate on any local write (see _ghPatchSupaWrites). */
+var _DC = {};              /* key -> {rows:[], ts:ms}  OR  {p:Promise} while in flight */
+var _DC_GEN = 0;           /* bumped on every bust; guards late-resolving fetches */
+var _DC_TTL = 60000;       /* 60s freshness window for cross-page reuse */
+function cacheBust(){ _DC = {}; _DC_GEN++; }
+function _cacheCopy(rows){ return (rows && rows.slice) ? rows.slice() : []; }
+function _cacheFetch(key, build){
+  var e = _DC[key];
+  if(e){
+    if(e.p) return e.p.then(_cacheCopy);                     /* fetch already in flight -> share it, hand out a copy */
+    if(e.rows && (Date.now()-e.ts) < _DC_TTL) return Promise.resolve(_cacheCopy(e.rows));
+  }
+  var gen = _DC_GEN;
+  var p = Promise.resolve().then(build).then(function(r){
+    var rows = (r && r.data) ? r.data : [];
+    if(gen === _DC_GEN) _DC[key] = {rows:rows, ts:Date.now()};
+    return rows;
+  }, function(){ if(gen === _DC_GEN){ delete _DC[key]; } return []; });
+  _DC[key] = {p:p};
+  return p.then(_cacheCopy);                                  /* callers always get an isolated array */
+}
+function cacheOrders(){ return _cacheFetch('orders', function(){ return supa.from('customer_orders').select('*'); }); }
+function cachePayments(){ return _cacheFetch('payments', function(){ return supa.from('customer_payments').select('*'); }); }
+function cacheCustomers(){ return _cacheFetch('customers', function(){ return supa.from('customers').select('*'); }); }
+function _cacheSortByCreated(rows){ return rows.slice().sort(function(a,b){ return new Date(b&&b.created_at||0) - new Date(a&&a.created_at||0); }); }
+function _ghPatchSupaWrites(client){
+  try{
+    if(!client || client.__ghPatched) return; client.__ghPatched = true;
+    var _from = client.from.bind(client);
+    client.from = function(tbl){
+      var qb = _from(tbl);
+      if(tbl==='customer_orders' || tbl==='customer_payments' || tbl==='customers'){
+        ['insert','update','delete','upsert'].forEach(function(m){
+          if(qb && typeof qb[m] === 'function'){ var o = qb[m].bind(qb); qb[m] = function(){ cacheBust(); return o.apply(qb, arguments); }; }
+        });
+      }
+      return qb;
+    };
+  }catch(e){ console.warn('[GH-ADMIN] supa write-patch failed', e); }
 }
 ensureSupa();
 
@@ -952,7 +997,7 @@ async function showApp(){
   // Supabase status
   const badge = document.getElementById('supa-badge-sb');
   if(supa){
-    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 89</span>';
+    badge.innerHTML='<span class="supa-badge supa-ok">● Supabase connected</span> <span style="font-size:9.5px;color:var(--ink3);margin-left:4px;font-weight:800;letter-spacing:.03em">BUILD 90</span>';
     await loadAllFromSupabase();
     await loadBulkTiers();
     await loadCatHeroImgs();
@@ -1068,8 +1113,8 @@ function custLoad(){
 function custLoadAgg(cb){
   if(_custAggLoaded){ cb&&cb(); return; }
   Promise.all([
-    supa.from('customer_orders').select('mobile,amount,status,created_at,title').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customer_payments').select('mobile,amount,created_at').then(function(r){return r.data||[];},function(){return [];})
+    cacheOrders(),
+    cachePayments()
   ]).then(function(res){ _custOrdersAll=res[0]; _custPaymentsAll=res[1]; _custAggLoaded=true; cb&&cb(); },function(){ _custAggLoaded=true; cb&&cb(); });
 }
 function custRenderView(){
@@ -1585,8 +1630,8 @@ function qLoadList(){
   var el=document.getElementById('q-listwrap'); if(!el)return;
   if(!supa){ el.innerHTML='<div class="sc" style="padding:20px">Not connected.</div>'; return; }
   Promise.all([
-    supa.from('customer_orders').select('*').order('created_at',{ascending:false}).then(function(r){ return (r.data||[]).filter(function(o){ return o.meta || o.status==='Quotation' || o.status==='Invoice'; }); },function(){return [];}),
-    supa.from('customers').select('*').then(function(r){return r.data||[];},function(){return [];})
+    cacheOrders().then(function(rows){ return _cacheSortByCreated(rows).filter(function(o){ return o.meta || o.status==='Quotation' || o.status==='Invoice'; }); },function(){return [];}),
+    cacheCustomers()
   ]).then(function(res){
     var rows=res[0]; _qListRows=rows; _CUSTOMERS=res[1]||[]; var nameBy={}, srcBy={}; _CUSTOMERS.forEach(function(c){nameBy[c.mobile]=c.name; srcBy[c.mobile]=c.signup_source;});
     var tQ=rows.filter(function(o){return o.status==='Quotation';}).reduce(function(a,o){return a+(+o.amount||0);},0);
@@ -1845,16 +1890,16 @@ function ghRangeBar(prefix,from,to){ var lb='font-size:10px;font-weight:800;colo
 function renderSales(){
   custStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Sales &amp; Store Manager</div><div class="page-sub">Sales, collections, pendings &amp; forecast</div></div><button class="settings-save-btn" onclick="renderSales()">Refresh</button></div>'+ghSearchBar('sales-find','Search customer name or mobile\u2026')+'<div id="sales-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Sales &amp; Store Manager</div><div class="page-sub">Sales, collections, pendings &amp; forecast</div></div><button class="settings-save-btn" onclick="cacheBust();renderSales()">Refresh</button></div>'+ghSearchBar('sales-find','Search customer name or mobile\u2026')+'<div id="sales-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
   salesLoad();
 }
 function salesLoad(){
   var el=document.getElementById('sales-wrap');
   if(!supa){ if(el)el.innerHTML='<div class="sc" style="padding:20px">Not connected.</div>'; return; }
   Promise.all([
-    supa.from('customer_orders').select('*').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customer_payments').select('*').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customers').select('*').then(function(r){return r.data||[];},function(){return [];})
+    cacheOrders(),
+    cachePayments(),
+    cacheCustomers()
   ]).then(function(res){ salesRender(res[0],res[1],res[2]); });
 }
 function salesRender(orders,payments,customers){
@@ -1959,8 +2004,8 @@ function vendRenderDetail(){
 function vendLoadProduction(){
   var el=document.getElementById('vend-production'); if(!el||!_curVend||!supa)return;
   Promise.all([
-    supa.from('customer_orders').select('*').in('status',['Confirmed','In production','Ready']).then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customers').select('mobile,name').then(function(r){return r.data||[];},function(){return [];}),
+    cacheOrders().then(function(rows){ return rows.filter(function(o){ return ['Confirmed','In production','Ready'].indexOf(o.status)>-1; }); },function(){return [];}),
+    cacheCustomers(),
     supa.from('vendor_payments').select('*').eq('vendor_id',_curVend.id).order('created_at',{ascending:false}).then(function(r){return r.data||[];},function(){return [];}),
     supa.from('production_stages').select('*').then(function(r){return r.data||[];},function(){return [];})
   ]).then(function(res){
@@ -1991,7 +2036,7 @@ function runPendingHtml(delivered, allOrders, payments, nameBy){ try{window._GH_
 function renderRunning(){
   custStyle(); runStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Running Orders</div><div class="page-sub">Confirmed &amp; in-production orders \u2014 timelines &amp; vendor split</div></div><button class="settings-save-btn" onclick="renderRunning()">Refresh</button></div>'+ghSearchBar('run-find','Search order, name, mobile or reference\u2026')+'<div id="run-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Running Orders</div><div class="page-sub">Confirmed &amp; in-production orders \u2014 timelines &amp; vendor split</div></div><button class="settings-save-btn" onclick="cacheBust();renderRunning()">Refresh</button></div>'+ghSearchBar('run-find','Search order, name, mobile or reference\u2026')+'<div id="run-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
   runLoad();
 }
 var _prodStages={};
@@ -2032,10 +2077,10 @@ function runLoad(){
   var el=document.getElementById('run-wrap');
   if(!supa){ if(el)el.innerHTML='<div class="sc" style="padding:20px">Not connected.</div>'; return; }
   Promise.all([
-    supa.from('customer_orders').select('*').in('status',['Confirmed','In production','Ready']).order('created_at',{ascending:false}).then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customers').select('mobile,name,photo_url').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customer_payments').select('*').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customer_orders').select('*').eq('status','Delivered').order('delivery_date',{ascending:false}).limit(500).then(function(r){return r.data||[];},function(){return [];}),
+    cacheOrders().then(function(rows){ return _cacheSortByCreated(rows).filter(function(o){ return ['Confirmed','In production','Ready'].indexOf(o.status)>-1; }); },function(){return [];}),
+    cacheCustomers(),
+    cachePayments(),
+    cacheOrders().then(function(rows){ return rows.filter(function(o){ return o.status==='Delivered'; }).sort(function(a,b){ return new Date(b&&b.delivery_date||0) - new Date(a&&a.delivery_date||0); }).slice(0,500); },function(){return [];}),
     supa.from('production_stages').select('*').then(function(r){return r.data||[];},function(){return [];})
   ]).then(function(res){ _runOrders=res[0]; _prodStages={}; (res[4]||[]).forEach(function(r){ _prodStages[r.line_key]=r; }); var nameBy={},photoBy={}; res[1].forEach(function(c){nameBy[c.mobile]=c.name;photoBy[c.mobile]=c.photo_url;}); _runNameBy=nameBy; runRender(nameBy,photoBy,res[2]||[],res[3]||[]); });
 }
@@ -2099,10 +2144,10 @@ function txnLoad(){
   var el=document.getElementById('txn-wrap');
   if(!supa){ if(el)el.innerHTML='<div class="sc" style="padding:20px">Not connected.</div>'; return; }
   Promise.all([
-    supa.from('customer_payments').select('*').then(function(r){return r.data||[];},function(){return [];}),
+    cachePayments(),
     supa.from('vendor_payments').select('*').then(function(r){return r.data||[];},function(){return [];}),
     supa.from('expenses').select('*').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customers').select('mobile,name').then(function(r){return r.data||[];},function(){return [];})
+    cacheCustomers()
   ]).then(function(res){
     var cp=res[0], vp=res[1], ex=res[2], custs=res[3]; _txnCusts=custs; var nameBy={}; custs.forEach(function(c){nameBy[c.mobile]=c.name;});
     _txns=[];
@@ -2873,9 +2918,9 @@ function renderDashboard(){
 function dashWidgets(){
   var el=document.getElementById('dsh-live'); if(!el||!supa) return;
   Promise.all([
-    supa.from('customer_orders').select('*').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customer_payments').select('amount').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customers').select('mobile,name').then(function(r){return r.data||[];},function(){return [];})
+    cacheOrders(),
+    cachePayments(),
+    cacheCustomers()
   ]).then(function(res){
     var orders=res[0], payments=res[1], custs=res[2];
     var totalOrders=orders.reduce(function(a,o){return a+(+o.amount||0);},0);
@@ -5296,14 +5341,14 @@ function lsSaveLeads(arr){ localStorage.setItem('gh_leads',JSON.stringify(arr));
 function renderAnalytics(){
   custStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Analytics</div><div class="page-sub">Business performance \u2014 sales, profit, leads &amp; products</div></div><button class="settings-save-btn" onclick="renderAnalytics()">Refresh</button></div><div id="an-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Analytics</div><div class="page-sub">Business performance \u2014 sales, profit, leads &amp; products</div></div><button class="settings-save-btn" onclick="cacheBust();renderAnalytics()">Refresh</button></div><div id="an-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
   if(!supa){ var w0=document.getElementById('an-wrap'); if(w0)w0.innerHTML='<div class="sc" style="padding:20px">Not connected.</div>'; return; }
   Promise.all([
-    supa.from('customer_orders').select('*').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customer_payments').select('*').then(function(r){return r.data||[];},function(){return [];}),
+    cacheOrders(),
+    cachePayments(),
     supa.from('vendor_payments').select('amount').then(function(r){return r.data||[];},function(){return [];}),
     supa.from('expenses').select('amount,created_at').then(function(r){return r.data||[];},function(){return [];}),
-    supa.from('customers').select('*').then(function(r){return r.data||[];},function(){return [];})
+    cacheCustomers()
   ]).then(function(res){ analyticsRender(res[0],res[1],res[2],res[3],res[4]); });
 }
 function analyticsRender(orders,payments,vpays,expenses,customers){
