@@ -1235,9 +1235,9 @@ function custEditProfile(){
   var host=document.getElementById('ecp-ov');
   if(!host){ host=document.createElement('div'); host.id='ecp-ov'; host.className='ll-ov'; document.body.appendChild(host); }
   host.innerHTML='<div class="ll-card ecp-card"><div class="ll-hd"><div><div class="ll-title">Edit customer</div><div class="ll-vend">'+escA(c.name||c.mobile)+'</div></div><button class="ll-x" onclick="ecpClose()">\u00d7</button></div>'
-    +'<div class="ll-body ecp-body">'
+    +'<div class="ll-body ecp-body">'+'<div class="ecp-field" style="display:flex;align-items:center;gap:14px">'+custAvatar(c,58)+'<label class="cust-hbtn" style="background:var(--c2);color:var(--ink);cursor:pointer">Change photo<input type="file" accept="image/*" style="display:none" onchange="custUploadPhoto(this)"></label></div>'
     +'<div class="ecp-field"><label>Name <span style="color:#C62828">*</span></label><input class="cust-in" id="ecp-name" value="'+escA(c.name||'')+'"></div>'
-    +'<div class="ecp-row2"><div class="ecp-field"><label>Phone</label><input class="cust-in" id="ecp-mobile" value="'+escA(c.mobile||'')+'" disabled style="opacity:.6"></div>'
+    +'<div class="ecp-row2"><div class="ecp-field"><label>Phone</label><input class="cust-in" id="ecp-mobile" inputmode="numeric" value="'+escA(c.mobile||'')+'"></div>'
     +'<div class="ecp-field"><label>Email</label><input class="cust-in" id="ecp-email" placeholder="name@example.com" value="'+escA(c.email||'')+'"></div></div>'
     +'<div class="ecp-sec">Company details (optional)</div>'
     +'<div class="ecp-field"><label>GSTIN</label><input class="cust-in" id="ecp-gstin" placeholder="29AABCT1332L000" value="'+escA(c.gstin||'')+'"></div>'
@@ -1269,12 +1269,40 @@ function ecpSave(){
     billing:bill, shipping:ship,
     billing_address:_addrText(bill)||null, state_code:bill.state_code||null,
     city:bill.city||null, updated_at:new Date().toISOString() };
+  var _oldMob=_curCust.mobile; var _newMob=(document.getElementById('ecp-mobile').value||'').replace(/\D/g,''); if(_newMob && _newMob!==_oldMob){ if(_newMob.length!==10){ toast('Enter a valid 10-digit mobile','#C62828'); return; } ecpChangeMobile(_oldMob,_newMob,upd); return; }
   supa.from('customers').update(upd).eq('mobile',_curCust.mobile).then(function(r){
     if(r&&r.error){ toast('Save failed: '+r.error.message,'#C62828'); return; }
     Object.assign(_curCust,upd); toast('Customer updated','#1B7A4D'); ecpClose(); custLoadDetail(_curCust.mobile);
   },function(){ toast('Save failed','#C62828'); });
 }
 function ecpClose(){ var h=document.getElementById('ecp-ov'); if(h) h.style.display='none'; }
+function ecpChangeMobile(oldMob,newMob,upd){
+  supa.from('customers').select('mobile').eq('mobile',newMob).maybeSingle().then(function(r){
+    if(r&&r.data){ toast('That number already belongs to another customer','#C62828'); return; }
+    var nO=((_custData&&_custData.orders)||[]).length, nP=((_custData&&_custData.payments)||[]).length;
+    ghConfirm('Change mobile from '+oldMob+' to '+newMob+'? This moves the customer and all linked records ('+nO+' order(s), '+nP+' payment(s), plus notes & messages) to the new number.', function(){
+      supa.from('customers').select('*').eq('mobile',oldMob).single().then(function(rr){
+        if((rr&&rr.error)||!rr||!rr.data){ toast('Could not read customer record','#C62828'); return; }
+        var row=Object.assign({},rr.data,upd,{mobile:newMob,updated_at:new Date().toISOString()});
+        supa.from('customers').insert(row).then(function(ir){
+          if(ir&&ir.error){ toast('Change failed: '+ir.error.message,'#C62828'); return; }
+          var kids=['customer_orders','customer_payments','customer_messages','customer_notes'];
+          (function mv(i){
+            if(i>=kids.length){
+              supa.from('customers').delete().eq('mobile',oldMob).then(function(dr){
+                if(dr&&dr.error){ toast('Records moved; old entry not removed: '+dr.error.message,'#C8860A'); } else { toast('Mobile number updated \u2713','#1B7A4D'); }
+                var idx=_CUSTOMERS.findIndex(function(x){return x.mobile===oldMob;}); if(idx>-1) _CUSTOMERS.splice(idx,1);
+                _curCust=Object.assign({},row); ecpClose(); if(typeof custLoad==='function') custLoad(); custLoadDetail(newMob);
+              },function(){ toast('Records moved; old entry not removed','#C8860A'); _curCust=Object.assign({},row); ecpClose(); custLoadDetail(newMob); });
+              return;
+            }
+            supa.from(kids[i]).update({mobile:newMob}).eq('mobile',oldMob).then(function(){ mv(i+1); },function(){ mv(i+1); });
+          })(0);
+        },function(){ toast('Change failed while copying record','#C62828'); });
+      },function(){ toast('Could not read customer record','#C62828'); });
+    });
+  },function(){ toast('Could not check the new number','#C62828'); });
+}
 function custAddPrompt(){
   if(!supa){ toast('Connect Supabase first','#C62828'); return; }
   ghForm({title:'Add customer', fields:[{key:'name',label:'Name',type:'text'},{key:'mobile',label:'Mobile (10 digits)',type:'text'},{key:'city',label:'City (optional)',type:'text'}], submitLabel:'Save customer', onSubmit:function(v){ var name=(v.name||'').trim(); var mobile=(v.mobile||'').replace(/\D/g,''); if(!name){ toast('Name required','#C62828'); return false; } if(mobile.length!==10){ toast('Enter a valid 10-digit mobile','#C62828'); return false; } supa.from('customers').upsert({mobile:mobile,name:name,city:(v.city||'').trim(),signup_source:'admin',updated_at:new Date().toISOString()},{onConflict:'mobile'}).then(function(r){ if(r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Customer saved','#1B7A4D'); custLoad(); }); }});
