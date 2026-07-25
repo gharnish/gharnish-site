@@ -1791,11 +1791,18 @@ function qToggleLam(i){ if(_quote.items[i]){ _quote.items[i]._showLam=!_quote.it
 function qItemSetLive(i,v){ if(!_quote.items[i])return; _quote.items[i].qty=Math.max(0,parseFloat(v)||0); var amt=(+_quote.items[i].qty||0)*(+_quote.items[i].rate||0); var an=document.getElementById('qi-'+i); if(an)an.textContent=custMoney(amt); qRenderTotals(); }
 function qItemQtyCommit(i,v){ if(!_quote.items[i])return; var q=Math.max(0,parseFloat(v)||0); _quote.items[i].qty=q; if(q===0){ _quote.items.splice(i,1); } qRenderItems(); qRenderProducts(); qRenderTotals(); }
 function qItemQty(i,d){ if(!_quote.items[i])return; _quote.items[i].qty=Math.max(0,(+_quote.items[i].qty||0)+d); if(_quote.items[i].qty===0){ _quote.items.splice(i,1); } qRenderItems(); qRenderProducts(); qRenderTotals(); }
+var _qDragFrom=null;
+function qDragStart(e,idx){ _qDragFrom=idx; try{ e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',String(idx)); }catch(_e){} }
+function qDragOver(e){ e.preventDefault(); try{ e.dataTransfer.dropEffect='move'; }catch(_e){} var r=e.currentTarget; if(r&&r.style){ r.style.outline='2px dashed var(--g)'; r.style.outlineOffset='-2px'; } }
+function qDragLeave(e){ var r=e.currentTarget; if(r&&r.style){ r.style.outline=''; r.style.outlineOffset=''; } }
+function qClearQDrop(){ var xs=document.querySelectorAll('#q-items .q-item'); for(var i=0;i<xs.length;i++){ xs[i].style.outline=''; xs[i].style.outlineOffset=''; } }
+function qDragEnd(e){ _qDragFrom=null; qClearQDrop(); }
+function qDrop(e,idx){ e.preventDefault(); qClearQDrop(); var from=_qDragFrom; if(from==null){ try{ from=parseInt(e.dataTransfer.getData('text/plain'),10); }catch(_e){} } if(from==null||isNaN(from)) return; var to=idx; try{ var rect=e.currentTarget.getBoundingClientRect(); if((e.clientY-rect.top)>rect.height/2) to=idx+1; }catch(_e){} var arr=_quote.items; if(from<0||from>=arr.length) return; var moved=arr.splice(from,1)[0]; if(from<to) to--; if(to<0)to=0; if(to>arr.length)to=arr.length; arr.splice(to,0,moved); _qDragFrom=null; qRenderItems(); qRenderTotals(); }
 function qRenderItems(){
   var el=document.getElementById('q-items'); if(!el)return;
   if(!_quote.items.length){ el.innerHTML='<div style="color:var(--ink3);font-size:13px;padding:16px 0;text-align:center">No items yet \u2014 add products above.</div>'; return; }
   el.innerHTML=_quote.items.map(function(it,idx){ var amt=(+it.qty||0)*(+it.rate||0);
-    return '<div class="q-item"><div class="q-item-row">'
+    return '<div class="q-item" data-qidx="'+idx+'" ondragover="qDragOver(event)" ondragleave="qDragLeave(event)" ondrop="qDrop(event,'+idx+')"><div class="q-item-row"><span class="q-drag" draggable="true" ondragstart="qDragStart(event,'+idx+')" ondragend="qDragEnd(event)" title="Drag to reorder" style="cursor:grab;user-select:none;color:var(--ink3);font-size:16px;padding:0 6px 0 0;flex:none;align-self:center">☰</span>'
       +(it.image?'<img src="'+escA(it.image)+'" class="q-thumb">':'<span class="q-thumb"></span>')
       +'<input class="cust-in q-name" style="margin:0" placeholder="Item name" value="'+escA(it.name)+'" oninput="qItemSet('+idx+',\'name\',this.value)">'
       +'<div class="q-cell"><label>HSN/SAC</label><input class="cust-in" style="margin:0;width:92px" value="'+escA(it.hsn)+'" oninput="qItemSet('+idx+',\'hsn\',this.value)"></div>'
