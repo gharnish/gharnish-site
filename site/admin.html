@@ -1064,7 +1064,7 @@ function custStyle(){ if(document.getElementById('cust-style'))return; var s=doc
   +'.an-stat .l{font-size:10.5px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-top:3px}'
   +'.qm-ov{position:fixed;inset:0;z-index:100001;background:rgba(20,16,10,.55);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:16px}'
   +'.qm-ov.open{display:flex}'
-  +'.qm-card{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:660px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}@media(max-width:600px){.qm-ov{align-items:flex-end;padding:0;}.qm-card{max-width:none;border-radius:18px 18px 0 0;max-height:92vh;padding:18px 16px calc(20px + env(safe-area-inset-bottom));}}'
+  +'.qm-card{background:#fff;border-radius:16px;padding:20px;width:100%;max-width:660px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3)}@media(max-width:600px){.qm-ov{align-items:flex-end;padding:0;}.qm-card{max-width:none;border-radius:18px 18px 0 0;max-height:92vh;padding:18px 16px calc(20px + env(safe-area-inset-bottom));}}@keyframes ghshimmer{0%{background-position:100% 0}100%{background-position:0 0}}.gh-skwrap{display:flex;flex-direction:column;gap:10px;padding:6px 2px}.gh-skrow{height:64px;border-radius:var(--r2,14px);background:linear-gradient(90deg,var(--c2) 25%,rgba(0,0,0,.05) 40%,var(--c2) 58%);background-size:400% 100%;animation:ghshimmer 1.4s ease infinite}@media(prefers-reduced-motion:reduce){.gh-skrow{animation:none}}'
   +'.q-presults{display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:5;max-height:260px;overflow-y:auto;margin-top:4px}'
   +'.q-pres{display:flex;align-items:center;gap:9px;padding:8px 10px;cursor:pointer}'
   +'.q-pres:hover{background:var(--c2)}'
@@ -1096,7 +1096,7 @@ function renderCustomers(){
   var views=[['list','Directory'],['pipeline','Pipeline'],['followups','Follow-ups'],['analytics','Analytics']];
   mc.innerHTML='<div class="page-hd"><div><div class="page-title">Customers</div><div class="page-sub">Leads, quotes, payments &amp; messages</div></div><div style="display:flex;gap:8px"><button class="settings-save-btn" style="background:var(--c2);color:var(--ink2)" onclick="custSyncLeads()">Sync leads</button><button class="settings-save-btn" onclick="custAddPrompt()">+ Add customer</button></div></div>'
     +'<div class="lead-filters" style="margin-bottom:14px">'+views.map(function(v){return '<button class="lead-filter'+(_custView===v[0]?' on':'')+'" onclick="custSetView(\''+v[0]+'\')">'+v[1]+'</button>';}).join('')+'</div>'
-    +'<div id="cust-view"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+    +'<div id="cust-view"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
   custLoad();
 }
 function custSetView(v){ _custView=v; renderCustomers(); }
@@ -1313,11 +1313,11 @@ function openCustomer(mobile){
   _curCust=_CUSTOMERS.find(function(c){return c.mobile===mobile;})||{mobile:mobile,name:'',city:''};
   custStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div id="cust-detail-body"><div style="padding:40px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div id="cust-detail-body"><div class="gh-skwrap"><div class="gh-skrow" style="height:118px"></div><div class="gh-skrow" style="height:80px"></div><div class="gh-skrow" style="height:80px"></div></div></div>';
   custLoadDetail(mobile);
 }
 function custLoadDetail(mobile){
-  var b=document.getElementById('cust-detail-body'); if(b) b.innerHTML='<div style="padding:40px;text-align:center;color:var(--ink3)">Loading\u2026</div>';
+  var b=document.getElementById('cust-detail-body'); if(b) b.innerHTML='<div class="gh-skwrap"><div class="gh-skrow" style="height:118px"></div><div class="gh-skrow" style="height:80px"></div><div class="gh-skrow" style="height:80px"></div></div>';
   Promise.all([
     supa.from('customer_orders').select('*').eq('mobile',mobile).order('created_at',{ascending:false}).then(function(r){return r.data||[];},function(){return [];}),
     supa.from('customer_payments').select('*').eq('mobile',mobile).order('created_at',{ascending:false}).then(function(r){return r.data||[];},function(){return [];}),
@@ -1654,7 +1654,7 @@ var _ghLogo=null; var _qCat='', _qSearch='', _qListRows=[];
 function renderQuotations(){
   custStyle(); qStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Quotations</div><div class="page-sub">All quotations &amp; tax invoices</div></div><button class="settings-save-btn" onclick="qReset();renderQuoteBuilder()">+ Create quotation</button></div>'+ghSearchBar('q-find','Search quote no, name, mobile or reference\u2026')+qDateBar()+'<div id="q-listwrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Quotations</div><div class="page-sub">All quotations &amp; tax invoices</div></div><button class="settings-save-btn" onclick="qReset();renderQuoteBuilder()">+ Create quotation</button></div>'+ghSearchBar('q-find','Search quote no, name, mobile or reference\u2026')+qDateBar()+'<div id="q-listwrap"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
   qLoadList();
 }
 function ghSearchBar(id,ph){
@@ -1948,7 +1948,7 @@ function ghRangeBar(prefix,from,to){ var lb='font-size:10px;font-weight:800;colo
 function renderSales(){
   custStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Sales &amp; Store Manager</div><div class="page-sub">Sales, collections, pendings &amp; forecast</div></div><button class="settings-save-btn" onclick="cacheBust();renderSales()">Refresh</button></div>'+ghSearchBar('sales-find','Search customer name or mobile\u2026')+'<div id="sales-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Sales &amp; Store Manager</div><div class="page-sub">Sales, collections, pendings &amp; forecast</div></div><button class="settings-save-btn" onclick="cacheBust();renderSales()">Refresh</button></div>'+ghSearchBar('sales-find','Search customer name or mobile\u2026')+'<div id="sales-wrap"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
   salesLoad();
 }
 function salesLoad(){
@@ -2023,7 +2023,7 @@ function vendAvatar(v,sz){ sz=sz||44; var ini=(v.name||'?').charAt(0).toUpperCas
 function renderVendors(){
   custStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Vendors</div><div class="page-sub">Suppliers &amp; makers \u2014 internal only, never shown to customers</div></div><div style="display:flex;gap:8px"><button class="settings-save-btn" style="background:var(--c2);color:var(--ink2)" onclick="vendSetDefaults()">Table defaults</button><button class="settings-save-btn" onclick="vendAddPrompt()">+ Add vendor</button></div></div><div class="tool-row" style="margin-bottom:14px"><div class="search-box"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="vend-search" placeholder="Search vendors\u2026" value="'+escA(_vendQuery)+'" oninput="vendSearch(this.value)"></div></div><div id="vend-list"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Vendors</div><div class="page-sub">Suppliers &amp; makers \u2014 internal only, never shown to customers</div></div><div style="display:flex;gap:8px"><button class="settings-save-btn" style="background:var(--c2);color:var(--ink2)" onclick="vendSetDefaults()">Table defaults</button><button class="settings-save-btn" onclick="vendAddPrompt()">+ Add vendor</button></div></div><div class="tool-row" style="margin-bottom:14px"><div class="search-box"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="vend-search" placeholder="Search vendors\u2026" value="'+escA(_vendQuery)+'" oninput="vendSearch(this.value)"></div></div><div id="vend-list"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
   vendLoad();
 }
 function vendLoad(){
@@ -2094,7 +2094,7 @@ function runPendingHtml(delivered, allOrders, payments, nameBy){ try{window._GH_
 function renderRunning(){
   custStyle(); runStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Running Orders</div><div class="page-sub">Confirmed &amp; in-production orders \u2014 timelines &amp; vendor split</div></div><button class="settings-save-btn" onclick="cacheBust();renderRunning()">Refresh</button></div>'+ghSearchBar('run-find','Search order, name, mobile or reference\u2026')+'<div id="run-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Running Orders</div><div class="page-sub">Confirmed &amp; in-production orders \u2014 timelines &amp; vendor split</div></div><button class="settings-save-btn" onclick="cacheBust();renderRunning()">Refresh</button></div>'+ghSearchBar('run-find','Search order, name, mobile or reference\u2026')+'<div id="run-wrap"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
   runLoad();
 }
 var _prodStages={};
@@ -2197,7 +2197,7 @@ function renderTransactions(){
   custStyle();
   if(!_txnRangeInit){ var _n=new Date(); _txnFrom=new Date(_n.getFullYear(),_n.getMonth(),1).toISOString().slice(0,10); _txnTo=new Date(_n.getFullYear(),_n.getMonth()+1,0).toISOString().slice(0,10); _txnRangeInit=true; }
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Transactions</div><div class="page-sub">Payments in, vendor payouts &amp; showroom expenses</div></div><div style="display:flex;gap:8px"><button class="settings-save-btn" style="background:var(--c2);color:var(--ink2)" onclick="txnAccounts()">Accounts</button><button class="settings-save-btn" onclick="txnPayIn()">+ Pay In</button><button class="settings-save-btn" style="background:#C62828" onclick="txnPayOut()">\u2212 Pay Out</button></div></div><div id="txn-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Transactions</div><div class="page-sub">Payments in, vendor payouts &amp; showroom expenses</div></div><div style="display:flex;gap:8px"><button class="settings-save-btn" style="background:var(--c2);color:var(--ink2)" onclick="txnAccounts()">Accounts</button><button class="settings-save-btn" onclick="txnPayIn()">+ Pay In</button><button class="settings-save-btn" style="background:#C62828" onclick="txnPayOut()">\u2212 Pay Out</button></div></div><div id="txn-wrap"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
   txnLoad();
 }
 function txnLoad(){
@@ -2725,7 +2725,7 @@ function tpSave(){
   });
 }
 function renderTablePricing(){
-  if(!TP){ loadTablePricing().then(renderTablePricing); document.getElementById('main-content').innerHTML='<div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div>'; return; }
+  if(!TP){ loadTablePricing().then(renderTablePricing); document.getElementById('main-content').innerHTML='<div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div>'; return; }
   if(TPBO===null){ loadTPBO().then(renderTablePricing); }
   var mc=document.getElementById('main-content');
   var ex=tpExample();
@@ -5405,7 +5405,7 @@ function lsSaveLeads(arr){ localStorage.setItem('gh_leads',JSON.stringify(arr));
 function renderAnalytics(){
   custStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Analytics</div><div class="page-sub">Business performance \u2014 sales, profit, leads &amp; products</div></div><button class="settings-save-btn" onclick="cacheBust();renderAnalytics()">Refresh</button></div><div id="an-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Analytics</div><div class="page-sub">Business performance \u2014 sales, profit, leads &amp; products</div></div><button class="settings-save-btn" onclick="cacheBust();renderAnalytics()">Refresh</button></div><div id="an-wrap"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
   if(!supa){ var w0=document.getElementById('an-wrap'); if(w0)w0.innerHTML='<div class="sc" style="padding:20px">Not connected.</div>'; return; }
   Promise.all([
     cacheOrders(),
@@ -5460,7 +5460,7 @@ const STAGE_LABELS = {new:'New',contacted:'Contacted',quoted:'Quoted',won:'Won',
 const STAGE_COLORS = {new:'#1A6BA8',contacted:'#8B4513',quoted:'#C8860A',won:'#2E7D32',lost:'#C62828'};
 
 var _leadStage='all', _leadQ='';
-function renderLeads(){ custStyle(); var mc=document.getElementById('main-content'); mc.innerHTML='<div class="page-hd"><div><div class="page-title">Leads &amp; Enquiries</div><div class="page-sub">Your sales funnel \u2014 synced live with Customers</div></div><button class="settings-save-btn" onclick="custAddPrompt()">+ Add lead</button></div><div id="leads-view"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading\u2026</div></div>'; if(!supa){ document.getElementById('leads-view').innerHTML='<div class="sc" style="padding:20px">Supabase isn\u2019t connected.</div>'; return; } _custAggLoaded=false; supa.from('customers').select('*').order('updated_at',{ascending:false}).then(function(r){ if(r.error){ document.getElementById('leads-view').innerHTML='<div class="sc" style="padding:20px;color:#C62828">Could not load leads: '+escA(r.error.message)+'</div>'; return; } _CUSTOMERS=r.data||[]; custLoadAgg(function(){ leadsPaint(); }); },function(){ document.getElementById('leads-view').innerHTML='<div class="sc" style="padding:20px;color:#C62828">Error loading leads.</div>'; }); }
+function renderLeads(){ custStyle(); var mc=document.getElementById('main-content'); mc.innerHTML='<div class="page-hd"><div><div class="page-title">Leads &amp; Enquiries</div><div class="page-sub">Your sales funnel \u2014 synced live with Customers</div></div><button class="settings-save-btn" onclick="custAddPrompt()">+ Add lead</button></div><div id="leads-view"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>'; if(!supa){ document.getElementById('leads-view').innerHTML='<div class="sc" style="padding:20px">Supabase isn\u2019t connected.</div>'; return; } _custAggLoaded=false; supa.from('customers').select('*').order('updated_at',{ascending:false}).then(function(r){ if(r.error){ document.getElementById('leads-view').innerHTML='<div class="sc" style="padding:20px;color:#C62828">Could not load leads: '+escA(r.error.message)+'</div>'; return; } _CUSTOMERS=r.data||[]; custLoadAgg(function(){ leadsPaint(); }); },function(){ document.getElementById('leads-view').innerHTML='<div class="sc" style="padding:20px;color:#C62828">Error loading leads.</div>'; }); }
 function leadValueBy(){ var v={}; (_custOrdersAll||[]).forEach(function(o){ if(o.status==='Cancelled')return; v[o.mobile]=(v[o.mobile]||0)+(+o.amount||0); }); return v; }
 function leadSetStage(mob,st){ supa.from('customers').update({lead_status:st,updated_at:new Date().toISOString()}).eq('mobile',mob).then(function(r){ if(r&&r.error){ toast('Update failed: '+r.error.message,'#C62828'); return; } var c=(_CUSTOMERS||[]).find(function(x){return x.mobile===mob;}); if(c)c.lead_status=st; toast('Moved to '+st, LEAD_COLOR[st]||'#1B7A4D'); leadsPaint(); }); }
 function leadsSetFilter(s){ _leadStage=s; leadsPaint(); }
