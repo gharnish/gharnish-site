@@ -121,6 +121,29 @@ export async function onRequestPost(context) {
     } catch (e) { /* category mapping best-effort */ }
   }
 
+  // Push ALL generated views into the storefront gallery
+  // (app_settings.gallery -> { items: { [id]: { images:[...] } } }).
+  try {
+    const order = { hero: 0, front: 1, back: 2, side: 3, top: 4, info_slide: 5 };
+    const urls = (images || [])
+      .slice()
+      .sort((a, b) => ((order[a.view_type] != null ? order[a.view_type] : 9) - (order[b.view_type] != null ? order[b.view_type] : 9)))
+      .map((i) => i.url)
+      .filter(Boolean);
+    const gr = await fetch(`${base}/rest/v1/app_settings?key=eq.gallery&select=value`, {
+      headers: { Authorization: "Bearer " + serviceKey, apikey: serviceKey },
+    });
+    const rows = await gr.json();
+    const cur = (rows && rows[0] && rows[0].value) || {};
+    const items = cur.items || {};
+    items[productId] = Object.assign({}, items[productId], { images: urls });
+    await fetch(`${base}/rest/v1/app_settings?on_conflict=key`, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + serviceKey, apikey: serviceKey, "Content-Type": "application/json", Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ key: "gallery", value: Object.assign({}, cur, { items }) }),
+    });
+  } catch (e) { /* gallery best-effort */ }
+
   try {
     await fetch(`${base}/rest/v1/studio_projects?id=eq.${projectId}`, {
       method: "PATCH",
