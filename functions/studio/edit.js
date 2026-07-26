@@ -91,8 +91,9 @@ export async function onRequestPost(context) {
     fd.append("prompt", buildEditPrompt(instruction));
     fd.append("size", "1024x1024");
     fd.append("n", "1");
+    fd.append("quality", "high");
     fd.append("output_format", "webp");
-    fd.append("output_compression", "60");
+    fd.append("output_compression", "70");
     fd.append("image", baseBlob, "base.webp");
 
     const or = await fetch("https://api.openai.com/v1/images/edits", {

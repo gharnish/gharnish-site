@@ -648,7 +648,7 @@ input,select,textarea{font-family:inherit;}
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
         Products
       </div>
-      <div class="nav-item" onclick="window.location.href='/studio.html'" title="AI product photography — generate catalog images, then publish">
+      <div class="nav-item" data-page="studio" title="AI product photography — generate catalog images, then publish">
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8z"/><path d="M18 14l.9 2.1L21 17l-2.1.9L18 20l-.9-2.1L15 17l2.1-.9z"/></svg>
         AI Product Studio
       </div>
@@ -2587,8 +2587,8 @@ function navigate(page){
     el.classList.toggle('active', el.dataset.page===page);
   });
   const mc = document.getElementById('main-content');
-  mc.classList.toggle('mc-wide', page==='products');
-  const renders = {dashboard:renderDashboard,products:renderProducts,categories:renderCategories,homepage:renderHomepage,recommended:renderRecommended,projects:renderProjects,analytics:renderAnalytics,leads:renderLeads,settings:renderSettings,inventory:renderInventory,reviews:renderReviews,tablepricing:renderTablePricing,customers:renderCustomers,quotations:renderQuotations,sales:renderSales,vendors:renderVendors,running:renderRunning,transactions:renderTransactions};
+  mc.classList.toggle('mc-wide', page==='products'||page==='studio');
+  const renders = {dashboard:renderDashboard,products:renderProducts,studio:renderStudio,categories:renderCategories,homepage:renderHomepage,recommended:renderRecommended,projects:renderProjects,analytics:renderAnalytics,leads:renderLeads,settings:renderSettings,inventory:renderInventory,reviews:renderReviews,tablepricing:renderTablePricing,customers:renderCustomers,quotations:renderQuotations,sales:renderSales,vendors:renderVendors,running:renderRunning,transactions:renderTransactions};
   if(renders[page]){
     try{ renders[page](); }catch(e){ mc.innerHTML='<div style="padding:24px;color:#C62828;font-family:Poppins,sans-serif">Error loading page: '+e.message+'</div>'; console.error(e); }
   } else {
@@ -6324,6 +6324,129 @@ function applyBulkPrice(){
 ══════════════════════════════════════ */
 function lsGetFeatured(){ try{ return JSON.parse(localStorage.getItem('gh_featured')||'{}'); }catch(e){return{};} }
 function lsSaveFeatured(obj){ localStorage.setItem('gh_featured',JSON.stringify(obj)); }
+
+/* ══════════════════════════════════════
+   AI PRODUCT STUDIO  (native admin section)
+══════════════════════════════════════ */
+var _stState={pid:null}, _stCats=null;
+var ST_UP='studio-uploads', ST_OUT='studio-outputs';
+var STB='background:var(--g,#1B7A4D);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit';
+var STB2='background:var(--c2,#f3f5f4);color:var(--ink,#16211d);border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:11px 16px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit';
+var STIN='width:100%;border:1px solid var(--line,#e5e7eb);border-radius:10px;padding:10px 12px;font-size:14px;font-family:inherit;background:#fff;outline:none';
+function stLbl(s){ return String(s||'').replace(/_/g,' ').replace(/\b\w/g,function(c){return c.toUpperCase();}); }
+async function stTok(){ var s=await supa.auth.getSession(); return s&&s.data&&s.data.session&&s.data.session.access_token; }
+async function stCats(){ if(_stCats)return _stCats; try{ var r=await supa.from('app_settings').select('value').eq('key','categories').single(); var v=(r.data&&r.data.value)||{}; _stCats=Object.keys(v).map(function(k){return{key:k,name:v[k].name||k,order:v[k].order||0,visible:v[k].visible!==false};}).filter(function(c){return c.visible;}).sort(function(a,b){return a.order-b.order;}); }catch(e){_stCats=[];} return _stCats; }
+function stViews(cat){ var c=cat||''; if(/table|desk|centre|center|base/i.test(c)) return ['hero','front','top','side','info_slide']; if(/chair|sofa|booth|recliner|stool|bed/i.test(c)) return ['hero','front','back','side','info_slide']; return ['hero','front','side','info_slide']; }
+
+function renderStudio(){ if(_stState.pid) stWorkspace(); else stList(); }
+
+async function stList(){
+  var mc=document.getElementById('main-content');
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">AI Product Studio</div><div class="page-sub">Shoot furniture into consistent, catalog-ready images — then publish to Products</div></div><button class="add-btn" onclick="stNew()"><svg fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New Product</button></div><div id="st-list"><div style="padding:30px;text-align:center;color:var(--ink3,#889)">Loading…</div></div>';
+  var r=await supa.from('studio_projects').select('*').order('updated_at',{ascending:false});
+  var list=r.data||[], w=document.getElementById('st-list');
+  if(!list.length){ w.innerHTML='<div style="padding:50px;text-align:center;color:var(--ink3,#889)">No studio products yet. Click “New Product” to start.</div>'; return; }
+  w.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px">'+list.map(function(p){var st=p.published?'Published':stLbl(p.status);return '<div onclick="stOpen(\''+p.id+'\')" style="cursor:pointer;background:var(--c1,#fff);border:1px solid var(--line,#e5e7eb);border-radius:14px;overflow:hidden"><div style="aspect-ratio:1;background:var(--c2,#f3f5f4)">'+(p.reference_image_url?'<img src="'+escA(p.reference_image_url)+'" style="width:100%;height:100%;object-fit:cover">':'')+'</div><div style="padding:11px"><div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escA(p.name)+'</div><div style="font-size:11px;color:var(--ink3,#889);margin-top:2px">'+escA(st)+'</div></div></div>';}).join('')+'</div>';
+}
+async function stNew(){ var r=await supa.from('studio_projects').insert({name:'Untitled Product',status:'draft'}).select('*').single(); if(r.error){toast(r.error.message,'#C62828');return;} stOpen(r.data.id); }
+function stOpen(id){ _stState.pid=id; stWorkspace(); }
+function stBack(){ _stState.pid=null; stList(); }
+async function stLoad(){ var pr=await supa.from('studio_projects').select('*').eq('id',_stState.pid).single(); var im=await supa.from('studio_generated_images').select('*').eq('project_id',_stState.pid).order('created_at',{ascending:false}); return {project:pr.data,images:im.data||[]}; }
+async function stWorkspace(force){
+  var mc=document.getElementById('main-content'); mc.innerHTML='<div style="padding:30px;color:var(--ink3,#889)">Loading…</div>';
+  var d=await stLoad(); if(!d.project){ stBack(); return; } var p=d.project, images=d.images;
+  var steps=['upload','details','lock','produce','results'];
+  var sf={draft:'upload',details:'details',ai_review:'lock',locked:'produce',producing:'produce',review:'results',published:'results'};
+  var active=force||sf[p.published?'published':p.status]||'upload';
+  var head='<div class="page-hd"><div style="display:flex;align-items:center;gap:12px"><button onclick="stBack()" style="background:var(--c2,#f3f5f4);border:1px solid var(--line,#e5e7eb);border-radius:8px;width:34px;height:34px;cursor:pointer;font-size:18px">‹</button><div><div class="page-title">'+escA(p.name)+'</div><div class="page-sub">'+(p.published?'Published to catalog':stLbl(p.status))+'</div></div></div></div>';
+  var pills='<div style="display:flex;gap:6px;margin:0 0 20px;flex-wrap:wrap">'+steps.map(function(s){var on=s===active;return '<span onclick="stWorkspace(\''+s+'\')" style="cursor:pointer;padding:7px 15px;border-radius:999px;font-size:12px;font-weight:700;'+(on?'background:var(--g,#1B7A4D);color:#fff':'background:var(--c2,#f3f5f4);color:var(--ink3,#889)')+'">'+stLbl(s)+'</span>';}).join('')+'</div>';
+  mc.innerHTML=head+'<div style="max-width:920px;margin:0 auto">'+pills+'<div id="st-step"></div></div>';
+  if(active==='upload') stStepUpload(p); else if(active==='details') stStepDetails(p); else if(active==='lock') stStepLock(p); else if(active==='produce') stStepProduce(p); else stStepResults(p,images);
+}
+function stStepUpload(p){
+  var box=document.getElementById('st-step');
+  box.innerHTML='<div id="st-drop" style="border:2px dashed var(--line,#e5e7eb);border-radius:14px;background:var(--c1,#fff);padding:40px;text-align:center;color:var(--ink3,#889);cursor:pointer"><div style="font-size:28px">⬆️</div><div style="font-weight:700;color:var(--ink,#16211d);margin-top:6px">Click to upload furniture photos</div><div style="font-size:12px;margin-top:2px">Up to 10 · JPG / PNG</div></div><input type="file" id="st-file" accept="image/*" multiple hidden><div id="st-thumbs" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-top:14px"></div><div style="margin-top:20px"><button id="st-cont" style="'+STB+'">Continue</button></div>';
+  var imgs=(p.source_images||[]).slice();
+  function paint(){ document.getElementById('st-thumbs').innerHTML=imgs.map(function(u){return '<img src="'+escA(u)+'" style="aspect-ratio:1;width:100%;object-fit:cover;border-radius:10px;border:1px solid var(--line,#e5e7eb)">';}).join(''); document.getElementById('st-cont').disabled=!imgs.length; }
+  paint();
+  document.getElementById('st-drop').onclick=function(){document.getElementById('st-file').click();};
+  document.getElementById('st-file').onchange=async function(e){ var files=[].slice.call(e.target.files).slice(0,10-imgs.length); if(!files.length)return; toast('Uploading…'); for(var i=0;i<files.length;i++){ var f=files[i]; var path=p.id+'/src-'+Date.now()+'-'+i+'.'+((f.name.split('.').pop())||'png'); var up=await supa.storage.from(ST_UP).upload(path,f,{upsert:true,contentType:f.type||'image/png'}); if(up.error){toast(up.error.message,'#C62828');continue;} imgs.push(supa.storage.from(ST_UP).getPublicUrl(path).data.publicUrl); } await supa.from('studio_projects').update({source_images:imgs}).eq('id',p.id); paint(); toast('Uploaded ✓','#1B7A4D'); };
+  document.getElementById('st-cont').onclick=function(){ stWorkspace('details'); };
+}
+async function stStepDetails(p){
+  var box=document.getElementById('st-step'); var cats=await stCats(); var d=p.dimensions||{};
+  var opts='<option value="">Select category…</option>'+cats.map(function(c){return '<option value="'+escA(c.key)+'"'+(p.category===c.key?' selected':'')+'>'+escA(c.name)+'</option>';}).join('');
+  function F(l,h){return '<div style="margin-bottom:13px"><label style="display:block;font-size:12px;font-weight:700;color:var(--ink3,#889);margin-bottom:5px">'+l+'</label>'+h+'</div>';}
+  box.innerHTML='<div style="background:var(--c1,#fff);border:1px solid var(--line,#e5e7eb);border-radius:14px;padding:20px">'
+    +F('Product Name','<input id="sd-name" style="'+STIN+'" value="'+escA(p.name)+'">')
+    +F('Category (maps to your catalog)','<select id="sd-cat" style="'+STIN+'">'+opts+'</select>')
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+F('Primary Material','<input id="sd-mat" style="'+STIN+'" value="'+escA(p.primary_material||'')+'">')+F('Finish','<input id="sd-fin" style="'+STIN+'" value="'+escA(p.finish||'')+'">')+'</div>'
+    +F('Price (₹)','<input id="sd-price" type="number" style="'+STIN+'" value="'+(p.price!=null?p.price:'')+'">')
+    +F('Dimensions (cm)','<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><input id="sd-w" type="number" placeholder="W" style="'+STIN+'" value="'+(d.width||'')+'"><input id="sd-d" type="number" placeholder="D" style="'+STIN+'" value="'+(d.depth||'')+'"><input id="sd-h" type="number" placeholder="H" style="'+STIN+'" value="'+(d.height||'')+'"></div>')
+    +F('Notes','<textarea id="sd-notes" rows="3" style="'+STIN+'">'+escA(p.notes||'')+'</textarea>')
+    +'<button id="sd-save" style="'+STB+';margin-top:6px">Save & Continue</button></div>';
+  document.getElementById('sd-save').onclick=async function(){ var b=this; b.disabled=true; b.textContent='Saving…'; var patch={name:(document.getElementById('sd-name').value||'').trim()||'Untitled Product',category:document.getElementById('sd-cat').value||null,primary_material:document.getElementById('sd-mat').value||null,finish:document.getElementById('sd-fin').value||null,price:parseInt(document.getElementById('sd-price').value)||null,dimensions:{width:+document.getElementById('sd-w').value||null,depth:+document.getElementById('sd-d').value||null,height:+document.getElementById('sd-h').value||null,unit:'cm'},notes:document.getElementById('sd-notes').value||null,status:'ai_review'}; await supa.from('studio_projects').update(patch).eq('id',p.id); stWorkspace('lock'); };
+}
+function stStepLock(p){
+  var box=document.getElementById('st-step'); var srcs=p.source_images||[]; var sel=p.reference_image_url||srcs[0]||null;
+  box.innerHTML='<p style="color:var(--ink3,#889);margin:0 0 14px">Lock the photo the AI will reproduce. Every generated view is created from this exact image — the furniture design never changes.</p><div style="display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:start"><img id="st-ref" src="'+escA(sel||'')+'" style="width:100%;aspect-ratio:1;object-fit:cover;border-radius:14px;border:1px solid var(--line,#e5e7eb)"><div><div id="st-picks" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:14px"></div><button id="st-lock" style="'+STB+';width:100%">🔒 Lock Reference</button></div></div>';
+  var picks=document.getElementById('st-picks');
+  srcs.forEach(function(u){ var im=document.createElement('img'); im.src=u; im.style.cssText='aspect-ratio:1;width:100%;object-fit:cover;border-radius:8px;cursor:pointer;border:'+(u===sel?'3px solid var(--g,#1B7A4D)':'1px solid var(--line,#e5e7eb)'); im.onclick=function(){ sel=u; document.getElementById('st-ref').src=u; [].forEach.call(picks.children,function(c){c.style.border='1px solid var(--line,#e5e7eb)';}); im.style.border='3px solid var(--g,#1B7A4D)'; }; picks.appendChild(im); });
+  document.getElementById('st-lock').onclick=async function(){ if(!sel){toast('Pick a reference image','#C62828');return;} this.disabled=true; this.textContent='Locking…'; await supa.from('studio_projects').update({reference_image_url:sel,reference_locked:true,reference_locked_at:new Date().toISOString(),status:'locked'}).eq('id',p.id); stWorkspace('produce'); };
+}
+function stStepProduce(p){
+  var box=document.getElementById('st-step'); var all=stViews(p.category); var chosen={}; all.forEach(function(v){chosen[v]=true;});
+  box.innerHTML='<p style="font-weight:700;margin:0 0 10px">Views to generate</p><div id="st-views" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:16px"></div><div style="background:var(--c1,#fff);border:1px solid var(--line,#e5e7eb);border-radius:12px;padding:14px;font-size:13px;color:var(--ink3,#889);margin-bottom:18px">Pure white background · centered · 12–15% margin · soft shadow · 1:1 · high quality. An information slide with specs is added automatically.</div><button id="st-go" style="'+STB+'">Start Generation</button>';
+  var vc=document.getElementById('st-views');
+  function paint(){ vc.innerHTML=''; all.forEach(function(v){ var b=document.createElement('button'); b.textContent=stLbl(v); b.style.cssText='border-radius:10px;padding:11px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;'+(chosen[v]?'border:1px solid var(--g,#1B7A4D);background:#e7f3ec;color:var(--g,#1B7A4D)':'border:1px solid var(--line,#e5e7eb);background:#fff;color:var(--ink3,#889)'); b.onclick=function(){ chosen[v]=!chosen[v]; paint(); }; vc.appendChild(b); }); }
+  paint();
+  document.getElementById('st-go').onclick=function(){ var views=all.filter(function(v){return chosen[v]&&v!=='info_slide';}); var wantSlide=chosen['info_slide']; stRun(p,views,wantSlide); };
+}
+async function stRun(p,views,wantSlide){
+  var box=document.getElementById('st-step');
+  box.innerHTML='<div style="text-align:center;padding:50px 20px"><div class="spin" style="width:34px;height:34px;border:3px solid var(--g,#1B7A4D);border-top-color:transparent;border-radius:50%;display:inline-block;animation:sp 0.7s linear infinite"></div><h3 id="st-prog" style="margin:16px 0 0">Starting…</h3></div><style>@keyframes sp{to{transform:rotate(360deg)}}</style>';
+  await supa.from('studio_projects').update({status:'producing'}).eq('id',p.id);
+  var tok=await stTok();
+  for(var i=0;i<views.length;i++){ var v=views[i]; var pe=document.getElementById('st-prog'); if(pe)pe.textContent='Generating '+stLbl(v)+' ('+(i+1)+'/'+views.length+')…'; try{ var r=await fetch('/studio/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({projectId:p.id,view:v,referenceUrl:p.reference_image_url})}); var j=await r.json().catch(function(){return null;}); if(!j||!j.ok)toast(stLbl(v)+': '+((j&&j.error)||'failed'),'#C62828'); }catch(e){toast(stLbl(v)+' failed','#C62828');} }
+  if(wantSlide){ var pe2=document.getElementById('st-prog'); if(pe2)pe2.textContent='Composing information slide…'; try{ await stInfoSlide(p); }catch(e){ toast('Info slide skipped: '+e.message,'#C8860A'); } }
+  await supa.from('studio_projects').update({status:'review'}).eq('id',p.id);
+  stWorkspace('results');
+}
+async function stStepResults(p,images){
+  var box=document.getElementById('st-step'); var cur=images.filter(function(i){return i.is_current;});
+  if(!cur.length){ box.innerHTML='<div style="padding:30px;text-align:center;color:var(--ink3,#889)">No images yet. Use the Produce step.</div>'; return; }
+  var grid='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px">'+cur.map(function(img){return '<div style="background:var(--c1,#fff);border:1px solid var(--line,#e5e7eb);border-radius:14px;overflow:hidden"><div style="position:relative;background:var(--c2,#f3f5f4)"><img src="'+escA(img.url)+'" style="width:100%;aspect-ratio:1;object-fit:contain"><span style="position:absolute;left:10px;top:10px;background:rgba(0,0,0,.7);color:#fff;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700">'+stLbl(img.view_type)+'</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;font-size:12px;border-top:1px solid var(--line,#e5e7eb)"><a href="'+escA(img.url)+'" download target="_blank" style="text-align:center;padding:10px;color:var(--ink2,#556);text-decoration:none">⬇</a><button onclick="stRegen(\''+img.view_type+'\')" style="border:none;border-left:1px solid var(--line,#e5e7eb);background:none;padding:10px;cursor:pointer;color:var(--ink2,#556)">↻</button><button onclick="stEdit(\''+img.id+'\')" style="border:none;border-left:1px solid var(--line,#e5e7eb);background:none;padding:10px;cursor:pointer;color:var(--ink2,#556)">✎</button></div></div>';}).join('')+'</div>';
+  box.innerHTML=grid+'<div style="display:flex;gap:10px;margin-top:18px"><button onclick="stInfoBtn()" style="'+STB2+'">🖼 Regenerate Info Slide</button><button id="st-pub" style="'+STB+'">Publish to Catalog</button></div><div id="st-pubmsg" style="margin-top:8px;color:var(--ink3,#889);font-size:13px"></div>';
+  document.getElementById('st-pub').onclick=async function(){ this.disabled=true; this.textContent='Publishing…'; var tok=await stTok(); try{ var r=await fetch('/studio/publish',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({projectId:p.id})}); var j=await r.json().catch(function(){return null;}); var m=document.getElementById('st-pubmsg'); if(j&&j.ok){ m.textContent='Published to catalog as '+j.productId+'. It now appears under Products.'; toast('Published ✓','#1B7A4D'); if(typeof loadProducts==='function'){ try{ if(typeof PRODS!=='undefined') PRODS=null; }catch(e){} } } else { m.textContent=(j&&j.error)||'Publish failed'; toast('Publish failed','#C62828'); this.disabled=false; this.textContent='Publish to Catalog'; } }catch(e){ document.getElementById('st-pubmsg').textContent='Publish failed'; this.disabled=false; this.textContent='Publish to Catalog'; } };
+}
+async function stRegen(view){ var d=await stLoad(); var box=document.getElementById('st-step'); box.innerHTML='<div style="padding:50px;text-align:center;color:var(--ink3,#889)">Regenerating '+stLbl(view)+'…</div>'; var tok=await stTok(); try{ await fetch('/studio/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({projectId:d.project.id,view:view,referenceUrl:d.project.reference_image_url})}); }catch(e){} stWorkspace('results'); }
+function stEdit(imgId){ var ins=prompt('Describe the change (only this image changes):\n\ne.g. Make the cushion dark green leather; add a soft gold footrest'); if(!ins||!ins.trim())return; (async function(){ var box=document.getElementById('st-step'); box.innerHTML='<div style="padding:50px;text-align:center;color:var(--ink3,#889)">Applying your edit…</div>'; var tok=await stTok(); try{ var r=await fetch('/studio/edit',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({imageId:imgId,instruction:ins.trim()})}); var j=await r.json().catch(function(){return null;}); if(!j||!j.ok)toast((j&&j.error)||'Edit failed','#C62828'); else toast('Updated ✓','#1B7A4D'); }catch(e){toast('Edit failed','#C62828');} stWorkspace('results'); })(); }
+function stInfoBtn(){ (async function(){ var d=await stLoad(); toast('Composing information slide…','#5B5BBC'); try{ await stInfoSlide(d.project); toast('Info slide ready ✓','#1B7A4D'); }catch(e){ toast('Info slide failed: '+e.message,'#C62828'); } stWorkspace('results'); })(); }
+function stRR(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+async function stInfoSlide(p){
+  var d=await stLoad(); var cur=d.images.filter(function(i){return i.is_current;});
+  var hero=cur.find(function(i){return i.view_type==='hero';})||cur[0]; var heroUrl=(hero&&hero.url)||p.reference_image_url;
+  if(!heroUrl) throw new Error('Generate a Hero image first');
+  var S=1080,c=document.createElement('canvas');c.width=S;c.height=S;var x=c.getContext('2d');
+  try{ await document.fonts.ready; }catch(e){}
+  x.fillStyle='#fff';x.fillRect(0,0,S,S);x.strokeStyle='#eef1ef';x.lineWidth=2;x.strokeRect(24,24,S-48,S-48);
+  var nm=(p.name||'Product').toUpperCase(); x.textAlign='center';x.fillStyle='#16211d';x.font='800 50px Poppins,Arial,sans-serif'; x.fillText(nm.length>28?nm.slice(0,27)+'…':nm,S/2,110);
+  x.fillStyle='#8a978f';x.font='600 22px Inter,Arial,sans-serif'; x.fillText((stLbl(p.category)||'Furniture').toUpperCase().split('').join(' '),S/2,148);
+  var bmp=null; try{ var resp=await fetch(heroUrl,{mode:'cors'}); var blob=await resp.blob(); bmp=await createImageBitmap(blob); }catch(e){ bmp=null; }
+  var bx=180,by=190,bw=S-360,bh=560;
+  if(bmp){ var s=Math.min(bw/bmp.width,bh/bmp.height); var w=bmp.width*s,h=bmp.height*s,ix=bx+(bw-w)/2,iy=by+(bh-h)/2; x.save();x.fillStyle='rgba(0,0,0,0.06)';x.beginPath();x.ellipse(S/2,iy+h-6,w*0.34,20,0,0,Math.PI*2);x.fill();x.restore(); x.drawImage(bmp,ix,iy,w,h); }
+  else { x.fillStyle='#f3f5f4';x.fillRect(bx,by,bw,bh); x.fillStyle='#8a978f';x.font='600 20px Arial';x.fillText('Hero image unavailable',S/2,by+bh/2); }
+  var dm=p.dimensions||{}; var dims=(dm.width||dm.height||dm.depth)?[dm.width||'—',dm.depth||'—',dm.height||'—'].join(' × ')+' cm':'—';
+  var cols=[['DIMENSIONS (W×D×H)',dims],['MATERIAL',p.primary_material||'—'],['FINISH',p.finish||'—']];
+  var sy=820,sh=150,sx=80,sw=S-160,cw=sw/cols.length; x.fillStyle='#f7f9f8';stRR(x,sx,sy,sw,sh,18);x.fill();
+  cols.forEach(function(col,i){ var cx=sx+cw*i+cw/2; if(i>0){x.strokeStyle='#e7ebe9';x.lineWidth=1;x.beginPath();x.moveTo(sx+cw*i,sy+28);x.lineTo(sx+cw*i,sy+sh-28);x.stroke();} x.textAlign='center';x.fillStyle='#1B7A4D';x.font='700 14px Inter,Arial,sans-serif';x.fillText(col[0],cx,sy+52); x.fillStyle='#16211d';x.font='600 26px Poppins,Arial,sans-serif'; var val=String(col[1]); x.fillText(val.length>18?val.slice(0,17)+'…':val,cx,sy+96); });
+  x.textAlign='center';x.fillStyle='#C8860A';x.font='800 22px Poppins,Arial,sans-serif';x.fillText('G H A R N I S H',S/2,S-46);
+  var outBlob=await new Promise(function(res){c.toBlob(res,'image/png',0.92);}); if(!outBlob) throw new Error('canvas render failed');
+  var path=p.id+'/info_slide-'+Date.now()+'.png'; var up=await supa.storage.from(ST_OUT).upload(path,outBlob,{upsert:true,contentType:'image/png'}); if(up.error) throw new Error(up.error.message);
+  var url=supa.storage.from(ST_OUT).getPublicUrl(path).data.publicUrl;
+  await supa.from('studio_generated_images').update({is_current:false}).eq('project_id',p.id).eq('view_type','info_slide').eq('is_current',true);
+  await supa.from('studio_generated_images').insert({project_id:p.id,view_type:'info_slide',status:'ready',url:url,thumb_url:url,bytes:outBlob.size,model:'canvas',is_current:true});
+}
 
 </script>
 

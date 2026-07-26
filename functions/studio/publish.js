@@ -63,6 +63,16 @@ export async function onRequestPost(context) {
   const fp = project.reference_fingerprint || {};
   const productId = project.published_product_id || ("gs_" + String(projectId).replace(/-/g, "").slice(0, 12));
 
+  // Next sort value so it appears at the end of the catalog list.
+  let nextSort = null;
+  try {
+    const sr = await fetch(`${base}/rest/v1/gharnish_products?select=sort&order=sort.desc.nullslast&limit=1`, {
+      headers: { Authorization: "Bearer " + serviceKey, apikey: serviceKey },
+    });
+    const rows = await sr.json();
+    nextSort = ((rows && rows[0] && Number(rows[0].sort)) || 0) + 1;
+  } catch (e) { /* sort optional */ }
+
   const row = {
     id: productId,
     name: project.name,
@@ -71,6 +81,9 @@ export async function onRequestPost(context) {
     image: hero.url,
     description: project.notes || fp.summary || null,
     shape: fp.shape || null,
+    price: (project.price != null ? project.price : null),
+    sort: nextSort,
+    stock: true,
   };
 
   try {
@@ -88,6 +101,25 @@ export async function onRequestPost(context) {
       return json(502, { ok: false, error: "Catalog upsert failed: " + t.slice(0, 200) });
     }
   } catch (e) { return json(502, { ok: false, error: "Catalog upsert failed: " + e.message }); }
+
+  // Map the product into its category (app_settings.product_categories: id -> [catKeys])
+  // so it shows in the admin/storefront category views, not just the flat list.
+  if (project.category) {
+    try {
+      const gr = await fetch(`${base}/rest/v1/app_settings?key=eq.product_categories&select=value`, {
+        headers: { Authorization: "Bearer " + serviceKey, apikey: serviceKey },
+      });
+      const rows = await gr.json();
+      const val = (rows && rows[0] && rows[0].value) || {};
+      if (!Array.isArray(val[productId])) val[productId] = [project.category];
+      else if (!val[productId].includes(project.category)) val[productId].push(project.category);
+      await fetch(`${base}/rest/v1/app_settings?key=eq.product_categories`, {
+        method: "PATCH",
+        headers: { Authorization: "Bearer " + serviceKey, apikey: serviceKey, "Content-Type": "application/json", Prefer: "return=minimal" },
+        body: JSON.stringify({ value: val }),
+      });
+    } catch (e) { /* category mapping best-effort */ }
+  }
 
   try {
     await fetch(`${base}/rest/v1/studio_projects?id=eq.${projectId}`, {

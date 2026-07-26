@@ -107,15 +107,18 @@ export async function onRequestPost(context) {
   // 2) Call OpenAI gpt-image-1 image edit (reference image = base).
   let b64;
   try {
+    const t = (refBlob.type || "").toLowerCase();
+    const ext = t.includes("webp") ? "webp" : t.includes("jpeg") || t.includes("jpg") ? "jpg" : "png";
     const fd = new FormData();
     fd.append("model", model);
     fd.append("prompt", buildViewPrompt(view));
     fd.append("size", "1024x1024");
     fd.append("n", "1");
+    fd.append("quality", "high"); // best fidelity for catalog images
     // gpt-image-1 compresses server-side — target small catalog files.
     fd.append("output_format", "webp");
-    fd.append("output_compression", "60");
-    fd.append("image", refBlob, "reference.png");
+    fd.append("output_compression", "70");
+    fd.append("image", refBlob, "reference." + ext);
 
     const or = await fetch("https://api.openai.com/v1/images/edits", {
       method: "POST",
