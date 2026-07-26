@@ -63,7 +63,7 @@
 
 /* Production by vendor — clean line rows + stages */
 .pstage-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
-.pstage-pill{font-size:9px;font-weight:800;letter-spacing:.02em;padding:1px 6px;border-radius:99px;white-space:nowrap}
+.pstage-pill{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .pline{display:flex;align-items:center;gap:10px;padding:9px 2px;border-top:1px solid rgba(0,0,0,.05)}
 .pline:first-child{border-top:none}
 .pline-img{width:40px;height:40px;border-radius:9px;object-fit:contain;background:var(--c2);flex:none;display:inline-block}
@@ -72,7 +72,7 @@
 .pline-sub{font-size:11px;color:var(--ink3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .pline-right{display:flex;align-items:center;gap:7px;flex:none}
 .pline-qty{font-size:13px;font-weight:800;color:var(--ink);min-width:30px;text-align:right}
-.pstage-tag{font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:99px;white-space:nowrap}
+.pstage-tag{font-size:9.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;padding:2px 8px;border-radius:999px;white-space:nowrap}
 .pline-btns{display:flex;gap:3px}
 .pstage-nav{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);background:var(--c1);color:var(--ink2);font-size:15px;font-weight:700;cursor:pointer;line-height:1;padding:0}
 .pstage-nav.fwd{background:#1B7A4D;border-color:#1B7A4D;color:#fff}
@@ -1078,6 +1078,7 @@ var CUST_STATUS=['Quotation','Confirmed','In production','Ready','Delivered','Ca
 var LEAD_STATUS=['New','Contacted','Quoted','Negotiating','Won','Lost'];
 var LEAD_COLOR={New:'#2563EB',Contacted:'#C8860A',Quoted:'#7C3AED',Negotiating:'#D97706',Won:'#1B7A4D',Lost:'#C62828'};
 function custMoney(n){ return '\u20b9'+(Math.round(+n||0)).toLocaleString('en-IN'); }
+function ghPill(label,color){ var c=color||'#6B7280'; return '<span class="pstage-tag" style="background:'+c+'1a;color:'+c+'">'+escA(label)+'</span>'; }
 function custDate(s){ try{ return new Date(s).toLocaleDateString('en-IN',{day:'numeric',month:'short'}); }catch(e){ return ''; } }
 function custStyle(){ if(document.getElementById('cust-style'))return; var s=document.createElement('style'); s.id='cust-style'; s.textContent=
   '.cust-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:10px}'
@@ -2403,7 +2404,7 @@ function runLoadingRender(){
       +'<label class="ll-chk"><input type="checkbox" '+(ln.include?'checked':'')+' onchange="llToggle('+i+',this.checked)"></label>'
       +(ln.image?'<img src="'+escA(ln.image)+'" class="ll-img">':'<span class="ll-img"></span>')
       +'<div class="ll-mid"><div class="ll-nm">'+escA(ln.name)+'</div>'
-      +'<div class="ll-sub">'+escA(ln.cust||'')+(ln.ref?(' \u00b7 Ref '+escA(ln.ref)):'')+' \u00b7 <span style="color:'+(STAGE_COL[ln.stage]||'#888')+'">'+ln.stage+'</span></div></div>'
+      +'<div class="ll-sub">'+escA(ln.cust||'')+(ln.ref?(' \u00b7 Ref '+escA(ln.ref)):'')+' \u00b7 '+ghPill(ln.stage, STAGE_COL[ln.stage]||'#888')+'</div></div>'
       +'<div class="ll-qty"><button onclick="llQty('+i+',-1)">\u2212</button><input type="number" min="0" value="'+ln.qty+'" onchange="llQtySet('+i+',this.value)"><button onclick="llQty('+i+',1)">+</button></div>'
       +'</div>';
   }).join('');
