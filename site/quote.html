@@ -116,8 +116,8 @@ input,select,textarea{font-family:inherit;}
 
 
 /* ── SIDEBAR ── */
-.sidebar{background:var(--dark);padding:0;display:none;flex-direction:column;min-height:100vh;position:sticky;top:0;}
-@media(min-width:768px){.sidebar{display:flex;flex:0 0 var(--nav-w);width:var(--nav-w);min-height:100vh;position:sticky;top:0;height:100vh;overflow-y:auto;}}
+.sidebar{background:var(--dark);padding:0;display:flex;flex-direction:column;position:fixed;top:0;bottom:0;left:0;width:270px;max-width:84vw;transform:translateX(-100%);transition:transform .26s ease;z-index:300;overflow-y:auto;-webkit-overflow-scrolling:touch;}.sidebar.nav-open{transform:translateX(0);box-shadow:0 0 40px rgba(0,0,0,.45);}.nav-overlay{position:fixed;inset:0;background:rgba(0,0,0,.48);opacity:0;pointer-events:none;transition:opacity .26s;z-index:290;}.nav-overlay.show{opacity:1;pointer-events:auto;}@media(min-width:768px){.nav-overlay{display:none!important;}}
+@media(min-width:768px){.sidebar{display:flex;flex:0 0 var(--nav-w);width:var(--nav-w);min-height:100vh;position:sticky;top:0;left:auto;height:100vh;overflow-y:auto;transform:none;max-width:none;z-index:auto;}}
 .sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid rgba(255,255,255,.07);}
 .sidebar-logo img{height:32px;width:auto;filter:brightness(0) invert(1);}
 .sidebar-logo-sub{font-size:9px;font-family:'Poppins',sans-serif;letter-spacing:.1em;color:rgba(255,255,255,.3);text-transform:uppercase;margin-top:4px;}
@@ -137,7 +137,7 @@ input,select,textarea{font-family:inherit;}
 
 /* ── MOBILE TOPBAR + BOTTOM NAV ── */
 .mobile-top{background:var(--dark);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;}
-.mobile-top img{height:28px;width:auto;filter:brightness(0) invert(1);}
+.mobile-top img{height:28px;width:auto;filter:brightness(0) invert(1);}.mobtop-menu{background:none;border:none;color:#fff;font-size:23px;line-height:1;cursor:pointer;padding:2px 6px 2px 0;-webkit-tap-highlight-color:transparent;}
 @media(min-width:768px){.mobile-top{display:none;}}
 .mobile-nav{position:fixed;bottom:0;left:0;right:0;background:var(--dark);display:flex;border-top:1px solid rgba(255,255,255,.08);z-index:200;padding:4px 0;}
 @media(min-width:768px){.mobile-nav{display:none;}}
@@ -653,6 +653,7 @@ input,select,textarea{font-family:inherit;}
 <!-- APP SHELL -->
 <div class="app-shell" id="app-shell">
   <!-- SIDEBAR (desktop) (grid-row 1/-1 so it spans all rows) -->
+  <div class="nav-overlay" onclick="ghCloseNav()"></div>
   <aside class="sidebar">
     <div class="sidebar-logo">
       <div style="font-size:20px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px">
@@ -704,9 +705,9 @@ input,select,textarea{font-family:inherit;}
   <div class="main-wrapper" style="flex:1;min-width:0;display:flex;flex-direction:column;">
     <!-- Mobile top bar -->
     <div class="mobile-top">
-      <div style="font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px"><button class="mobtop-menu" onclick="ghToggleNav()" aria-label="Menu">☰</button><div style="font-size:18px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px">
         <span style="width:7px;height:7px;border-radius:50%;background:var(--g);display:inline-block"></span>Gharnish Quotes
-      </div>
+      </div></div>
       <button class="logout-btn" style="padding:6px 12px;font-size:12px" onclick="doLogout()">Sign Out</button>
     </div>
 
@@ -714,13 +715,7 @@ input,select,textarea{font-family:inherit;}
   </div>
 
   <!-- Mobile bottom nav -->
-  <nav class="mobile-nav">
-    <div class="mnav-btn active" data-page="dashboard"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</div>
-    <div class="mnav-btn" data-page="products"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>Products</div>
-    <div class="mnav-btn" data-page="categories"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>Categories</div>
-    <div class="mnav-btn" data-page="homepage"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>Homepage</div>
-    <div class="mnav-btn" data-page="analytics"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</div><div class="mnav-btn" data-page="reviews"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>Reviews</div><div class="mnav-btn" data-page="customers"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-3-3.87M4 21v-2a4 4 0 013-3.87"/><circle cx="12" cy="7" r="4"/></svg>Clients</div><div class="mnav-btn" data-page="tablepricing"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg>Tables</div><div class="mnav-btn" data-page="settings"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</div>
-  </nav>
+  <nav class="mobile-nav"><div class="mnav-btn" data-page="dashboard"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Home</div><div class="mnav-btn" data-page="products"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>Products</div><div class="mnav-btn" data-page="customers"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-3-3.87M4 21v-2a4 4 0 013-3.87"/><circle cx="12" cy="7" r="4"/></svg>Clients</div><div class="mnav-btn" data-page="running"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 3h15v13H1z"/><path d="M16 8h4l3 3v5h-7"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Orders</div><div class="mnav-btn" data-page="__menu__"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>More</div></nav>
 </div>
 
 
@@ -2585,7 +2580,11 @@ function setupCustRealtime(){
   }catch(e){}
 }
 
+function ghToggleNav(){ var s=document.querySelector('.sidebar'); var o=document.querySelector('.nav-overlay'); if(!s)return; var open=s.classList.toggle('nav-open'); if(o)o.classList.toggle('show',open); }
+function ghCloseNav(){ var s=document.querySelector('.sidebar'); var o=document.querySelector('.nav-overlay'); if(s)s.classList.remove('nav-open'); if(o)o.classList.remove('show'); }
 function navigate(page){
+  if(page==='__menu__'){ ghToggleNav(); return; }
+  ghCloseNav();
   currentPage = page;
   document.querySelectorAll('.nav-item,.mnav-btn').forEach(el=>{
     el.classList.toggle('active', el.dataset.page===page);
