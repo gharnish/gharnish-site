@@ -337,10 +337,13 @@ function stepResults(p,images){
         <button data-a="regen">↻ Regenerate</button>
         <button data-a="edit">✎ Edit</button></div></div>`);
     c.querySelector('[data-a=regen]').onclick=()=>runGeneration(p,[img.view_type]);
-    c.querySelector('[data-a=edit]').onclick=()=>toast('Edit with AI — coming next','#5B5BBC');
+    c.querySelector('[data-a=edit]').onclick=()=>openEdit(c,img,p);
     wrap.appendChild(c);
   });
   if(cur.length){
+    const slideBtn=el(`<button class="btn sec" id="slide" style="margin-top:6px;margin-bottom:8px">🖼 Generate Information Slide</button>`);
+    app.appendChild(slideBtn);
+    document.getElementById('slide').onclick=()=>composeInfoSlide(p,cur);
     const pubBtn=el(`<button class="btn" id="pub" style="margin-top:6px">Publish to Catalog</button><div id="pubmsg" class="muted" style="text-align:center;margin-top:8px"></div>`);
     app.appendChild(pubBtn);
     document.getElementById('pub').onclick=async()=>{
@@ -356,6 +359,98 @@ function stepResults(p,images){
     };
   }
 }
+
+// ---------- Edit with AI (inline) ----------
+function openEdit(card,img,p){
+  const act=card.querySelector('.imgact');
+  if(!act) return;
+  const box=el(`<div class="pad" style="border-top:1px solid var(--line)">
+    <textarea class="in" id="ei" rows="2" placeholder="e.g. Make the cushion dark green leather; add a soft gold footrest"></textarea>
+    <div class="row" style="margin-top:8px;gap:8px"><button class="btn" id="eap">Apply Changes</button><button class="btn sec sm" id="ecx">Cancel</button></div>
+    <div class="muted" style="margin-top:6px">Only this image changes. The furniture design stays locked.</div></div>`).firstChild;
+  act.replaceWith(box);
+  box.querySelector('#ecx').onclick=()=>render();
+  box.querySelector('#eap').onclick=async()=>{
+    const ins=box.querySelector('#ei').value.trim();
+    if(!ins){toast('Describe the change','#C62828');return;}
+    const b=box.querySelector('#eap');b.disabled=true;b.innerHTML='<span class="spin"></span> Applying…';
+    const tok=await token();
+    try{
+      const r=await fetch('/studio/edit',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({imageId:img.id,instruction:ins})});
+      const j=await r.json().catch(()=>null);
+      if(j&&j.ok){toast('Updated ✓','#1c7a45');render();}
+      else{toast((j&&j.error)||'Edit failed','#C62828');b.disabled=false;b.textContent='Apply Changes';}
+    }catch(e){toast('Edit failed','#C62828');b.disabled=false;b.textContent='Apply Changes';}
+  };
+}
+
+// ---------- Information Slide (client-side canvas composition) ----------
+async function composeInfoSlide(p,cur){
+  const hero=(cur||[]).find(i=>i.view_type==='hero')||(cur||[])[0];
+  const heroUrl=(hero&&hero.url)||p.reference_image_url;
+  if(!heroUrl){toast('Generate a Hero image first','#C62828');return;}
+  toast('Composing information slide…','#5B5BBC');
+  const S=1080, c=document.createElement('canvas');c.width=S;c.height=S;
+  const x=c.getContext('2d');
+  try{ await document.fonts.load('800 54px Poppins'); await document.fonts.load('600 26px Inter'); await document.fonts.ready; }catch(e){}
+
+  // background + subtle frame
+  x.fillStyle='#ffffff';x.fillRect(0,0,S,S);
+  x.strokeStyle='#eef1ef';x.lineWidth=2;x.strokeRect(24,24,S-48,S-48);
+
+  // title + category
+  const name=(p.name||'Product').toUpperCase();
+  x.textAlign='center';x.fillStyle='#16211d';x.font='800 50px Poppins, sans-serif';
+  x.fillText(name.length>28?name.slice(0,27)+'…':name, S/2, 108);
+  x.fillStyle='#8a978f';x.font='600 22px Inter, sans-serif';
+  x.fillText((label(p.category)||'Furniture').toUpperCase().split('').join(' '), S/2, 146);
+
+  // hero image (contain into box) with soft shadow
+  let bmp=null;
+  try{ const resp=await fetch(heroUrl,{mode:'cors'}); const blob=await resp.blob(); bmp=await createImageBitmap(blob); }
+  catch(e){ bmp=null; }
+  const bx=180, by=190, bw=S-360, bh=560;
+  if(bmp){
+    const s=Math.min(bw/bmp.width, bh/bmp.height);
+    const w=bmp.width*s, h=bmp.height*s, ix=bx+(bw-w)/2, iy=by+(bh-h)/2;
+    x.save();x.fillStyle='rgba(0,0,0,0.06)';x.beginPath();
+    x.ellipse(S/2, iy+h-6, w*0.34, 20, 0, 0, Math.PI*2);x.fill();x.restore();
+    x.drawImage(bmp, ix, iy, w, h);
+  }else{
+    x.fillStyle='#f3f5f4';x.fillRect(bx,by,bw,bh);
+    x.fillStyle='#8a978f';x.font='600 20px Inter';x.fillText('Hero image unavailable (CORS)', S/2, by+bh/2);
+  }
+
+  // spec strip
+  const d=p.dimensions||{};
+  const dims=(d.width||d.height||d.depth)?[d.width||'—',d.depth||'—',d.height||'—'].join(' × ')+' cm':'—';
+  const cols=[['DIMENSIONS (W×D×H)',dims],['MATERIAL',p.primary_material||'—'],['FINISH',p.finish||'—']];
+  const sy=820, sh=150, sx=80, sw=S-160, cw=sw/cols.length;
+  x.fillStyle='#f7f9f8';roundRect(x,sx,sy,sw,sh,18);x.fill();
+  cols.forEach((col,i)=>{
+    const cx=sx+cw*i+cw/2;
+    if(i>0){x.strokeStyle='#e7ebe9';x.lineWidth=1;x.beginPath();x.moveTo(sx+cw*i,sy+28);x.lineTo(sx+cw*i,sy+sh-28);x.stroke();}
+    x.textAlign='center';x.fillStyle='#1c7a45';x.font='700 14px Inter, sans-serif';
+    x.fillText(col[0], cx, sy+52);
+    x.fillStyle='#16211d';x.font='600 26px Poppins, sans-serif';
+    const val=String(col[1]);x.fillText(val.length>18?val.slice(0,17)+'…':val, cx, sy+96);
+  });
+
+  // footer wordmark
+  x.textAlign='center';x.fillStyle='#C8860A';x.font='800 22px Poppins, sans-serif';
+  x.fillText('G H A R N I S H', S/2, S-46);
+
+  const blob=await new Promise(res=>c.toBlob(res,'image/png',0.92));
+  if(!blob){toast('Could not render slide','#C62828');return;}
+  const path=p.id+'/info_slide-'+Date.now()+'.png';
+  const up=await supa.storage.from(OUTPUTS).upload(path,blob,{upsert:true,contentType:'image/png'});
+  if(up.error){toast(up.error.message,'#C62828');return;}
+  const url=supa.storage.from(OUTPUTS).getPublicUrl(path).data.publicUrl;
+  await supa.from('studio_generated_images').update({is_current:false}).eq('project_id',p.id).eq('view_type','info_slide').eq('is_current',true);
+  await supa.from('studio_generated_images').insert({project_id:p.id,view_type:'info_slide',status:'ready',url,thumb_url:url,bytes:blob.size,model:'canvas',is_current:true});
+  toast('Information slide ready ✓','#1c7a45');render();
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 
 render();
 </script>
