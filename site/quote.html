@@ -531,7 +531,7 @@ input,select,textarea{font-family:inherit;}
 .pf-tools-menu .sep{height:1px;background:rgba(0,0,0,.06);margin:5px 2px;}
 
 /* ── TOAST ── */
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:var(--rpill);font-size:14px;font-weight:600;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:all .3s;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:var(--rpill);font-size:14px;font-weight:600;z-index:999;box-shadow:0 4px 16px rgba(0,0,0,.2);transition:all .3s;}.gh-utoast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:11px 12px 11px 20px;border-radius:var(--rpill);background:#2b2b2b;color:#fff;font-size:14px;font-weight:600;z-index:1000;box-shadow:0 6px 22px rgba(0,0,0,.3);max-width:calc(100vw - 26px);white-space:nowrap;animation:ghUtIn .22s ease}@keyframes ghUtIn{from{opacity:0;transform:translate(-50%,10px)}to{opacity:1;transform:translate(-50%,0)}}.gh-utoast-btn{background:var(--g);color:#fff;border:none;border-radius:999px;padding:7px 17px;font-size:13px;font-weight:800;cursor:pointer;font-family:inherit;flex:none;-webkit-tap-highlight-color:transparent}@media(max-width:600px){.gh-utoast{bottom:calc(80px + env(safe-area-inset-bottom))}}
 @media(min-width:768px){.toast{bottom:20px;}}
 
 /* Spin */
@@ -936,6 +936,23 @@ function toast(msg, color){
   document.body.appendChild(t);
   setTimeout(()=>t.remove(), 3000);
 }
+function ghUndoToast(msg, undoFn){
+  var old=document.getElementById('gh-utoast'); if(old)old.remove();
+  var t=document.createElement('div'); t.id='gh-utoast'; t.className='gh-utoast';
+  var span=document.createElement('span'); span.textContent=msg; t.appendChild(span);
+  var btn=document.createElement('button'); btn.className='gh-utoast-btn'; btn.textContent='Undo'; t.appendChild(btn);
+  var done=false;
+  var timer=setTimeout(function(){ if(!done && t.parentNode) t.remove(); }, 6500);
+  btn.onclick=function(){ if(done)return; done=true; clearTimeout(timer); if(t.parentNode)t.remove(); try{ if(undoFn)undoFn(); }catch(e){} };
+  document.body.appendChild(t);
+}
+function ghConfirmType(opts){
+  var word=String(opts.word||'DELETE').trim();
+  ghForm({ title:opts.title||'Confirm deletion', note:opts.note||'', fields:[{key:'confirm', type:'text', label:opts.label||('Type '+word+' to confirm')}], submitLabel:opts.submitLabel||'Delete permanently', onSubmit:function(vals){
+    if(String(vals.confirm||'').trim().toLowerCase()!==word.toLowerCase()){ toast('Type '+word+' exactly to confirm','#C62828'); return false; }
+    if(opts.onConfirm)opts.onConfirm(); return true;
+  }});
+}
 
 /* ══ AUTH ══ */
 async function doLogin(){
@@ -1333,7 +1350,7 @@ function custAvatar(c,sz){ sz=sz||44; var ini=(c.name||'?').charAt(0).toUpperCas
 function custUploadPhoto(input){ var f=input.files&&input.files[0]; if(!f||!_curCust)return; toast('Uploading\u2026'); var path='customers/'+_curCust.mobile+'-'+Date.now()+'.png'; supa.storage.from('project-media').upload(path,f,{cacheControl:'3600',upsert:true,contentType:f.type||'image/png'}).then(function(up){ if(up&&up.error){ toast('Upload failed: '+up.error.message,'#C62828'); return; } var url=supa.storage.from('project-media').getPublicUrl(path).data.publicUrl; _curCust.photo_url=url; supa.from('customers').update({photo_url:url}).eq('mobile',_curCust.mobile).then(function(){},function(){}); var i=_CUSTOMERS.find(function(x){return x.mobile===_curCust.mobile;}); if(i)i.photo_url=url; toast('Photo saved','#1B7A4D'); custLoadDetail(_curCust.mobile); },function(){ toast('Upload failed','#C62828'); }); }
 function custBack(){ renderCustomers(); }
 function closeCustomer(){ custBack(); }
-function custDeleteCustomer(){ if(!_curCust||!_curCust.mobile){ return; } var c=_curCust; var nOrders=((_custData&&_custData.orders)||[]).length; ghConfirm('Delete '+(c.name||'this customer')+' permanently? This removes the customer AND all their data \u2014 '+nOrders+' quote(s)/order(s), payments, notes and messages. This cannot be undone.', function(){ var mob=c.mobile; var steps=[['customer_messages',{col:'mobile'}],['customer_notes',{col:'mobile'}],['customer_payments',{col:'mobile'}],['customer_orders',{col:'mobile'}],['customers',{col:'mobile'}]]; function nx(i){ if(i>=steps.length){ toast((c.name||'Customer')+' deleted','#C62828'); _curCust=null; _custView='list'; renderCustomers(); return; } supa.from(steps[i][0]).delete().eq(steps[i][1].col,mob).then(function(){ nx(i+1); },function(){ nx(i+1); }); } nx(0); }); }
+function custDeleteCustomer(){ if(!_curCust||!_curCust.mobile){ return; } var c=_curCust; var nOrders=((_custData&&_custData.orders)||[]).length; var nm=(c.name||'').trim(); ghConfirmType({ title:'Delete customer', word:(nm||'DELETE'), label:'Type '+(nm?('the name \u201c'+nm+'\u201d'):'DELETE')+' below to confirm', note:'This permanently removes '+(nm||'this customer')+' AND all their data \u2014 '+nOrders+' quote(s)/order(s), payments, notes and messages. This cannot be undone.', submitLabel:'Delete permanently', onConfirm:function(){ var mob=c.mobile; var steps=[['customer_messages',{col:'mobile'}],['customer_notes',{col:'mobile'}],['customer_payments',{col:'mobile'}],['customer_orders',{col:'mobile'}],['customers',{col:'mobile'}]]; function nx(i){ if(i>=steps.length){ toast((c.name||'Customer')+' deleted','#C62828'); _curCust=null; _custView='list'; renderCustomers(); return; } supa.from(steps[i][0]).delete().eq(steps[i][1].col,mob).then(function(){ nx(i+1); },function(){ nx(i+1); }); } nx(0); } }); }
 function openCustomer(mobile){
   _curCust=_CUSTOMERS.find(function(c){return c.mobile===mobile;})||{mobile:mobile,name:'',city:''};
   custStyle();
@@ -2216,7 +2233,7 @@ function runEditQuote(id){
   try{ navigate('quotations'); }catch(e){}
   setTimeout(function(){ qEditQuote(o); }, 40);
 }
-function runDeleteOrder(id,label){ ghConfirm('Permanently delete \u201c'+(label||('Order #'+id))+'\u201d and its saved costs? Recorded payments stay in Transactions. This cannot be undone.', function(){ supa.from('customer_orders').delete().eq('id',id).then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Order deleted','#1B7A4D'); runLoad(); },function(){ toast('Failed','#C62828'); }); }); }
+function runDeleteOrder(id,label){ ghConfirm('Permanently delete \u201c'+(label||('Order #'+id))+'\u201d and its saved costs? Recorded payments stay in Transactions.', function(){ supa.from('customer_orders').select('*').eq('id',id).maybeSingle().then(function(sel){ var snap=(sel&&sel.data)||null; supa.from('customer_orders').delete().eq('id',id).then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } cacheBust(); runLoad(); ghUndoToast('Order deleted', function(){ if(!snap){ toast('Could not undo \u2014 order data not captured','#C62828'); return; } supa.from('customer_orders').insert(snap).then(function(ins){ if(ins&&ins.error){ toast('Undo failed: '+ins.error.message,'#C62828'); return; } cacheBust(); runLoad(); toast('Order restored','#1B7A4D'); },function(){ toast('Undo failed','#C62828'); }); }); },function(){ toast('Failed','#C62828'); }); }); }); }
 var _txns=[], _txnFilter='all', _txnQuery='', _txnCusts=[];
 function renderTransactions(){
   custStyle();
@@ -5559,7 +5576,7 @@ function updateLeadStage(id,stage){
   const leads=lsGetLeads(); const l=leads.find(x=>x.id===id); if(l) l.stage=stage; lsSaveLeads(leads); renderLeads(); toast('Lead moved to '+STAGE_LABELS[stage]);
 }
 function deleteLead(id){
-  ghConfirm('Delete this lead?',function(){ lsSaveLeads(lsGetLeads().filter(l=>l.id!==id)); renderLeads(); toast('Lead deleted','#C62828'); });
+  ghConfirm('Delete this lead?',function(){ var all=lsGetLeads(); var snap=all.filter(function(l){return l.id===id;})[0]||null; lsSaveLeads(all.filter(function(l){return l.id!==id;})); renderLeads(); ghUndoToast('Lead deleted', function(){ if(!snap){ toast('Nothing to undo','#C62828'); return; } var cur=lsGetLeads(); if(!cur.some(function(l){return l.id===snap.id;})){ cur.push(snap); lsSaveLeads(cur); } renderLeads(); toast('Lead restored','#1B7A4D'); }); });
 }
 function openLeadWA(id,waNum){
   const lead=lsGetLeads().find(l=>l.id===id);
