@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="referrer" content="no-referrer" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Gharnish Studio</title>
+<meta name="robots" content="noindex,nofollow" />
+<link rel="manifest" href="/manager-manifest.json" />
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --g:#0f3b2e; --g2:#1c7a45; --gold:#C8860A; --red:#C62828;
+  --ink:#16211d; --ink2:#4b5a54; --ink3:#8a978f;
+  --line:#e7ebe9; --c1:#ffffff; --c2:#f3f5f4;
+  --shadow:0 1px 2px rgba(0,0,0,.04),0 1px 3px rgba(0,0,0,.06);
+  --r:16px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--c2);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+h1,h2,h3{font-family:Poppins,Inter,sans-serif;margin:0}
+button{font-family:inherit;cursor:pointer}
+img{display:block;max-width:100%}
+.wrap{max-width:640px;margin:0 auto;padding:16px 16px 96px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:12px;padding:13px 16px;font-size:14px;font-weight:700;background:var(--g2);color:#fff;width:100%}
+.btn:disabled{opacity:.5}
+.btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+.btn.ghost{background:transparent;color:var(--ink2);width:auto;padding:8px}
+.btn.sm{width:auto;padding:9px 13px;font-size:12.5px}
+.card{background:var(--c1);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow)}
+.pad{padding:16px}
+.row{display:flex;align-items:center;gap:12px}
+.muted{color:var(--ink3);font-size:12px}
+.lbl{font-size:11.5px;font-weight:700;color:var(--ink2);margin-bottom:5px;display:block}
+.in{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 12px;font-size:14px;font-family:inherit;outline:none;background:#fff}
+.in:focus{border-color:var(--g2)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pill{display:inline-flex;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700;text-transform:capitalize}
+.pill.ok{background:#e3f3e8;color:var(--g2)} .pill.warn{background:#fbeecf;color:var(--gold)} .pill.draft{background:var(--c2);color:var(--ink3)}
+.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.back{width:34px;height:34px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:18px;color:var(--ink)}
+.thumb{aspect-ratio:1;border-radius:12px;border:1px solid var(--line);object-fit:cover;width:100%;background:var(--c2)}
+.sel{outline:3px solid var(--g2);outline-offset:-1px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.stat b{font-family:Poppins;font-size:22px;display:block}
+.drop{border:2px dashed var(--line);border-radius:var(--r);background:#fff;padding:34px 16px;text-align:center;color:var(--ink3);width:100%}
+.viewbtn{border:1px solid var(--line);background:#fff;border-radius:12px;padding:12px;font-size:12px;font-weight:700;color:var(--ink3)}
+.viewbtn.on{border-color:var(--g2);background:#e7f3ec;color:var(--g2)}
+.spin{width:18px;height:18px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;display:inline-block;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.center{min-height:60vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center}
+.brandbar{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.logo{width:34px;height:34px;border-radius:9px;background:var(--g);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-family:Poppins}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:13px;font-weight:600;z-index:99;opacity:0;transition:opacity .2s}
+.toast.show{opacity:1}
+.imgact{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);font-size:12px}
+.imgact button,.imgact a{display:flex;align-items:center;justify-content:center;gap:5px;padding:12px;color:var(--ink2);background:none;border:none;text-decoration:none;border-left:1px solid var(--line)}
+.imgact button:first-child,.imgact a:first-child{border-left:none}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL='https://djedmaezxvuzmwjnooel.supabase.co';
+const SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
+const UPLOADS='studio-uploads', OUTPUTS='studio-outputs', MAX_IMG=10;
+const PRODUCT_TYPES=['executive_desk','dining_table','coffee_table','restaurant_table','conference_table','chair','office_chair','restaurant_chair','booth_seating','recliner','sofa','cabinet','tv_unit','bed','storage'];
+const label=s=>String(s||'').replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+function viewsFor(t){
+  const tables=['dining_table','coffee_table','restaurant_table','conference_table','executive_desk'];
+  if(tables.includes(t)) return ['hero','front','top','side','info_slide'];
+  if(t==='bed') return ['hero','front','side','top','info_slide'];
+  return ['hero','front','back','side','info_slide'];
+}
+let supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
+const app=document.getElementById('app');
+const el=(h)=>{const d=document.createElement('div');d.innerHTML=h;return d;};
+let _t; function toast(m,c){const t=document.getElementById('toast');t.textContent=m;t.style.background=c||'#16211d';t.classList.add('show');clearTimeout(_t);_t=setTimeout(()=>t.classList.remove('show'),2600);}
+async function token(){const {data}=await supa.auth.getSession();return data&&data.session&&data.session.access_token;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+// ---------- routing ----------
+window.addEventListener('hashchange',render);
+async function render(){
+  if(!supa){app.innerHTML='<div class="center"><p>Could not load Supabase.</p></div>';return;}
+  const {data}=await supa.auth.getSession();
+  if(!data||!data.session){return renderLogin();}
+  const h=location.hash.slice(1)||'/';
+  const [_,route,id,sub]=h.split('/');
+  if(!route) return renderDashboard();
+  if(route==='new') return renderNew();
+  if(route==='p'&&id) return renderProject(id,sub);
+  return renderDashboard();
+}
+
+// ---------- login ----------
+function renderLogin(){
+  app.innerHTML='';
+  const v=el(`<div style="min-height:80vh;display:flex;flex-direction:column;justify-content:center">
+    <div class="brandbar"><div class="logo">G</div><div><div style="font-weight:800;font-family:Poppins">Gharnish Studio</div><div class="muted">Furniture production platform</div></div></div>
+    <h1 style="font-size:24px;margin:18px 0 4px">Welcome back 👋</h1>
+    <p class="muted" style="margin-bottom:16px">Sign in with your Gharnish account</p>
+    <div class="card pad">
+      <label class="lbl">Email</label><input class="in" id="li-email" type="email" placeholder="you@gharnish.com" style="margin-bottom:12px"/>
+      <label class="lbl">Password</label><input class="in" id="li-pass" type="password" placeholder="••••••••" style="margin-bottom:16px"/>
+      <button class="btn" id="li-go">Login</button>
+      <p id="li-err" style="color:var(--red);font-size:13px;margin:10px 0 0"></p>
+    </div></div>`);
+  app.appendChild(v);
+  document.getElementById('li-go').onclick=async()=>{
+    const email=document.getElementById('li-email').value.trim();
+    const pass=document.getElementById('li-pass').value;
+    const btn=document.getElementById('li-go');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+    const {error}=await supa.auth.signInWithPassword({email,password:pass});
+    if(error){document.getElementById('li-err').textContent=error.message;btn.disabled=false;btn.textContent='Login';return;}
+    render();
+  };
+}
+
+// ---------- dashboard ----------
+async function renderDashboard(){
+  app.innerHTML='<div class="center"><span class="spin" style="color:var(--g2)"></span></div>';
+  const {data:projects}=await supa.from('studio_projects').select('*').order('updated_at',{ascending:false});
+  const list=projects||[];
+  const pub=list.filter(p=>p.published).length;
+  app.innerHTML='';
+  const v=el(`
+    <div class="top"><div class="brandbar"><div class="logo">G</div><div><div style="font-weight:800;font-family:Poppins">Gharnish Studio</div><div class="muted">Dashboard</div></div></div>
+      <button class="btn ghost" id="logout">Sign out</button></div>
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="stat"><b>${list.length}</b><span class="muted">Products</span></div>
+      <div class="stat"><b>${pub}</b><span class="muted">Published</span></div>
+    </div>
+    <button class="btn" id="new" style="margin-bottom:20px">+ New Product</button>
+    <div class="row" style="justify-content:space-between;margin-bottom:10px"><h2 style="font-size:15px">Recent Products</h2></div>
+    <div id="plist"></div>`);
+  app.appendChild(v);
+  document.getElementById('logout').onclick=async()=>{await supa.auth.signOut();render();};
+  document.getElementById('new').onclick=()=>{location.hash='/new';};
+  const pl=document.getElementById('plist');
+  if(!list.length){pl.innerHTML='<div class="card pad" style="text-align:center"><p class="muted">No products yet. Create your first one.</p></div>';}
+  list.slice(0,20).forEach(p=>{
+    const cls=p.published?'ok':(p.status==='review'||p.status==='producing'?'warn':'draft');
+    const c=el(`<div class="card pad row" style="margin-bottom:8px;cursor:pointer">
+      <img class="thumb" style="width:48px;height:48px" src="${esc(p.reference_image_url||'')}"/>
+      <div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</div><div class="muted">${esc(label(p.category)||'Uncategorized')}</div></div>
+      <span class="pill ${cls}">${esc(p.published?'published':label(p.status))}</span></div>`);
+    c.firstChild.onclick=()=>{location.hash='/p/'+p.id;};
+    pl.appendChild(c);
+  });
+}
+
+// ---------- new product ----------
+async function renderNew(){
+  const {data,error}=await supa.from('studio_projects').insert({name:'Untitled Product',status:'draft'}).select('*').single();
+  if(error){toast(error.message,'#C62828');location.hash='/';return;}
+  location.hash='/p/'+data.id+'/upload';
+}
+
+// ---------- project (wizard + hub) ----------
+async function loadProject(id){
+  const {data:project}=await supa.from('studio_projects').select('*').eq('id',id).single();
+  const {data:images}=await supa.from('studio_generated_images').select('*').eq('project_id',id).order('created_at',{ascending:false});
+  return {project,images:images||[]};
+}
+function topbar(title,backHash){
+  const t=el(`<div class="top"><div class="row"><button class="back" id="bk">‹</button><h1 style="font-size:19px">${esc(title)}</h1></div></div>`);
+  t.querySelector('#bk').onclick=()=>{location.hash=backHash;};
+  return t;
+}
+async function renderProject(id,sub){
+  app.innerHTML='<div class="center"><span class="spin" style="color:var(--g2)"></span></div>';
+  const {project,images}=await loadProject(id);
+  if(!project){location.hash='/';return;}
+  if(sub==='upload') return stepUpload(project);
+  if(sub==='details') return stepDetails(project);
+  if(sub==='lock') return stepLock(project);
+  if(sub==='produce') return stepProduce(project);
+  if(sub==='results') return stepResults(project,images);
+  return hub(project,images);
+}
+
+function hub(p,images){
+  app.innerHTML='';app.appendChild(topbar(p.name,'/'));
+  const cur=images.filter(i=>i.is_current);
+  const next=nextStep(p);
+  const v=el(`
+    ${p.reference_image_url?`<img class="thumb" style="aspect-ratio:16/10;margin-bottom:14px" src="${esc(p.reference_image_url)}"/>`:''}
+    <div class="grid2" style="margin-bottom:14px">
+      <div class="card pad"><div class="muted">Category</div><div style="font-weight:700">${esc(label(p.category)||'—')}</div></div>
+      <div class="card pad"><div class="muted">Material</div><div style="font-weight:700">${esc(p.primary_material||'—')}</div></div>
+    </div>
+    ${next?`<button class="btn" id="next">${esc(next.label)}</button>`:''}
+    <div id="gv" style="margin-top:18px"></div>`);
+  app.appendChild(v);
+  if(next)document.getElementById('next').onclick=()=>{location.hash='/p/'+p.id+'/'+next.href;};
+  if(cur.length){
+    const gv=document.getElementById('gv');
+    gv.innerHTML='<h2 style="font-size:14px;margin-bottom:8px">Generated Views</h2>';
+    const g=el('<div class="grid3"></div>');
+    cur.forEach(i=>g.appendChild(el(`<img class="thumb" src="${esc(i.url)}"/>`)) );
+    gv.appendChild(g);
+  }
+}
+function nextStep(p){
+  if(p.published) return {href:'results',label:'View Results'};
+  const m={draft:{href:'upload',label:'Upload Photos'},details:{href:'details',label:'Add Product Details'},ai_review:{href:'lock',label:'Reference Lock'},locked:{href:'produce',label:'Produce Studio Images'},producing:{href:'produce',label:'View Generation'},review:{href:'results',label:'View Results'}};
+  return m[p.status]||{href:'upload',label:'Continue'};
+}
+
+// step 1: upload
+function stepUpload(p){
+  app.innerHTML='';app.appendChild(topbar('Upload Photos','/p/'+p.id));
+  let imgs=(p.source_images||[]).slice();
+  const v=el(`<button class="drop" id="drop">
+      <div style="font-size:26px">⬆️</div><div style="font-weight:700;color:var(--ink)">Drag &amp; drop or tap to browse</div>
+      <div class="muted">Up to ${MAX_IMG} images · JPG, PNG</div></button>
+    <input type="file" id="file" accept="image/*" multiple hidden/>
+    <div class="grid3" id="thumbs" style="margin-top:12px"></div>
+    <button class="btn" id="cont" style="margin-top:18px">Continue</button>`);
+  app.appendChild(v);
+  const thumbs=document.getElementById('thumbs');
+  const paint=()=>{thumbs.innerHTML='';imgs.forEach(u=>thumbs.appendChild(el(`<img class="thumb" src="${esc(u)}"/>`)));document.getElementById('cont').disabled=!imgs.length;};
+  paint();
+  document.getElementById('drop').onclick=()=>document.getElementById('file').click();
+  document.getElementById('file').onchange=async(e)=>{
+    const files=[...e.target.files].slice(0,MAX_IMG-imgs.length);
+    if(!files.length)return;toast('Uploading…');
+    for(const f of files){
+      const path=p.id+'/src-'+Date.now()+'-'+Math.round(Math.random()*1e4)+'.'+(f.name.split('.').pop()||'png');
+      const {error}=await supa.storage.from(UPLOADS).upload(path,f,{upsert:true,contentType:f.type||'image/png'});
+      if(error){toast(error.message,'#C62828');continue;}
+      imgs.push(supa.storage.from(UPLOADS).getPublicUrl(path).data.publicUrl);
+    }
+    await supa.from('studio_projects').update({source_images:imgs}).eq('id',p.id);
+    paint();toast('Uploaded ✓','#1c7a45');
+  };
+  document.getElementById('cont').onclick=()=>{location.hash='/p/'+p.id+'/details';};
+}
+
+// step 2: details
+function stepDetails(p){
+  app.innerHTML='';app.appendChild(topbar('Product Details','/p/'+p.id+'/upload'));
+  const d=p.dimensions||{};
+  const opts=PRODUCT_TYPES.map(t=>`<option value="${t}" ${p.category===t?'selected':''}>${label(t)}</option>`).join('');
+  const v=el(`
+    <label class="lbl">Product Name</label><input class="in" id="f-name" value="${esc(p.name)}" style="margin-bottom:12px"/>
+    <label class="lbl">Category</label><select class="in" id="f-cat" style="margin-bottom:12px"><option value="">Select…</option>${opts}</select>
+    <label class="lbl">Primary Material</label><input class="in" id="f-mat" value="${esc(p.primary_material||'')}" style="margin-bottom:12px"/>
+    <label class="lbl">Finish</label><input class="in" id="f-fin" value="${esc(p.finish||'')}" style="margin-bottom:12px"/>
+    <label class="lbl">Dimensions (cm)</label><div class="grid3" style="margin-bottom:12px">
+      <input class="in" id="f-w" type="number" placeholder="W" value="${esc(d.width||'')}"/>
+      <input class="in" id="f-d" type="number" placeholder="D" value="${esc(d.depth||'')}"/>
+      <input class="in" id="f-h" type="number" placeholder="H" value="${esc(d.height||'')}"/></div>
+    <label class="lbl">Notes</label><textarea class="in" id="f-notes" rows="3" style="margin-bottom:16px">${esc(p.notes||'')}</textarea>
+    <button class="btn" id="save">Save &amp; Continue</button>`);
+  app.appendChild(v);
+  document.getElementById('save').onclick=async()=>{
+    const btn=document.getElementById('save');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+    const patch={name:document.getElementById('f-name').value.trim()||'Untitled Product',category:document.getElementById('f-cat').value||null,primary_material:document.getElementById('f-mat').value||null,finish:document.getElementById('f-fin').value||null,notes:document.getElementById('f-notes').value||null,dimensions:{width:+document.getElementById('f-w').value||null,depth:+document.getElementById('f-d').value||null,height:+document.getElementById('f-h').value||null,unit:'cm'},status:'ai_review'};
+    await supa.from('studio_projects').update(patch).eq('id',p.id);
+    location.hash='/p/'+p.id+'/lock';
+  };
+}
+
+// step 3: reference lock
+function stepLock(p){
+  app.innerHTML='';app.appendChild(topbar('Reference Lock','/p/'+p.id+'/details'));
+  const srcs=p.source_images||[];let sel=p.reference_image_url||srcs[0]||null;
+  const attrs=['Shape & Geometry','Materials & Colors','Proportions','Legs & Base','Details & Finishing'];
+  const v=el(`<p class="muted" style="margin-bottom:12px">Lock your product as the visual reference. Every generated image is produced from this exact photo — the furniture design never changes.</p>
+    <img class="thumb" id="ref" style="aspect-ratio:1;margin-bottom:10px" src="${esc(sel||'')}"/>
+    <div class="grid3" id="picks" style="margin-bottom:14px"></div>
+    <div class="card" style="margin-bottom:16px">${attrs.map((a,i)=>`<div class="row" style="padding:12px 14px;${i?'border-top:1px solid var(--line)':''}"><span style="color:var(--g2)">✓</span><span style="font-size:14px">${a}</span></div>`).join('')}</div>
+    <button class="btn" id="lock">🔒 Lock Reference</button>`);
+  app.appendChild(v);
+  const picks=document.getElementById('picks');
+  if(srcs.length>1)srcs.forEach(u=>{const im=el(`<img class="thumb ${u===sel?'sel':''}" src="${esc(u)}"/>`).firstChild;im.onclick=()=>{sel=u;document.getElementById('ref').src=u;[...picks.children].forEach(c=>c.classList.remove('sel'));im.classList.add('sel');};picks.appendChild(im);});
+  document.getElementById('lock').onclick=async()=>{
+    if(!sel){toast('Pick a reference image','#C62828');return;}
+    const btn=document.getElementById('lock');btn.disabled=true;btn.innerHTML='<span class="spin"></span>';
+    await supa.from('studio_projects').update({reference_image_url:sel,reference_locked:true,reference_locked_at:new Date().toISOString(),status:'locked'}).eq('id',p.id);
+    location.hash='/p/'+p.id+'/produce';
+  };
+}
+
+// step 4: produce
+function stepProduce(p){
+  app.innerHTML='';app.appendChild(topbar('Produce Studio Images','/p/'+p.id+'/lock'));
+  const all=viewsFor(p.category);const chosen=new Set(all);
+  const v=el(`<p style="font-weight:700;margin-bottom:8px">Views to Generate</p>
+    <div class="grid3" id="views" style="margin-bottom:16px"></div>
+    <div class="card" style="margin-bottom:16px">
+      ${[['Background','Pure White #FFFFFF'],['Shadow','Soft floor shadow'],['Framing','Centered · 12–15% margin'],['Size','1024×1024 (1:1)'],['Format','WebP, optimized']].map((r,i)=>`<div class="row" style="justify-content:space-between;padding:11px 14px;${i?'border-top:1px solid var(--line)':''}"><span class="muted">${r[0]}</span><span style="font-weight:600;font-size:13px">${r[1]}</span></div>`).join('')}
+    </div>
+    <button class="btn" id="go">Start Generation</button>`);
+  app.appendChild(v);
+  const vc=document.getElementById('views');
+  const paint=()=>{vc.innerHTML='';all.forEach(w=>{const b=el(`<button class="viewbtn ${chosen.has(w)?'on':''}">${label(w)}</button>`).firstChild;b.onclick=()=>{chosen.has(w)?chosen.delete(w):chosen.add(w);paint();};vc.appendChild(b);});};
+  paint();
+  document.getElementById('go').onclick=()=>runGeneration(p,[...chosen]);
+}
+
+async function runGeneration(p,views){
+  app.innerHTML=`<div class="center"><span class="spin" style="color:var(--g2);width:34px;height:34px"></span><h2 style="font-size:18px">Generating studio images…</h2><p class="muted" id="prog">Starting ${views.length} views</p></div>`;
+  await supa.from('studio_projects').update({status:'producing'}).eq('id',p.id);
+  const tok=await token();let done=0;
+  for(const view of views){
+    document.getElementById('prog').textContent=`Generating ${label(view)} (${done+1}/${views.length})…`;
+    try{
+      const r=await fetch('/studio/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({projectId:p.id,view,referenceUrl:p.reference_image_url})});
+      const j=await r.json().catch(()=>null);
+      if(!j||!j.ok)toast((label(view))+': '+((j&&j.error)||'failed'),'#C62828');
+    }catch(e){toast(label(view)+' failed','#C62828');}
+    done++;
+  }
+  await supa.from('studio_projects').update({status:'review'}).eq('id',p.id);
+  location.hash='/p/'+p.id+'/results';
+}
+
+// step 5: results
+function stepResults(p,images){
+  app.innerHTML='';app.appendChild(topbar('Results','/p/'+p.id));
+  const cur=images.filter(i=>i.is_current);
+  const wrap=el('<div id="res"></div>');app.appendChild(wrap);
+  if(!cur.length)wrap.innerHTML='<div class="card pad" style="text-align:center"><p class="muted">No images yet. Go back and run production.</p></div>';
+  cur.forEach(img=>{
+    const c=el(`<div class="card" style="margin-bottom:14px;overflow:hidden">
+      <div style="position:relative;background:var(--c2)"><img src="${esc(img.url)}" style="width:100%;aspect-ratio:1;object-fit:contain"/>
+        <span style="position:absolute;left:12px;top:12px;background:rgba(0,0,0,.7);color:#fff;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:600">${label(img.view_type)}</span></div>
+      <div class="imgact">
+        <a href="${esc(img.url)}" download target="_blank">⬇ Download</a>
+        <button data-a="regen">↻ Regenerate</button>
+        <button data-a="edit">✎ Edit</button></div></div>`);
+    c.querySelector('[data-a=regen]').onclick=()=>runGeneration(p,[img.view_type]);
+    c.querySelector('[data-a=edit]').onclick=()=>openEdit(c,img,p);
+    wrap.appendChild(c);
+  });
+  if(cur.length){
+    const slideBtn=el(`<button class="btn sec" id="slide" style="margin-top:6px;margin-bottom:8px">🖼 Generate Information Slide</button>`);
+    app.appendChild(slideBtn);
+    document.getElementById('slide').onclick=()=>composeInfoSlide(p,cur);
+    const pubBtn=el(`<button class="btn" id="pub" style="margin-top:6px">Publish to Catalog</button><div id="pubmsg" class="muted" style="text-align:center;margin-top:8px"></div>`);
+    app.appendChild(pubBtn);
+    document.getElementById('pub').onclick=async()=>{
+      const b=document.getElementById('pub');b.disabled=true;b.innerHTML='<span class="spin"></span>';
+      const tok=await token();
+      try{
+        const r=await fetch('/studio/publish',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({projectId:p.id})});
+        const j=await r.json().catch(()=>null);
+        if(j&&j.ok){document.getElementById('pubmsg').textContent='Published to catalog as '+j.productId;toast('Published ✓','#1c7a45');}
+        else{document.getElementById('pubmsg').textContent=(j&&j.error)||'Publish failed';}
+      }catch(e){document.getElementById('pubmsg').textContent='Publish failed';}
+      b.disabled=false;b.textContent='Publish to Catalog';
+    };
+  }
+}
+
+// ---------- Edit with AI (inline) ----------
+function openEdit(card,img,p){
+  const act=card.querySelector('.imgact');
+  if(!act) return;
+  const box=el(`<div class="pad" style="border-top:1px solid var(--line)">
+    <textarea class="in" id="ei" rows="2" placeholder="e.g. Make the cushion dark green leather; add a soft gold footrest"></textarea>
+    <div class="row" style="margin-top:8px;gap:8px"><button class="btn" id="eap">Apply Changes</button><button class="btn sec sm" id="ecx">Cancel</button></div>
+    <div class="muted" style="margin-top:6px">Only this image changes. The furniture design stays locked.</div></div>`).firstChild;
+  act.replaceWith(box);
+  box.querySelector('#ecx').onclick=()=>render();
+  box.querySelector('#eap').onclick=async()=>{
+    const ins=box.querySelector('#ei').value.trim();
+    if(!ins){toast('Describe the change','#C62828');return;}
+    const b=box.querySelector('#eap');b.disabled=true;b.innerHTML='<span class="spin"></span> Applying…';
+    const tok=await token();
+    try{
+      const r=await fetch('/studio/edit',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({imageId:img.id,instruction:ins})});
+      const j=await r.json().catch(()=>null);
+      if(j&&j.ok){toast('Updated ✓','#1c7a45');render();}
+      else{toast((j&&j.error)||'Edit failed','#C62828');b.disabled=false;b.textContent='Apply Changes';}
+    }catch(e){toast('Edit failed','#C62828');b.disabled=false;b.textContent='Apply Changes';}
+  };
+}
+
+// ---------- Information Slide (client-side canvas composition) ----------
+async function composeInfoSlide(p,cur){
+  const hero=(cur||[]).find(i=>i.view_type==='hero')||(cur||[])[0];
+  const heroUrl=(hero&&hero.url)||p.reference_image_url;
+  if(!heroUrl){toast('Generate a Hero image first','#C62828');return;}
+  toast('Composing information slide…','#5B5BBC');
+  const S=1080, c=document.createElement('canvas');c.width=S;c.height=S;
+  const x=c.getContext('2d');
+  try{ await document.fonts.load('800 54px Poppins'); await document.fonts.load('600 26px Inter'); await document.fonts.ready; }catch(e){}
+
+  // background + subtle frame
+  x.fillStyle='#ffffff';x.fillRect(0,0,S,S);
+  x.strokeStyle='#eef1ef';x.lineWidth=2;x.strokeRect(24,24,S-48,S-48);
+
+  // title + category
+  const name=(p.name||'Product').toUpperCase();
+  x.textAlign='center';x.fillStyle='#16211d';x.font='800 50px Poppins, sans-serif';
+  x.fillText(name.length>28?name.slice(0,27)+'…':name, S/2, 108);
+  x.fillStyle='#8a978f';x.font='600 22px Inter, sans-serif';
+  x.fillText((label(p.category)||'Furniture').toUpperCase().split('').join(' '), S/2, 146);
+
+  // hero image (contain into box) with soft shadow
+  let bmp=null;
+  try{ const resp=await fetch(heroUrl,{mode:'cors'}); const blob=await resp.blob(); bmp=await createImageBitmap(blob); }
+  catch(e){ bmp=null; }
+  const bx=180, by=190, bw=S-360, bh=560;
+  if(bmp){
+    const s=Math.min(bw/bmp.width, bh/bmp.height);
+    const w=bmp.width*s, h=bmp.height*s, ix=bx+(bw-w)/2, iy=by+(bh-h)/2;
+    x.save();x.fillStyle='rgba(0,0,0,0.06)';x.beginPath();
+    x.ellipse(S/2, iy+h-6, w*0.34, 20, 0, 0, Math.PI*2);x.fill();x.restore();
+    x.drawImage(bmp, ix, iy, w, h);
+  }else{
+    x.fillStyle='#f3f5f4';x.fillRect(bx,by,bw,bh);
+    x.fillStyle='#8a978f';x.font='600 20px Inter';x.fillText('Hero image unavailable (CORS)', S/2, by+bh/2);
+  }
+
+  // spec strip
+  const d=p.dimensions||{};
+  const dims=(d.width||d.height||d.depth)?[d.width||'—',d.depth||'—',d.height||'—'].join(' × ')+' cm':'—';
+  const cols=[['DIMENSIONS (W×D×H)',dims],['MATERIAL',p.primary_material||'—'],['FINISH',p.finish||'—']];
+  const sy=820, sh=150, sx=80, sw=S-160, cw=sw/cols.length;
+  x.fillStyle='#f7f9f8';roundRect(x,sx,sy,sw,sh,18);x.fill();
+  cols.forEach((col,i)=>{
+    const cx=sx+cw*i+cw/2;
+    if(i>0){x.strokeStyle='#e7ebe9';x.lineWidth=1;x.beginPath();x.moveTo(sx+cw*i,sy+28);x.lineTo(sx+cw*i,sy+sh-28);x.stroke();}
+    x.textAlign='center';x.fillStyle='#1c7a45';x.font='700 14px Inter, sans-serif';
+    x.fillText(col[0], cx, sy+52);
+    x.fillStyle='#16211d';x.font='600 26px Poppins, sans-serif';
+    const val=String(col[1]);x.fillText(val.length>18?val.slice(0,17)+'…':val, cx, sy+96);
+  });
+
+  // footer wordmark
+  x.textAlign='center';x.fillStyle='#C8860A';x.font='800 22px Poppins, sans-serif';
+  x.fillText('G H A R N I S H', S/2, S-46);
+
+  const blob=await new Promise(res=>c.toBlob(res,'image/png',0.92));
+  if(!blob){toast('Could not render slide','#C62828');return;}
+  const path=p.id+'/info_slide-'+Date.now()+'.png';
+  const up=await supa.storage.from(OUTPUTS).upload(path,blob,{upsert:true,contentType:'image/png'});
+  if(up.error){toast(up.error.message,'#C62828');return;}
+  const url=supa.storage.from(OUTPUTS).getPublicUrl(path).data.publicUrl;
+  await supa.from('studio_generated_images').update({is_current:false}).eq('project_id',p.id).eq('view_type','info_slide').eq('is_current',true);
+  await supa.from('studio_generated_images').insert({project_id:p.id,view_type:'info_slide',status:'ready',url,thumb_url:url,bytes:blob.size,model:'canvas',is_current:true});
+  toast('Information slide ready ✓','#1c7a45');render();
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+
+render();
+</script>
+</body>
+</html>
