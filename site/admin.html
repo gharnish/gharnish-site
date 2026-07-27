@@ -876,6 +876,8 @@ const CAT_ICON = {'chair':'🪑','stool':'🪑','table-round':'⭕','table-squar
 const CAT_ICON_KEY = {'chair':'chair','stool':'stool','table-round':'roundtable','table-square':'roundtable','table-rect':'recttable','table-base':'roundtable','booth':'booth','outdoor-chair':'outchair','outdoor-table':'outtable','restaurant-set':'recttable'};
 const TIER_LABEL = {essential:'Economic',premium:'Premium',luxury:'Luxury'};
 var RES_CATS=[['res-dining-set','Dining Table Sets'],['res-dining-table','Dining Tables'],['res-dining-chair','Dining Chairs'],['res-sofa','Sofas'],['res-bed','Beds'],['res-centre-table','Centre Tables'],['res-side-table','Side Tables']];
+var OFFICE_CATS=[['off-general','Office Furniture']];
+Object.assign(CAT_LABEL,{'off-general':'Office Furniture'});
 Object.assign(CAT_LABEL,{'res-dining-set':'Dining Table Sets','res-dining-table':'Dining Tables','res-dining-chair':'Dining Chairs','res-sofa':'Sofas','res-bed':'Beds','res-centre-table':'Centre Tables','res-side-table':'Side Tables'});
 Object.assign(CAT_ICON,{'res-dining-set':'\ud83c\udf7d\ufe0f','res-dining-table':'\u25ac','res-dining-chair':'\ud83e\ude91','res-sofa':'\ud83d\udecb\ufe0f','res-bed':'\ud83d\udecf\ufe0f','res-centre-table':'\u25ac','res-side-table':'\u25ab'});
 Object.assign(CAT_ICON_KEY,{'res-dining-set':'recttable','res-dining-table':'recttable','res-dining-chair':'chair','res-sofa':'booth','res-bed':'booth','res-centre-table':'recttable','res-side-table':'roundtable'});
@@ -3148,7 +3150,7 @@ function prodRow(p,idx,total){
     +'</div>'
     +'<div class="pcard-body">'
     +'<div class="pcard-name">'+p.name+'</div>'
-    +'<div class="pcard-meta">'+(CAT_LABEL[p.cat]||p.cat)+(p.internal?' <span class="badge" style="background:#5B5BBC22;color:#5B5BBC">INTERNAL</span>':'')+(p.hidden?' <span class="badge" style="background:#C6282822;color:#C62828">HIDDEN</span>':'')+(p.section==='residential'?' <span class="badge" style="background:#0E7C6B22;color:#0E7C6B">RESIDENTIAL</span>':'')+'</div>'
+    +'<div class="pcard-meta">'+(CAT_LABEL[p.cat]||p.cat)+(p.internal?' <span class="badge" style="background:#5B5BBC22;color:#5B5BBC">INTERNAL</span>':'')+(p.hidden?' <span class="badge" style="background:#C6282822;color:#C62828">HIDDEN</span>':'')+(p.section==='residential'?' <span class="badge" style="background:#0E7C6B22;color:#0E7C6B">RESIDENTIAL</span>':'')+(p.section==='office'?' <span class="badge" style="background:#5B4B8A22;color:#5B4B8A">OFFICE</span>':'')+'</div>'
     +'<div class="pcard-badges">'+stockBadge+'</div>'+prodCostVendorUI(p)
     +'<div class="pcard-foot">'
     +'<div class="pcard-price" id="ppr-'+p.id+'" title="Click to edit price" onclick="event.stopPropagation();prodPriceEdit(\''+p.id+'\')" style="cursor:pointer;border-bottom:1px dashed rgba(200,134,10,.55)">'+fmt(p.price)+'</div>'
@@ -5591,9 +5593,9 @@ function openProdFormAdvanced(id){
     +'<div class="pf-grid"><div class="pf-main">'
     +'<div class="pf-card"><div class="pf-card-h">General Information</div>'
     +'<div class="f-field"><label>Product Name *</label><input class="f-input" id="pf-name" value="'+(p?.name||'')+'" placeholder="e.g. Verona Bistro Chair"></div>'
-    +'<div class="f-row"><div class="f-field"><label>Category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+(p&&p.section==='residential'?RES_CATS:dynCats()).map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'
+    +'<div class="f-row"><div class="f-field"><label>Category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+(p&&p.section==='office'?OFFICE_CATS:(p&&p.section==='residential'?RES_CATS:dynCats())).map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'
     +'<div class="f-field"><label>Tier</label><select class="f-select" id="pf-tier">'+Object.entries(TIER_LABEL).map(([k,v])=>'<option value="'+k+'"'+(p?.tier===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
-    +'<div class="f-row"><div class="f-field"><label>Section</label><select class="f-select" id="pf-section" onchange="onPFSectionChange()"><option value="">Restaurant / Commercial</option><option value="residential"'+(p&&p.section==='residential'?' selected':'')+'>Residential</option></select></div>'
+    +'<div class="f-row"><div class="f-field"><label>Section</label><select class="f-select" id="pf-section" onchange="onPFSectionChange()"><option value="">Restaurant / Commercial</option><option value="residential"'+(p&&p.section==='residential'?' selected':'')+'>Residential</option><option value="office"'+(p&&p.section==='office'?' selected':'')+'>Office Furniture</option></select></div>'
     +'<div class="f-field" style="justify-content:flex-end"><div class="toggle-row" style="border:none;padding:8px 0;margin-top:auto"><span class="toggle-lbl">Internal only (custom)</span><div class="toggle-sw'+(p&&p.internal?' on':'')+'" id="pf-internal" onclick="this.classList.toggle(\'on\')"><div class="toggle-th"></div></div></div></div></div>'
     +'<div style="font-size:11px;color:var(--ink3);margin:-4px 0 10px">Internal products never show on the customer app \u2014 usable in quotes, orders &amp; vendor assignment. Residential products appear only in the Residential section of the app.</div>'
     +'<div class="f-row"><div class="f-field" style="justify-content:flex-end"><div class="toggle-row" style="border:none;padding:8px 0"><span class="toggle-lbl">Hide from customer app <span style="font-weight:400;color:var(--ink3);font-size:11px">\u2014 all categories, temporarily unlisted</span></span><div class="toggle-sw'+(p&&p.hidden?' on':'')+'" id="pf-hidden" onclick="this.classList.toggle(\'on\')"><div class="toggle-th"></div></div></div></div></div>'
@@ -5679,7 +5681,7 @@ function removeSpec(i){ prodSpecs.splice(i,1); document.getElementById('specs-li
 
 // Override openProdForm to use advanced form
 function openProdForm(id){ openProdFormAdvanced(id); }
-function onPFSectionChange(){ var sec=document.getElementById('pf-section'); var catSel=document.getElementById('pf-cat'); if(!sec||!catSel)return; var cur=catSel.value; var opts=(sec.value==='residential')?RES_CATS:dynCats(); catSel.innerHTML=opts.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>';}).join(''); try{ if(typeof onPFCatChange==='function') onPFCatChange(); }catch(e){} }
+function onPFSectionChange(){ var sec=document.getElementById('pf-section'); var catSel=document.getElementById('pf-cat'); if(!sec||!catSel)return; var cur=catSel.value; var opts=(sec.value==='office')?OFFICE_CATS:((sec.value==='residential')?RES_CATS:dynCats()); catSel.innerHTML=opts.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>';}).join(''); try{ if(typeof onPFCatChange==='function') onPFCatChange(); }catch(e){} }
 function openCustomProd(){ openProdFormAdvanced(); setTimeout(function(){ var t=document.getElementById('pf-internal'); if(t) t.classList.add('on'); },80); }
 
 /* ═══════════ TABLE BUILDER — choose which catalog bases appear ═══════════ */

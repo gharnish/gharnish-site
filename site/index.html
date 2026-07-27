@@ -2106,6 +2106,7 @@ body.detail-open #ai-fab{display:none}
     <button class="bnav-btn dnav-link" data-tab="home">Home</button>
     <button class="bnav-btn dnav-link" data-tab="categories">Shop Furniture</button>
     <button class="dnav-link" onclick="ghGoResidential()">Home Furniture</button>
+    <button class="dnav-link" onclick="ghGoOffice()">Office Furniture</button>
     <button class="dnav-link" onclick="goToOurWork()">Our Work</button>
     <button class="bnav-btn dnav-link" data-tab="calculator">Get an Estimate</button>
     <button class="bnav-btn dnav-link" data-tab="offers">Offers</button>
@@ -3961,15 +3962,22 @@ var RES_CAT_CARDS=[
   {key:'res-side-table',  label:'Side Tables',       sub:'Accent & lamp tables',    icon:'roundtable',cats:['res-side-table']},
 ];
 var GH_ALL=[];
-function ghApplySection(){ if(!GH_ALL.length && PRODUCTS.length){ GH_ALL=PRODUCTS.slice(); } var wantRes=(S.section==='residential'); var list=GH_ALL.filter(function(p){ return wantRes ? (p.section==='residential') : (p.section!=='residential'); }); PRODUCTS.length=0; list.forEach(function(p){ PRODUCTS.push(p); }); }
+function ghSecOf(p){ var s=p&&p.section; return (s==='residential'||s==='office')?s:'restaurant'; }
+function ghCurSec(){ return (S.section==='residential'||S.section==='office')?S.section:'restaurant'; }
+function ghApplySection(){ if(!GH_ALL.length && PRODUCTS.length){ GH_ALL=PRODUCTS.slice(); } var sec=ghCurSec(); var list=GH_ALL.filter(function(p){ return ghSecOf(p)===sec; }); PRODUCTS.length=0; list.forEach(function(p){ PRODUCTS.push(p); }); }
 function ghGoResidential(){ ghSetSection('residential'); try{ trackEvent('go_residential',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
-function ghSetSection(sec){ S.section=(sec==='residential')?'residential':'restaurant'; ghApplySection(); S.selectedProduct=null; S.selectedProject=null; S.tab='categories'; S.catView='list'; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section}); }catch(e){} render(); window.scrollTo(0,0); }
+function ghGoOffice(){ ghSetSection('office'); try{ trackEvent('go_office',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
+function ghSetSection(sec){ S.section=(sec==='residential'||sec==='office')?sec:'restaurant'; ghApplySection(); S.selectedProduct=null; S.selectedProject=null; S.tab='categories'; S.catView='list'; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section}); }catch(e){} render(); window.scrollTo(0,0); }
 var CAT_IMAGES={};
 var CATMETA={};
 function ghIsResCat(k){ return /^res-/.test(k||''); }
+function ghIsOffCat(k){ return /^off-/.test(k||''); }
+function ghCatSec(k){ return ghIsResCat(k)?'residential':(ghIsOffCat(k)?'office':'restaurant'); }
+var OFFICE_CAT_CARDS=[{key:'off-general',label:'Office Furniture',sub:'Desks, chairs & workstations for your workspace',icon:'chair',cats:['off-general']}];
+try{ if(typeof CAT_LABEL!=='undefined') CAT_LABEL['off-general']='Office Furniture'; }catch(e){}
 function orderedCards(){
   var meta=CATMETA;
-  var wantRes=(S.section==='residential');
+  var sec=ghCurSec(); var wantRes=(sec!=='restaurant');
   if(!meta || !Object.keys(meta).length) return wantRes?[]:CAT_CARDS;
   var used={}; CAT_CARDS.forEach(function(c){ c.cats.forEach(function(k){ used[k]=1; }); });
   // restaurant section: base CAT_CARDS (all restaurant). residential section: none of the base cards.
@@ -3978,9 +3986,7 @@ function orderedCards(){
     return Object.assign({},c,{_order:(mk.order!=null?mk.order:(m.order!=null?m.order:999)),_visible:((mk.visible!==undefined?mk.visible:m.visible)!==false),_name:nm}); }).filter(function(c){ return c._visible; });
   Object.keys(meta).forEach(function(k){
     if(used[k]) return; var m=meta[k]; if(!m||m.visible===false) return;
-    var isRes=ghIsResCat(k);
-    // only show residential cards in residential section, restaurant cards in restaurant section
-    if(wantRes !== isRes) return;
+    if(ghCatSec(k)!==sec) return;
     cards.push({key:k,label:m.name||k,sub:m.description||'',icon:'chair',cats:[k],_custom:true,_order:(m.order!=null?m.order:999),_visible:true,_name:m.name||k});
   });
   cards.sort(function(a,b){ return (a._order!=null?a._order:999)-(b._order!=null?b._order:999); });
@@ -4624,10 +4630,10 @@ function renderCategoriesPage(){
   var adminCats=(function(){try{return JSON.parse(localStorage.getItem('gh_categories')||'null');}catch(e){return null;}})();
   var H=[];
   H.push('<div class="home-wrap">');
-  var _res=(S.section==='residential'); H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">'+(_res?'Residential Collection':'Shop by Category')+'</div><div style="font-size:13px;color:var(--ink3)">'+(_res?'Dining sets, tables &amp; chairs, sofas, beds &amp; more for your home':'Browse the full Gharnish range by furniture type')+'</div>');
-  H.push('<div style="display:flex;gap:8px;margin-top:12px">'+[['restaurant','Restaurant &amp; Caf\u00e9'],['residential','Residential']].map(function(t){ var on=(S.section===t[0]); return '<button onclick="ghSetSection(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div></div>');
+  var _sec=ghCurSec(); var _res=(_sec==='residential'); var _off=(_sec==='office'); H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">'+(_off?'Office Furniture':(_res?'Residential Collection':'Shop by Category'))+'</div><div style="font-size:13px;color:var(--ink3)">'+(_off?'Desks, chairs &amp; workstations for your workspace':(_res?'Dining sets, tables &amp; chairs, sofas, beds &amp; more for your home':'Browse the full Gharnish range by furniture type'))+'</div>');
+  H.push('<div style="display:flex;gap:8px;margin-top:12px">'+[['restaurant','Restaurant &amp; Caf\u00e9'],['residential','Residential'],['office','Office']].map(function(t){ var on=(S.section===t[0]); return '<button onclick="ghSetSection(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div></div>');
   H.push('<div class="cat-img-grid" style="margin-top:12px">');
-  (_res?RES_CAT_CARDS:orderedCards()).forEach(function(c){
+  (_off?OFFICE_CAT_CARDS:(_res?RES_CAT_CARDS:orderedCards())).forEach(function(c){
     var n=cardCount(c.cats);
     var adminImg=adminCats&&adminCats[c.cats[0]]?adminCats[c.cats[0]].image:'';
     var customImg=catCardImg(c)||adminImg||'';
@@ -6761,22 +6767,26 @@ function ghResolveRoute(path){
   if(!seg.length){ base(); S.tab='home'; S.homeView='landing'; S._pendingPath=null; return true; }
   if(seg[0]==='product' && seg[1]){
     var pool=(GH_ALL&&GH_ALL.length)?GH_ALL:PRODUCTS; var p=pool.find(function(x){return ghProdSlug(x)===seg[1];});
-    if(p){ base(); var pr=(p.section==='residential'); if(pr!==(S.section==='residential')){ S.section=pr?'residential':'restaurant'; ghApplySection(); } S.tab='home'; S.selectedProduct=p.id; S._pendingPath=null; return true; }
+    if(p){ base(); var ps=ghSecOf(p); if(ps!==ghCurSec()){ S.section=ps; ghApplySection(); } S.tab='home'; S.selectedProduct=p.id; S._pendingPath=null; return true; }
     S._pendingPath=path; return false;   /* products not loaded yet — retry after fetch */
   }
   base();
-  if(seg[0]==='category' && seg[1]){ var _ck=GH_SHOP_ALIAS[seg[1]]||seg[1]; var _rc=(_ck.indexOf('res-')===0); if(_rc!==(S.section==='residential')){ S.section=_rc?'residential':'restaurant'; ghApplySection(); } S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=(GH_CAT_FILTER[_ck]||_ck); }
+  if(seg[0]==='category' && seg[1]){ var _ck=GH_SHOP_ALIAS[seg[1]]||seg[1]; var _cs=ghCatSec(_ck); if(_cs!==ghCurSec()){ S.section=_cs; ghApplySection(); } S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=(GH_CAT_FILTER[_ck]||_ck); }
   else if(seg[0]==='categories'){ S.tab='categories'; S.catView='list'; }
   else if(seg[0]==='shop'){
     if(seg[1]==='residential'){
       // /shop/residential → the home-furniture category hub
       if(S.section!=='residential'){ S.section='residential'; ghApplySection(); }
       S.tab='categories'; S.catView='list';
+    } else if(seg[1]==='office'){
+      // /shop/office → the office-furniture category hub
+      if(S.section!=='office'){ S.section='office'; ghApplySection(); }
+      S.tab='categories'; S.catView='list';
     } else if(seg[1]){
       // /shop/<category> — accepts SEO bucket names and app keys alike
       var _k=GH_SHOP_ALIAS[seg[1]]||seg[1];
-      var _rs=(_k.indexOf('res-')===0);
-      if(_rs!==(S.section==='residential')){ S.section=_rs?'residential':'restaurant'; ghApplySection(); }
+      var _cs2=ghCatSec(_k);
+      if(_cs2!==ghCurSec()){ S.section=_cs2; ghApplySection(); }
       S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=(GH_CAT_FILTER[_k]||_k);
     } else {
       // bare /shop → full catalogue, clear any sticky category filter
