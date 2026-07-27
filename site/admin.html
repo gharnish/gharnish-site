@@ -6408,6 +6408,8 @@ async function stRun(p,views,wantSlide){
   var box=document.getElementById('st-step');
   box.innerHTML='<div style="text-align:center;padding:50px 20px"><div class="spin" style="width:34px;height:34px;border:3px solid var(--g,#1B7A4D);border-top-color:transparent;border-radius:50%;display:inline-block;animation:sp 0.7s linear infinite"></div><h3 id="st-prog" style="margin:16px 0 0">Starting…</h3></div><style>@keyframes sp{to{transform:rotate(360deg)}}</style>';
   await supa.from('studio_projects').update({status:'producing'}).eq('id',p.id);
+  // If an info slide is wanted but there is no hero being made or already present, make the hero first so the slide uses a proper white product shot (not the raw reference).
+  if(wantSlide && views.indexOf('hero')<0){ try{ var dd=await stLoad(); var hasHero=(dd.images||[]).some(function(i){return i.is_current&&i.view_type==='hero';}); if(!hasHero) views=['hero'].concat(views); }catch(e){} }
   var tok=await stTok();
   for(var i=0;i<views.length;i++){ var v=views[i]; var pe=document.getElementById('st-prog'); if(pe)pe.textContent='Generating '+stLbl(v)+' ('+(i+1)+'/'+views.length+')…'; try{ var r=await fetch('/studio/generate',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:JSON.stringify({projectId:p.id,view:v,referenceUrl:p.reference_image_url})}); var j=await r.json().catch(function(){return null;}); if(!j||!j.ok){ toast(stLbl(v)+': '+((j&&j.error)||'failed'),'#C62828'); } }catch(e){toast(stLbl(v)+' failed','#C62828');} }
   if(wantSlide){ var pe2=document.getElementById('st-prog'); if(pe2)pe2.textContent='Composing information slide…'; try{ await stInfoSlide(p); }catch(e){ toast('Info slide skipped: '+e.message,'#C8860A'); } }
@@ -6456,7 +6458,7 @@ async function stStoreWhite(pid, view, b64, parentId){
 async function stEditInProducts(id){ try{ if(typeof loadAllFromSupabase==='function') await loadAllFromSupabase(); }catch(e){} try{ currentPage='products'; }catch(e){} document.querySelectorAll('.nav-item,.mnav-btn').forEach(function(el){ el.classList.toggle('active', el.dataset&&el.dataset.page==='products'); }); var mc=document.getElementById('main-content'); if(mc)mc.classList.add('mc-wide'); if(typeof renderProducts==='function') renderProducts(); setTimeout(function(){ if(typeof openProdForm==='function') openProdForm(id); },90); }
 async function stInfoSlide(p){
   var d=await stLoad(); var cur=d.images.filter(function(i){return i.is_current;});
-  var hero=cur.find(function(i){return i.view_type==='hero';})||cur[0]; var heroUrl=(hero&&hero.url)||p.reference_image_url;
+  var hero=cur.find(function(i){return i.view_type==='hero';})||cur.find(function(i){return i.view_type!=='info_slide';})||null; var heroUrl=(hero&&hero.url)||p.reference_image_url;
   if(!heroUrl) throw new Error('Generate a Hero image first');
   var S=1080,c=document.createElement('canvas');c.width=S;c.height=S;var x=c.getContext('2d');
   try{ await document.fonts.ready; }catch(e){}

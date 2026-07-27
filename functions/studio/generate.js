@@ -77,7 +77,6 @@ export async function onRequestPost(context) {
     fd.append("size", "1024x1024");
     fd.append("n", "1");
     fd.append("quality", "high");
-    fd.append("background", "opaque");
     fd.append("output_format", "webp");
     fd.append("output_compression", "80");
     fd.append("image", refBlob, "reference." + ext);
