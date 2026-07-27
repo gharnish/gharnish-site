@@ -3830,7 +3830,7 @@ function openCatForm(key){
   document.getElementById('cat-modal-title').textContent=isNew?'Add Category':('Edit: '+c.name);
   document.getElementById('cat-modal-body').innerHTML=
     '<div class="f-section">Display</div>'
-    +'<div class="f-field"><label>Display Name'+(isNew?' *':'')+'</label><input class="f-input" id="cf-name" value="'+tbEsc(c.name)+'" placeholder="e.g. Bar Tables"></div>'
+    +'<div class="f-field"><label>Display Name'+(isNew?' *':'')+'</label><input class="f-input" id="cf-name" value="'+tbEsc(c.name)+'" placeholder="e.g. Bar Tables"></div>'+'<div class="f-field"><label>Section</label><select class="f-select" id="cf-section"><option value="">Restaurant / Commercial</option><option value="residential"'+(c.section==='residential'?' selected':'')+'>Home Furniture</option><option value="office"'+(c.section==='office'?' selected':'')+'>Office Furniture</option><option value="banquet"'+(c.section==='banquet'?' selected':'')+'>Banquet</option></select></div>'
     +'<div class="f-field"><label>Description (optional)</label><input class="f-input" id="cf-desc" value="'+tbEsc(c.description||'')+'" placeholder="Short description shown on homepage card"></div>'
     +'<div class="f-section">Cover Image</div>'
     +'<div class="img-upload-area" onclick="document.getElementById(\'cat-file\').click()" style="background:#fff">'
@@ -3853,19 +3853,21 @@ function saveCat(){
   const desc=document.getElementById('cf-desc')?.value.trim()||'';
   const image=document.getElementById('cat-image-val')?.value||'';
   const visible=document.getElementById('cf-vis')?.classList.contains('on');
+  const section=document.getElementById('cf-section')?.value||'';
+  const _pfx={'':'','residential':'res-','office':'off-','banquet':'bnq-'}[section]||'';
   const cats=getCategories();
   if(editingCatKey===null||editingCatKey===undefined){
     if(!name){ toast('Enter a category name','#C62828'); return; }
-    var key=ghCatSlug(name)||('cat-'+Date.now().toString(36)), base=key, nn=2;
+    var key=_pfx+(ghCatSlug(name)||('cat-'+Date.now().toString(36))), base=key, nn=2;
     while(cats[key]){ key=base+'-'+nn; nn++; }
     var maxO=0; Object.values(cats).forEach(function(c){ if((c.order||0)>maxO) maxO=c.order||0; });
-    cats[key]={key:key,name:name,description:desc,image:image,visible:visible!==false,order:maxO+1,_custom:true};
+    cats[key]={key:key,name:name,description:desc,image:image,visible:visible!==false,order:maxO+1,section:section,_custom:true};
     lsSaveCategories(cats);
     var ck=GRAN_TO_CARD[key]; if(ck&&image){ catHeroImgs[ck]=image; saveCatHeroImgs(); }
     closeCatForm(); renderCategories(); toast('Category added');
     return;
   }
-  cats[editingCatKey]={...cats[editingCatKey],name:name||cats[editingCatKey].name,description:desc,image,visible};
+  cats[editingCatKey]={...cats[editingCatKey],name:name||cats[editingCatKey].name,description:desc,image,visible,section:section};
   lsSaveCategories(cats);
   var cardKey=GRAN_TO_CARD[editingCatKey];
   if(cardKey){
@@ -5593,9 +5595,9 @@ function openProdFormAdvanced(id){
     +'<div class="pf-grid"><div class="pf-main">'
     +'<div class="pf-card"><div class="pf-card-h">General Information</div>'
     +'<div class="f-field"><label>Product Name *</label><input class="f-input" id="pf-name" value="'+(p?.name||'')+'" placeholder="e.g. Verona Bistro Chair"></div>'
-    +'<div class="f-row"><div class="f-field"><label>Category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+(p&&p.section==='banquet'?BANQUET_CATS:(p&&p.section==='office'?OFFICE_CATS:(p&&p.section==='residential'?RES_CATS:dynCats()))).map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'
-    +'<div class="f-field"><label>Tier</label><select class="f-select" id="pf-tier">'+Object.entries(TIER_LABEL).map(([k,v])=>'<option value="'+k+'"'+(p?.tier===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
-    +'<div class="f-row"><div class="f-field"><label>Section</label><select class="f-select" id="pf-section" onchange="onPFSectionChange()"><option value="">Restaurant / Commercial</option><option value="residential"'+(p&&p.section==='residential'?' selected':'')+'>Residential</option><option value="office"'+(p&&p.section==='office'?' selected':'')+'>Office Furniture</option><option value="banquet"'+(p&&p.section==='banquet'?' selected':'')+'>Banquet Furniture</option></select></div>'
+    +'<div class="f-row"><div class="f-field"><label>Category *</label><select class="f-select" id="pf-section" onchange="onPFSectionChange()"><option value="">Restaurant / Commercial</option><option value="residential"'+(p&&p.section==='residential'?' selected':'')+'>Home Furniture</option><option value="office"'+(p&&p.section==='office'?' selected':'')+'>Office Furniture</option><option value="banquet"'+(p&&p.section==='banquet'?' selected':'')+'>Banquet</option></select></div>'
+    +'<div class="f-field"><label>Sub-category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+(p&&p.section==='banquet'?BANQUET_CATS:(p&&p.section==='office'?OFFICE_CATS:(p&&p.section==='residential'?RES_CATS:dynCats()))).map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
+    +'<div class="f-row"><div class="f-field"><label>Tier</label><select class="f-select" id="pf-tier">'+Object.entries(TIER_LABEL).map(([k,v])=>'<option value="'+k+'"'+(p?.tier===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'
     +'<div class="f-field" style="justify-content:flex-end"><div class="toggle-row" style="border:none;padding:8px 0;margin-top:auto"><span class="toggle-lbl">Internal only (custom)</span><div class="toggle-sw'+(p&&p.internal?' on':'')+'" id="pf-internal" onclick="this.classList.toggle(\'on\')"><div class="toggle-th"></div></div></div></div></div>'
     +'<div style="font-size:11px;color:var(--ink3);margin:-4px 0 10px">Internal products never show on the customer app \u2014 usable in quotes, orders &amp; vendor assignment. Residential products appear only in the Residential section of the app.</div>'
     +'<div class="f-row"><div class="f-field" style="justify-content:flex-end"><div class="toggle-row" style="border:none;padding:8px 0"><span class="toggle-lbl">Hide from customer app <span style="font-weight:400;color:var(--ink3);font-size:11px">\u2014 all categories, temporarily unlisted</span></span><div class="toggle-sw'+(p&&p.hidden?' on':'')+'" id="pf-hidden" onclick="this.classList.toggle(\'on\')"><div class="toggle-th"></div></div></div></div></div>'
