@@ -2068,7 +2068,7 @@ body.detail-open #ai-fab{display:none}
 @media(min-width:560px){.mq-sheet-ov{align-items:center}.mq-sheet{border-radius:22px}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("/service-worker.js").catch(function(){});});}</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",function(){var hadCtrl=!!navigator.serviceWorker.controller;var reloaded=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(reloaded||!hadCtrl)return;reloaded=true;window.location.reload();});navigator.serviceWorker.register("/service-worker.js").then(function(reg){try{reg.update();}catch(e){}function ask(sw){if(sw){try{sw.postMessage({type:"SKIP_WAITING"});}catch(e){}}}if(reg.waiting)ask(reg.waiting);reg.addEventListener("updatefound",function(){var nw=reg.installing;if(nw){nw.addEventListener("statechange",function(){if(nw.state==="installed"&&navigator.serviceWorker.controller)ask(nw);});}});}).catch(function(){});});}</script>
 </head>
 <body>
 
