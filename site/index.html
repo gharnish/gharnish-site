@@ -1652,7 +1652,7 @@ body.detail-open #ai-fab{display:none}
     border-left:none;border-right:none;box-shadow:0 2px 18px rgba(0,0,0,.28);}
   .nav-sub{display:none;}
   .dnav{display:flex;align-items:center;gap:3px;margin-left:22px;}
-  .dnav .bnav-btn,.dnav .dnav-link{flex:none;flex-direction:row;background:none;border:none;color:rgba(255,255,255,.72);font-size:14px;font-weight:600;letter-spacing:0;padding:8px 14px;border-radius:9px;cursor:pointer;transition:color .15s,background .15s;font-family:"Inter",sans-serif;}
+  .dnav .bnav-btn,.dnav .dnav-link{flex:none;flex-direction:row;background:none;border:none;color:rgba(255,255,255,.72);font-size:14px;font-weight:600;letter-spacing:0;padding:8px 14px;border-radius:9px;cursor:pointer;transition:color .15s,background .15s;font-family:"Inter",sans-serif;}.dnav-drop{position:relative;flex:none;}.dnav-cat{display:inline-flex;align-items:center;gap:6px;}.dnav-caret{font-size:10px;line-height:1;opacity:.85;transition:transform .16s;}.dnav-drop.open .dnav-caret{transform:rotate(180deg);}.dnav-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:214px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:13px;box-shadow:0 14px 36px rgba(0,0,0,.2);padding:6px;display:none;z-index:500;}.dnav-drop.open .dnav-menu{display:block;}.dnav-mi{display:block;width:100%;text-align:left;background:none;border:none;color:#1a1208;font-size:14px;font-weight:600;padding:10px 12px;border-radius:9px;cursor:pointer;font-family:"Inter",sans-serif;white-space:nowrap;}.dnav-mi:hover{background:#F3EFE7;color:#C8860A;}
   .dnav .bnav-btn:hover,.dnav .dnav-link:hover{color:#fff;background:rgba(255,255,255,.08);}
   .dnav .bnav-btn.active{background:rgba(200,134,10,.18);color:#F0C067;}
   .dnav .bnav-btn svg{display:none;}
@@ -2104,10 +2104,15 @@ body.detail-open #ai-fab{display:none}
   <div class="nav-sub" id="nav-sub"><span style="font-size:9px;opacity:.4;font-family:monospace">v4.1</span>HYD &amp; BLR</div>
   <nav class="dnav" aria-label="Primary navigation">
     <button class="bnav-btn dnav-link" data-tab="home">Home</button>
-    <button class="bnav-btn dnav-link" data-tab="categories">Shop Furniture</button>
-    <button class="dnav-link" onclick="ghGoResidential()">Home Furniture</button>
-    <button class="dnav-link" onclick="ghGoOffice()">Office Furniture</button>
-    <button class="dnav-link" onclick="ghGoBanquet()">Banquet</button>
+    <div class="dnav-drop">
+      <button class="dnav-link dnav-cat" onclick="ghNavCat(this)" aria-haspopup="true" aria-expanded="false">Categories <span class="dnav-caret" aria-hidden="true">▾</span></button>
+      <div class="dnav-menu" role="menu">
+        <button class="dnav-mi" role="menuitem" onclick="ghSetSection('restaurant');ghNavClose(this)">Restaurant &amp; Café</button>
+        <button class="dnav-mi" role="menuitem" onclick="ghGoResidential();ghNavClose(this)">Home Furniture</button>
+        <button class="dnav-mi" role="menuitem" onclick="ghGoOffice();ghNavClose(this)">Office Furniture</button>
+        <button class="dnav-mi" role="menuitem" onclick="ghGoBanquet();ghNavClose(this)">Banquet</button>
+      </div>
+    </div>
     <button class="dnav-link" onclick="goToOurWork()">Our Work</button>
     <button class="bnav-btn dnav-link" data-tab="calculator">Get an Estimate</button>
     <button class="bnav-btn dnav-link" data-tab="offers">Offers</button>
@@ -3969,6 +3974,9 @@ function ghApplySection(){ if(!GH_ALL.length && PRODUCTS.length){ GH_ALL=PRODUCT
 function ghGoResidential(){ ghSetSection('residential'); try{ trackEvent('go_residential',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
 function ghGoOffice(){ ghSetSection('office'); try{ trackEvent('go_office',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
 function ghGoBanquet(){ ghSetSection('banquet'); try{ trackEvent('go_banquet',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
+function ghNavCat(btn){ var d=btn.parentNode; var open=d.classList.toggle('open'); btn.setAttribute('aria-expanded',open?'true':'false'); document.removeEventListener('click',ghNavCatOut,true); if(open){ setTimeout(function(){ document.addEventListener('click',ghNavCatOut,true); },0); } }
+function ghNavCatOut(e){ var d=document.querySelector('.dnav-drop.open'); if(d && !d.contains(e.target)){ d.classList.remove('open'); var t=d.querySelector('.dnav-cat'); if(t)t.setAttribute('aria-expanded','false'); document.removeEventListener('click',ghNavCatOut,true); } }
+function ghNavClose(el){ var d=el.closest('.dnav-drop'); if(d){ d.classList.remove('open'); var t=d.querySelector('.dnav-cat'); if(t)t.setAttribute('aria-expanded','false'); } document.removeEventListener('click',ghNavCatOut,true); }
 function ghSetSection(sec){ S.section=(sec==='residential'||sec==='office'||sec==='banquet')?sec:'restaurant'; ghApplySection(); S.selectedProduct=null; S.selectedProject=null; S.tab='categories'; S.catView='list'; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section}); }catch(e){} render(); window.scrollTo(0,0); }
 var CAT_IMAGES={};
 var CATMETA={};
