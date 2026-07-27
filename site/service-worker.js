@@ -1,7 +1,10 @@
 /* Gharnish PWA service worker — network-first for fresh content, offline fallback */
-var CACHE = 'gharnish-v72';
+var CACHE = 'gharnish-v73';
 var SHELL = ['/', '/index.html', '/table-estimator.html', '/space-planner.html', '/icons/icon-192.png', '/icons/icon-512.png'];
 
+self.addEventListener('message', function (e) {
+  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
 self.addEventListener('install', function (e) {
   self.skipWaiting();
   e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(SHELL).catch(function () {}); }));
