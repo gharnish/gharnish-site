@@ -2107,6 +2107,7 @@ body.detail-open #ai-fab{display:none}
     <button class="bnav-btn dnav-link" data-tab="categories">Shop Furniture</button>
     <button class="dnav-link" onclick="ghGoResidential()">Home Furniture</button>
     <button class="dnav-link" onclick="ghGoOffice()">Office Furniture</button>
+    <button class="dnav-link" onclick="ghGoBanquet()">Banquet</button>
     <button class="dnav-link" onclick="goToOurWork()">Our Work</button>
     <button class="bnav-btn dnav-link" data-tab="calculator">Get an Estimate</button>
     <button class="bnav-btn dnav-link" data-tab="offers">Offers</button>
@@ -3962,19 +3963,23 @@ var RES_CAT_CARDS=[
   {key:'res-side-table',  label:'Side Tables',       sub:'Accent & lamp tables',    icon:'roundtable',cats:['res-side-table']},
 ];
 var GH_ALL=[];
-function ghSecOf(p){ var s=p&&p.section; return (s==='residential'||s==='office')?s:'restaurant'; }
-function ghCurSec(){ return (S.section==='residential'||S.section==='office')?S.section:'restaurant'; }
+function ghSecOf(p){ var s=p&&p.section; return (s==='residential'||s==='office'||s==='banquet')?s:'restaurant'; }
+function ghCurSec(){ return (S.section==='residential'||S.section==='office'||S.section==='banquet')?S.section:'restaurant'; }
 function ghApplySection(){ if(!GH_ALL.length && PRODUCTS.length){ GH_ALL=PRODUCTS.slice(); } var sec=ghCurSec(); var list=GH_ALL.filter(function(p){ return ghSecOf(p)===sec; }); PRODUCTS.length=0; list.forEach(function(p){ PRODUCTS.push(p); }); }
 function ghGoResidential(){ ghSetSection('residential'); try{ trackEvent('go_residential',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
 function ghGoOffice(){ ghSetSection('office'); try{ trackEvent('go_office',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
-function ghSetSection(sec){ S.section=(sec==='residential'||sec==='office')?sec:'restaurant'; ghApplySection(); S.selectedProduct=null; S.selectedProject=null; S.tab='categories'; S.catView='list'; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section}); }catch(e){} render(); window.scrollTo(0,0); }
+function ghGoBanquet(){ ghSetSection('banquet'); try{ trackEvent('go_banquet',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
+function ghSetSection(sec){ S.section=(sec==='residential'||sec==='office'||sec==='banquet')?sec:'restaurant'; ghApplySection(); S.selectedProduct=null; S.selectedProject=null; S.tab='categories'; S.catView='list'; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section}); }catch(e){} render(); window.scrollTo(0,0); }
 var CAT_IMAGES={};
 var CATMETA={};
 function ghIsResCat(k){ return /^res-/.test(k||''); }
 function ghIsOffCat(k){ return /^off-/.test(k||''); }
-function ghCatSec(k){ return ghIsResCat(k)?'residential':(ghIsOffCat(k)?'office':'restaurant'); }
+function ghIsBnqCat(k){ return /^bnq-/.test(k||''); }
+function ghCatSec(k){ return ghIsResCat(k)?'residential':(ghIsOffCat(k)?'office':(ghIsBnqCat(k)?'banquet':'restaurant')); }
 var OFFICE_CAT_CARDS=[{key:'off-general',label:'Office Furniture',sub:'Desks, chairs & workstations for your workspace',icon:'chair',cats:['off-general']}];
 try{ if(typeof CAT_LABEL!=='undefined') CAT_LABEL['off-general']='Office Furniture'; }catch(e){}
+var BANQUET_CAT_CARDS=[{key:'bnq-general',label:'Banquet Furniture',sub:'Chairs, tables & event furniture for banquets & functions',icon:'chair',cats:['bnq-general']}];
+try{ if(typeof CAT_LABEL!=='undefined') CAT_LABEL['bnq-general']='Banquet Furniture'; }catch(e){}
 function orderedCards(){
   var meta=CATMETA;
   var sec=ghCurSec(); var wantRes=(sec!=='restaurant');
@@ -4630,10 +4635,10 @@ function renderCategoriesPage(){
   var adminCats=(function(){try{return JSON.parse(localStorage.getItem('gh_categories')||'null');}catch(e){return null;}})();
   var H=[];
   H.push('<div class="home-wrap">');
-  var _sec=ghCurSec(); var _res=(_sec==='residential'); var _off=(_sec==='office'); H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">'+(_off?'Office Furniture':(_res?'Residential Collection':'Shop by Category'))+'</div><div style="font-size:13px;color:var(--ink3)">'+(_off?'Desks, chairs &amp; workstations for your workspace':(_res?'Dining sets, tables &amp; chairs, sofas, beds &amp; more for your home':'Browse the full Gharnish range by furniture type'))+'</div>');
-  H.push('<div style="display:flex;gap:8px;margin-top:12px">'+[['restaurant','Restaurant &amp; Caf\u00e9'],['residential','Residential'],['office','Office']].map(function(t){ var on=(S.section===t[0]); return '<button onclick="ghSetSection(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div></div>');
+  var _sec=ghCurSec(); var _res=(_sec==='residential'); var _off=(_sec==='office'); var _bnq=(_sec==='banquet'); H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">'+(_bnq?'Banquet Furniture':(_off?'Office Furniture':(_res?'Residential Collection':'Shop by Category')))+'</div><div style="font-size:13px;color:var(--ink3)">'+(_bnq?'Chairs, tables &amp; event furniture for banquets &amp; functions':(_off?'Desks, chairs &amp; workstations for your workspace':(_res?'Dining sets, tables &amp; chairs, sofas, beds &amp; more for your home':'Browse the full Gharnish range by furniture type')))+'</div>');
+  H.push('<div style="display:flex;gap:8px;margin-top:12px">'+[['restaurant','Restaurant &amp; Caf\u00e9'],['residential','Residential'],['office','Office'],['banquet','Banquet']].map(function(t){ var on=(S.section===t[0]); return '<button onclick="ghSetSection(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div></div>');
   H.push('<div class="cat-img-grid" style="margin-top:12px">');
-  (_off?OFFICE_CAT_CARDS:(_res?RES_CAT_CARDS:orderedCards())).forEach(function(c){
+  (_bnq?BANQUET_CAT_CARDS:(_off?OFFICE_CAT_CARDS:(_res?RES_CAT_CARDS:orderedCards()))).forEach(function(c){
     var n=cardCount(c.cats);
     var adminImg=adminCats&&adminCats[c.cats[0]]?adminCats[c.cats[0]].image:'';
     var customImg=catCardImg(c)||adminImg||'';
@@ -6781,6 +6786,10 @@ function ghResolveRoute(path){
     } else if(seg[1]==='office'){
       // /shop/office → the office-furniture category hub
       if(S.section!=='office'){ S.section='office'; ghApplySection(); }
+      S.tab='categories'; S.catView='list';
+    } else if(seg[1]==='banquet'){
+      // /shop/banquet → the banquet-furniture category hub
+      if(S.section!=='banquet'){ S.section='banquet'; ghApplySection(); }
       S.tab='categories'; S.catView='list';
     } else if(seg[1]){
       // /shop/<category> — accepts SEO bucket names and app keys alike
