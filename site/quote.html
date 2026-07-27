@@ -903,7 +903,7 @@ Object.assign(CAT_LABEL,{'res-dining-set':'Dining Table Sets','res-dining-table'
 Object.assign(CAT_ICON,{'res-dining-set':'\ud83c\udf7d\ufe0f','res-dining-table':'\u25ac','res-dining-chair':'\ud83e\ude91','res-sofa':'\ud83d\udecb\ufe0f','res-bed':'\ud83d\udecf\ufe0f','res-centre-table':'\u25ac','res-side-table':'\u25ab'});
 Object.assign(CAT_ICON_KEY,{'res-dining-set':'recttable','res-dining-table':'recttable','res-dining-chair':'chair','res-sofa':'booth','res-bed':'booth','res-centre-table':'recttable','res-side-table':'roundtable'});
 const ALL_CATS = Object.entries(CAT_LABEL);
-const ALL_THEMES = [['cafe','Café'],['qsr','QSR'],['fine-dining','Fine Dining'],['hotel','Hotel'],['rooftop','Rooftop']];
+const ALL_THEMES = [['cafe','Café'],['qsr','QSR'],['fine-dining','Fine Dining'],['hotel','Hotel'],['rooftop','Rooftop'],['office','Office']];
 
 /* ══ STATE ══ */
 let currentUser = null;
@@ -3054,7 +3054,7 @@ function renderProducts(){
   const cat = document.getElementById('prod-cat-filter')?.value||'';
   const stk = document.getElementById('prod-stk-filter')?.value||'';
   const filtered = prods.filter(p=>{
-    if(q&&!p.name.toLowerCase().includes(q)&&!(p.id||'').toLowerCase().includes(q)) return false;
+    if(q&&!p.name.toLowerCase().includes(q)&&!(p.id||'').toLowerCase().includes(q)&&!((p.tags||[]).join(' ').toLowerCase().includes(q))) return false;
     if(cat==='__internal__'){ if(p.internal!==true) return false; } else if(cat==='__hidden__'){ if(p.hidden!==true) return false; } else if(cat&&p.cat!==cat) return false;
     if(stk==='in'&&!p.stock) return false;
     if(stk==='out'&&p.stock) return false;
@@ -3144,7 +3144,7 @@ function prodApplyFilter(){
   var cat=document.getElementById('prod-cat-filter')?.value||'';
   var stk=document.getElementById('prod-stk-filter')?.value||'';
   var filtered=prods.filter(function(p){
-    if(q&&!p.name.toLowerCase().includes(q)&&!(p.id||'').toLowerCase().includes(q)) return false;
+    if(q&&!p.name.toLowerCase().includes(q)&&!(p.id||'').toLowerCase().includes(q)&&!((p.tags||[]).join(' ').toLowerCase().includes(q))) return false;
     if(cat==='__internal__'){ if(p.internal!==true) return false; } else if(cat==='__hidden__'){ if(p.hidden!==true) return false; } else if(cat&&p.cat!==cat) return false;
     if(stk==='in'&&!p.stock) return false;
     if(stk==='out'&&p.stock) return false;
@@ -5236,7 +5236,7 @@ function bulkOnOrder(val){
 /* ══════════════════════════════════════
    COMFORT PICKS  (app_settings: comfort)
 ══════════════════════════════════════ */
-var VENUE_OPTS=[['cafe','Caf\u00e9'],['qsr','QSR'],['finedine','Fine Dine'],['bar','Bar / Lounge'],['banquet','Banquet'],['outdoor','Outdoor'],['residential','Residential']];
+var VENUE_OPTS=[['cafe','Caf\u00e9'],['qsr','QSR'],['finedine','Fine Dine'],['bar','Bar / Lounge'],['banquet','Banquet'],['outdoor','Outdoor'],['residential','Residential'],['office','Office']];
 var VENUE_TAGS={};
 async function loadVenueTags(){
   if(!supa) return;
@@ -5630,7 +5630,7 @@ function openProdFormAdvanced(id){
     +'</div>'
     +'<div class="pf-card"><div class="pf-card-h">Description</div>'
     +'<div class="f-field"><label>Short Description <span style="font-weight:400;color:var(--ink3);font-size:11px">— optional, shown as the product subtitle</span></label><textarea class="f-textarea" id="pf-mat" placeholder="e.g. Solid teak frame, genuine leather seat, commercial-grade upholstery">'+(p?.material||'')+'</textarea></div>'
-    +'<div class="f-field"><label>Detailed Description (shown on product page)</label><textarea class="f-textarea" id="pf-desc" style="min-height:100px" placeholder="Full product description for the detail page…">'+(p?.description||'')+'</textarea></div>'
+    +'<div class="f-field"><label>Detailed Description (shown on product page)</label><textarea class="f-textarea" id="pf-desc" style="min-height:100px" placeholder="Full product description for the detail page…">'+(p?.description||'')+'</textarea></div>'+'<div class="f-field"><label>Tags <span style="font-weight:400;color:var(--ink3);font-size:11px">\u2014 comma-separated keywords, makes this product easy to find in search</span></label><input class="f-input" id="pf-tags" placeholder="e.g. ergonomic, mesh back, executive, black" value="'+((p&&p.tags&&p.tags.join)?escA(p.tags.join(', ')):'')+'"></div>'
     +'</div>'
     +'<div id="pf-table-fields" style="display:'+(isTable?'block':'none')+'"><div class="pf-card"><div class="pf-card-h">Table Details</div>'
     +'<div class="f-row"><div class="f-field"><label>Seats</label><select class="f-select" id="pf-seats"><option value="">-</option>'+[2,4,6,8].map(n=>'<option value="'+n+'"'+(p?.seats===n?' selected':'')+'>'+n+'-Seater</option>').join('')+'</select></div>'
@@ -6228,6 +6228,7 @@ function saveProd(){
   const stock=document.getElementById('pf-stock')?.classList.contains('on')!==false;
   const material=(document.getElementById('pf-mat')?.value||'').trim();
   const description=(document.getElementById('pf-desc')?.value||'').trim();
+  const tags=(document.getElementById('pf-tags')?.value||'').split(',').map(function(t){return t.trim();}).filter(Boolean);
   const themes=[...document.querySelectorAll('#pf-themes .theme-chip.sel')].map(c=>c.dataset.t);
   const badges=[...document.querySelectorAll('#pf-badges .badge-chip.sel')].map(c=>c.dataset.b);
   const featured=document.getElementById('pf-featured')?.classList.contains('on')||false;
@@ -6262,6 +6263,7 @@ function saveProd(){
   if(isNew) prod.isNew=true;
   if(bestseller) prod.bestseller=true;
   if(pfSection) prod.section=pfSection;
+  if(tags&&tags.length) prod.tags=tags;
   if(pfInternal) prod.internal=true;
   if(pfHidden) prod.hidden=true;
   if(restockDate) prod.restockDate=restockDate;

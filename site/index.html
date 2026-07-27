@@ -2462,7 +2462,7 @@ function renderAdmin(){
   var customIds= new Set(custom.map(p=>p.id));
   var q        = ADM.search.toLowerCase();
   var filtered = allProds.filter(function(p){
-    return !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q);
+    return !q || p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q) || ((p.tags||[]).join(" ").toLowerCase().includes(q));
   });
 
   // Stats
