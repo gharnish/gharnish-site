@@ -51,7 +51,7 @@ async function editAndStore(o) {
     fd.append("prompt", buildEditPrompt(instruction, !!refBlob));
     fd.append("size", "1024x1024");
     fd.append("n", "1");
-    fd.append("quality", "medium");
+    fd.append("quality", "high");
     fd.append("output_format", "webp");
     fd.append("output_compression", "80");
     fd.append("image", baseBlob, "base.webp");
