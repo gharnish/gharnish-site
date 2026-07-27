@@ -3986,8 +3986,8 @@ function ghIsBnqCat(k){ return /^bnq-/.test(k||''); }
 function ghCatSec(k){ return ghIsResCat(k)?'residential':(ghIsOffCat(k)?'office':(ghIsBnqCat(k)?'banquet':'restaurant')); }
 var OFFICE_CAT_CARDS=[{key:'off-general',label:'Office Furniture',sub:'Desks, chairs & workstations for your workspace',icon:'chair',cats:['off-general']}];
 try{ if(typeof CAT_LABEL!=='undefined') CAT_LABEL['off-general']='Office Furniture'; }catch(e){}
-var BANQUET_CAT_CARDS=[{key:'bnq-general',label:'Banquet Furniture',sub:'Chairs, tables & event furniture for banquets & functions',icon:'chair',cats:['bnq-general']}];
-try{ if(typeof CAT_LABEL!=='undefined') CAT_LABEL['bnq-general']='Banquet Furniture'; }catch(e){}
+var BANQUET_CAT_CARDS=[{key:'bnq-chair',label:'Banquet Chairs',sub:'Stackable & cushioned banquet chairs',icon:'chair',cats:['bnq-chair']},{key:'bnq-chair-cover',label:'Chair Covers',sub:'Covers & sashes for banquet chairs',icon:'chair',cats:['bnq-chair-cover']},{key:'bnq-buffet-table',label:'Buffet Tables',sub:'Round buffet & dining tables',icon:'roundtable',cats:['bnq-buffet-table']},{key:'bnq-table-cover',label:'Table Covers',sub:'Covers & linens for buffet tables',icon:'roundtable',cats:['bnq-table-cover']}];
+try{ if(typeof CAT_LABEL!=='undefined'){ CAT_LABEL['bnq-chair']='Banquet Chairs'; CAT_LABEL['bnq-chair-cover']='Chair Covers'; CAT_LABEL['bnq-buffet-table']='Buffet Tables'; CAT_LABEL['bnq-table-cover']='Table Covers'; } }catch(e){}
 function orderedCards(){
   var meta=CATMETA;
   var sec=ghCurSec(); var wantRes=(sec!=='restaurant');
