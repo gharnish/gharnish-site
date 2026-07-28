@@ -3578,7 +3578,16 @@ function pfEnsurePageStyle(){
     +'.pf-hint{color:var(--ink3);font-size:11.5px;margin-top:6px;line-height:1.4}'
     +'.pf-adv-toggle{width:100%;padding:14px;border:1.5px dashed #D8D3CA;border-radius:14px;background:#fff;color:var(--ink2);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:border-color .15s,color .15s}'
     +'.pf-adv-toggle:hover{border-color:var(--g);color:var(--g)}'
-    +'.pf-adv-wrap{display:flex;flex-direction:column;gap:18px}';
+    +'.pf-adv-wrap{display:flex;flex-direction:column;gap:18px}'
+    +'.pf-taxo{background:#FAF8F5;border:1px solid rgba(20,16,10,.06);border-radius:14px;padding:15px 16px;margin-bottom:15px}'
+    +'.pf-opt{font-weight:400;color:var(--ink3);font-size:11px}'
+    +'.pf-xwrap{display:flex;flex-wrap:wrap;gap:8px;align-items:center}'
+    +'.pf-xchip{display:inline-flex;align-items:center;gap:7px;padding-right:8px}'
+    +'.pf-xrm{border:none;background:rgba(200,134,10,.16);color:var(--g);width:18px;height:18px;border-radius:50%;font-size:14px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}'
+    +'.pf-xrm:hover{background:var(--g);color:#fff}'
+    +'.pf-xadd{border:1.5px dashed #D5CFC4;border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--ink2);background:#fff;cursor:pointer;font-family:inherit}'
+    +'.pf-xadd:hover{border-color:var(--g);color:var(--g)}'
+    +'.pf-xadd:focus{outline:none;border-color:var(--g)}';
   document.head.appendChild(s);
 }
 function closeProdForm(){
@@ -5649,8 +5658,8 @@ function openProdFormAdvanced(id){
     +'<div class="f-field"><label>Product Name *</label><input class="f-input" id="pf-name" value="'+(p?.name||'')+'" placeholder="e.g. Verona Bistro Chair"></div>'
     +'<div class="f-row"><div class="f-field"><label>Section *</label><select class="f-select" id="pf-section" onchange="onPFSectionChange()"><option value="">Restaurant / Commercial</option><option value="residential"'+(p&&p.section==='residential'?' selected':'')+'>Home Furniture</option><option value="office"'+(p&&p.section==='office'?' selected':'')+'>Office Furniture</option><option value="banquet"'+(p&&p.section==='banquet'?' selected':'')+'>Banquet</option></select></div>'
     +'<div class="f-field"><label>Category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+pfCatsForSection(p&&p.section?p.section:'').map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
-    +'<div class="f-row"><div class="f-field" style="flex:1 1 100%"><label>Sub-category <span style="font-weight:400;color:var(--ink3);font-size:11px">— optional, the finer type inside the category</span></label><div class="themes-row" id="pf-subs"></div><div class="pf-hint" id="pf-subs-empty" style="display:none">No sub-categories yet for this category — add them from the Categories page.</div></div></div>'
-    +'<div class="f-row"><div class="f-field" style="flex:1 1 100%"><label>Assign to more categories <span style="font-weight:400;color:var(--ink3);font-size:11px">— also list this product under these categories</span></label><div class="themes-row" id="pf-xcats"></div></div></div>'
+    +'<div class="pf-taxo"><div class="f-field" style="flex:1 1 100%;margin-bottom:13px"><label>Sub-category <span class="pf-opt">optional — a finer type inside the category</span></label><div class="themes-row" id="pf-subs"></div><div class="pf-hint" id="pf-subs-empty" style="display:none">No sub-categories for this category yet.</div></div>'
+    +'<div class="f-field" style="flex:1 1 100%;margin-bottom:0"><label>Also appears in <span class="pf-opt">optional — also list this product in other categories</span></label><div class="pf-xwrap" id="pf-xcats"></div></div></div>'
     +'<div class="f-row"><div class="f-field"><label>Tier</label><select class="f-select" id="pf-tier">'+Object.entries(TIER_LABEL).map(([k,v])=>'<option value="'+k+'"'+(p?.tier===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'
     +'<div class="f-field" style="justify-content:flex-end"><div class="toggle-row" style="border:none;padding:8px 0;margin-top:auto"><span class="toggle-lbl">Internal only (custom)</span><div class="toggle-sw'+(p&&p.internal?' on':'')+'" id="pf-internal" onclick="this.classList.toggle(\'on\')"><div class="toggle-th"></div></div></div></div></div>'
     +'<div style="font-size:11px;color:var(--ink3);margin:-4px 0 10px">Internal products never show on the customer app — usable in quotes, orders &amp; vendor assignment. Residential products appear only in the Residential section of the app.</div>'
@@ -5882,11 +5891,19 @@ function pfRenderXcats(){
   var host=document.getElementById('pf-xcats'); if(!host) return;
   var sec=(document.getElementById('pf-section')||{}).value||'';
   var mainc=(document.getElementById('pf-cat')||{}).value||'';
-  var sels={}; host.querySelectorAll('.theme-chip.sel').forEach(function(c){ sels[c.getAttribute('data-xcat')]=1; });
-  if(!Object.keys(sels).length && editingProdId && typeof PRODUCT_CATEGORIES!=='undefined' && PRODUCT_CATEGORIES[editingProdId]){ PRODUCT_CATEGORIES[editingProdId].forEach(function(k){ if(k!==mainc) sels[k]=1; }); }
-  host.innerHTML=pfCatsForSection(sec).filter(function(c){ return c[0]!==mainc; }).map(function(c){ var on=!!sels[c[0]]; return '<div class="theme-chip'+(on?' sel':'')+'" data-xcat="'+c[0]+'">'+tbEsc(c[1])+'</div>'; }).join('');
-  host.querySelectorAll('.theme-chip').forEach(function(c){ c.onclick=function(){ c.classList.toggle('sel'); pfRenderSubs(); }; });
+  var sels={}; host.querySelectorAll('.theme-chip.sel[data-xcat]').forEach(function(c){ sels[c.getAttribute('data-xcat')]=1; });
+  if(!host._seeded){ host._seeded=true; if(editingProdId && typeof PRODUCT_CATEGORIES!=='undefined' && PRODUCT_CATEGORIES[editingProdId]){ PRODUCT_CATEGORIES[editingProdId].forEach(function(k){ if(k!==mainc) sels[k]=1; }); } }
+  var all=pfCatsForSection(sec).filter(function(c){ return c[0]!==mainc; });
+  var nameOf={}; all.forEach(function(c){ nameOf[c[0]]=c[1]; });
+  Object.keys(sels).forEach(function(k){ if(!nameOf[k]) delete sels[k]; });
+  var selKeys=Object.keys(sels);
+  var chips=selKeys.map(function(k){ return '<span class="theme-chip sel pf-xchip" data-xcat="'+k+'">'+tbEsc(nameOf[k])+'<button type="button" class="pf-xrm" onclick="pfRemoveXcat(event,\''+k+'\')" aria-label="Remove">×</button></span>'; }).join('');
+  var avail=all.filter(function(c){ return !sels[c[0]]; });
+  var add = avail.length ? '<select class="pf-xadd" onchange="pfAddXcat(this)"><option value="">+ Add category</option>'+avail.map(function(c){ return '<option value="'+c[0]+'">'+tbEsc(c[1])+'</option>'; }).join('')+'</select>' : '';
+  host.innerHTML=chips+add;
 }
+function pfAddXcat(selEl){ var v=selEl.value; if(!v)return; var host=document.getElementById('pf-xcats'); if(host){ var sp=document.createElement('span'); sp.className='theme-chip sel pf-xchip'; sp.setAttribute('data-xcat',v); host.insertBefore(sp, host.firstChild); } pfRenderXcats(); pfRenderSubs(); }
+function pfRemoveXcat(ev,k){ if(ev&&ev.stopPropagation)ev.stopPropagation(); var host=document.getElementById('pf-xcats'); if(host){ host.querySelectorAll('.theme-chip.sel[data-xcat="'+k+'"]').forEach(function(c){ c.remove(); }); } pfRenderXcats(); pfRenderSubs(); }
 function pfRenderSubs(){
   var host=document.getElementById('pf-subs'); if(!host) return;
   var empty=document.getElementById('pf-subs-empty');
