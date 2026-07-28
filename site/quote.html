@@ -5626,9 +5626,9 @@ function openProdFormAdvanced(id){
     +'<div class="pf-card"><div class="pf-card-h">General Information</div>'
     +'<div class="f-field"><label>Product Name *</label><input class="f-input" id="pf-name" value="'+(p?.name||'')+'" placeholder="e.g. Verona Bistro Chair"></div>'
     +'<div class="f-row"><div class="f-field"><label>Section *</label><select class="f-select" id="pf-section" onchange="onPFSectionChange()"><option value="">Restaurant / Commercial</option><option value="residential"'+(p&&p.section==='residential'?' selected':'')+'>Home Furniture</option><option value="office"'+(p&&p.section==='office'?' selected':'')+'>Office Furniture</option><option value="banquet"'+(p&&p.section==='banquet'?' selected':'')+'>Banquet</option></select></div>'
-    +'<div class="f-field"><label>Category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+(p&&p.section==='banquet'?BANQUET_CATS:(p&&p.section==='office'?OFFICE_CATS:(p&&p.section==='residential'?RES_CATS:dynCats()))).map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
+    +'<div class="f-field"><label>Category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+pfCatsForSection(p&&p.section?p.section:'').map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
     +'<div class="f-row"><div class="f-field" style="flex:1 1 100%"><label>Sub-category <span style="font-weight:400;color:var(--ink3);font-size:11px">— optional, the finer type inside the category</span></label><div class="themes-row" id="pf-subs"></div><div class="pf-hint" id="pf-subs-empty" style="display:none">No sub-categories yet for this category — add them from the Categories page.</div></div></div>'
-    +'<div class="f-row"><div class="f-field" style="flex:1 1 100%"><label>Assign to more categories <span style="font-weight:400;color:var(--ink3);font-size:11px">— also list this product under these categories</span></label><div class="themes-row" id="pf-xcats">'+dynCats().map(function(c){ var on=(p&&PRODUCT_CATEGORIES[p.id]&&PRODUCT_CATEGORIES[p.id].indexOf(c[0])>-1&&p.cat!==c[0]); return '<div class="theme-chip'+(on?' sel':'')+'" data-xcat="'+c[0]+'">'+tbEsc(c[1])+'</div>'; }).join('')+'</div></div></div>'
+    +'<div class="f-row"><div class="f-field" style="flex:1 1 100%"><label>Assign to more categories <span style="font-weight:400;color:var(--ink3);font-size:11px">— also list this product under these categories</span></label><div class="themes-row" id="pf-xcats"></div></div></div>'
     +'<div class="f-row"><div class="f-field"><label>Tier</label><select class="f-select" id="pf-tier">'+Object.entries(TIER_LABEL).map(([k,v])=>'<option value="'+k+'"'+(p?.tier===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'
     +'<div class="f-field" style="justify-content:flex-end"><div class="toggle-row" style="border:none;padding:8px 0;margin-top:auto"><span class="toggle-lbl">Internal only (custom)</span><div class="toggle-sw'+(p&&p.internal?' on':'')+'" id="pf-internal" onclick="this.classList.toggle(\'on\')"><div class="toggle-th"></div></div></div></div></div>'
     +'<div style="font-size:11px;color:var(--ink3);margin:-4px 0 10px">Internal products never show on the customer app — usable in quotes, orders &amp; vendor assignment. Residential products appear only in the Residential section of the app.</div>'
@@ -5690,6 +5690,7 @@ function openProdFormAdvanced(id){
   document.querySelectorAll('#pf-badges .badge-chip').forEach(c=>c.onclick=()=>c.classList.toggle('sel'));
   document.querySelectorAll('.pf-tag-grp .badge-chip').forEach(c=>c.onclick=()=>c.classList.toggle('sel'));
   document.querySelectorAll('#pf-venues .venue-chip').forEach(c=>c.onclick=()=>c.classList.toggle('sel'));
+  pfRenderXcats();
   pfRenderSubs();
   pfEnsurePageStyle();
   var _ov=document.getElementById('prod-overlay');
@@ -5713,7 +5714,7 @@ function removeSpec(i){ prodSpecs.splice(i,1); document.getElementById('specs-li
 
 // Override openProdForm to use advanced form
 function openProdForm(id){ openProdFormAdvanced(id); }
-function onPFSectionChange(){ var sec=document.getElementById('pf-section'); var catSel=document.getElementById('pf-cat'); if(!sec||!catSel)return; var cur=catSel.value; var opts=(sec.value==='banquet')?BANQUET_CATS:((sec.value==='office')?OFFICE_CATS:((sec.value==='residential')?RES_CATS:dynCats())); catSel.innerHTML=opts.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>';}).join(''); try{ if(typeof onPFCatChange==='function') onPFCatChange(); }catch(e){} }
+function onPFSectionChange(){ var sec=document.getElementById('pf-section'); var catSel=document.getElementById('pf-cat'); if(!sec||!catSel)return; var cur=catSel.value; var opts=pfCatsForSection(sec.value); catSel.innerHTML=opts.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>';}).join(''); try{ if(typeof pfRenderXcats==='function') pfRenderXcats(); }catch(e){} try{ if(typeof onPFCatChange==='function') onPFCatChange(); }catch(e){} }
 function openCustomProd(){ openProdFormAdvanced(); setTimeout(function(){ var t=document.getElementById('pf-internal'); if(t) t.classList.add('on'); },80); }
 
 /* ═══════════ TABLE BUILDER — choose which catalog bases appear ═══════════ */
@@ -5850,6 +5851,19 @@ function scSave(){
   if(SUBCATS[_subTarget]) SUBCATS[_subTarget]=SUBCATS[_subTarget].filter(function(x){return x&&(x.name||'').trim();});
   if(SUBCATS[_subTarget]&&!SUBCATS[_subTarget].length) delete SUBCATS[_subTarget];
   saveSubcats(); saveProductSubcats(); scClose(); renderCategories(); toast('Subcategories saved','#1B7A4D');
+}
+function pfCatsForSection(sec){
+  var pfx = sec==='residential'?'res-':(sec==='office'?'off-':(sec==='banquet'?'bnq-':''));
+  return dynCats().filter(function(c){ if(pfx) return c[0].indexOf(pfx)===0; return !/^(res-|off-|bnq-)/.test(c[0]); });
+}
+function pfRenderXcats(){
+  var host=document.getElementById('pf-xcats'); if(!host) return;
+  var sec=(document.getElementById('pf-section')||{}).value||'';
+  var mainc=(document.getElementById('pf-cat')||{}).value||'';
+  var sels={}; host.querySelectorAll('.theme-chip.sel').forEach(function(c){ sels[c.getAttribute('data-xcat')]=1; });
+  if(!Object.keys(sels).length && editingProdId && typeof PRODUCT_CATEGORIES!=='undefined' && PRODUCT_CATEGORIES[editingProdId]){ PRODUCT_CATEGORIES[editingProdId].forEach(function(k){ if(k!==mainc) sels[k]=1; }); }
+  host.innerHTML=pfCatsForSection(sec).filter(function(c){ return c[0]!==mainc; }).map(function(c){ var on=!!sels[c[0]]; return '<div class="theme-chip'+(on?' sel':'')+'" data-xcat="'+c[0]+'">'+tbEsc(c[1])+'</div>'; }).join('');
+  host.querySelectorAll('.theme-chip').forEach(function(c){ c.onclick=function(){ c.classList.toggle('sel'); pfRenderSubs(); }; });
 }
 function pfRenderSubs(){
   var host=document.getElementById('pf-subs'); if(!host) return;
