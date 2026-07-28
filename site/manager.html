@@ -257,7 +257,7 @@ input,select,textarea{font-family:inherit;}
 .pfm-badge{position:absolute;bottom:0;left:0;right:0;background:rgba(200,134,10,.94);color:#fff;font-size:9px;font-weight:800;letter-spacing:.05em;text-align:center;padding:3px;}
 .pfm-rm{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(26,21,16,.82);color:#fff;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;padding:0;}
 .pfm-star{position:absolute;top:5px;left:5px;width:22px;height:22px;border-radius:50%;background:rgba(200,134,10,.92);color:#fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;padding:0;}
-.pfm-add{aspect-ratio:1;border:1.5px dashed rgba(200,134,10,.5);border-radius:var(--r2);background:rgba(200,134,10,.05);color:var(--g);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:11px;font-weight:700;}
+.pfm-add{aspect-ratio:1;border:1.5px dashed rgba(99,102,241,.5);border-radius:var(--r2);background:rgba(99,102,241,.05);color:#6366F1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:11px;font-weight:700;}
 .pfm-add svg{width:24px;height:24px;}
 .pfm-hint{font-size:11.5px;color:var(--ink3);margin-top:9px;line-height:1.5;}
 .tpbo-list{padding:10px 12px 12px}
@@ -3152,7 +3152,7 @@ function prodRow(p,idx,total){
     +'</div>'
     +'<div class="pcard-body">'
     +'<div class="pcard-name">'+p.name+'</div>'
-    +'<div class="pcard-meta">'+(CAT_LABEL[p.cat]||p.cat)+(p.internal?' <span class="badge" style="background:#5B5BBC22;color:#5B5BBC">INTERNAL</span>':'')+(p.hidden?' <span class="badge" style="background:#C6282822;color:#C62828">HIDDEN</span>':'')+(p.section==='residential'?' <span class="badge" style="background:#0E7C6B22;color:#0E7C6B">RESIDENTIAL</span>':'')+(p.section==='office'?' <span class="badge" style="background:#5B4B8A22;color:#5B4B8A">OFFICE</span>':'')+(p.section==='banquet'?' <span class="badge" style="background:#B4602222;color:#B46022">BANQUET</span>':'')+'</div>'
+    +'<div class="pcard-meta">'+(CAT_LABEL[p.cat]||p.cat)+(p.internal?' <span class="badge" style="background:#5B5BBC22;color:#5B5BBC">INTERNAL</span>':'')+(p.hidden?' <span class="badge" style="background:#C6282822;color:#C62828">HIDDEN</span>':'')+(p.section==='residential'?' <span class="badge" style="background:#0E7C6B22;color:#0E7C6B">RESIDENTIAL</span>':'')+(p.section==='office'?' <span class="badge" style="background:#5B4B8A22;color:#5B4B8A">OFFICE</span>':'')+(p.section==='banquet'?' <span class="badge" style="background:#B4602222;color:#B46022">BANQUET</span>':'')+(DRAFTS[p.id]?' <span class="badge" style="background:#6366F122;color:#6366F1">DRAFT</span>':'')+'</div>'
     +'<div class="pcard-badges">'+stockBadge+'</div>'+prodCostVendorUI(p)
     +'<div class="pcard-foot">'
     +'<div class="pcard-price" id="ppr-'+p.id+'" title="Click to edit price" onclick="event.stopPropagation();prodPriceEdit(\''+p.id+'\')" style="cursor:pointer;border-bottom:1px dashed rgba(200,134,10,.55)">'+fmt(p.price)+'</div>'
@@ -5247,7 +5247,7 @@ function bulkCustomizable(val){
 /* ══════════════════════════════════════
    ON ORDER  (stored in app_settings: onorder)
 ══════════════════════════════════════ */
-var ONORDER={};
+var ONORDER={}; var DRAFTS={};
 var MAKINGTIME={};
 async function loadMakingTime(){
   if(!supa) return;
@@ -5262,6 +5262,7 @@ async function loadOnOrder(){
       var ids=Array.isArray(v)?v:(v&&v.ids?v.ids:[]);
       var m={}; (ids||[]).forEach(function(id){ m[id]=true; }); ONORDER=m;
     }
+    try{ var _dr=await supa.from('app_settings').select('value').eq('key','product_drafts').maybeSingle(); if(_dr&&_dr.data&&_dr.data.value){ var _dv=(typeof _dr.data.value==='string'?JSON.parse(_dr.data.value):_dr.data.value); var _dids=Array.isArray(_dv)?_dv:(_dv&&_dv.ids?_dv.ids:[]); var _dm={}; (_dids||[]).forEach(function(id){ _dm[id]=true; }); DRAFTS=_dm; } }catch(e){}
   }catch(e){}
 }
 function saveOnOrder(){
@@ -5948,7 +5949,7 @@ function migrateLocalSpecs(){
 }
 function pcatHas(p,key){ if(!p) return false; if(p.cat===key) return true; var xs=PRODUCT_CATEGORIES[p.id]; return !!(xs&&xs.indexOf(key)>-1); }
 function pfTagPicker(){
-  var btn='<button type="button" onclick="openTagManager()" style="margin-top:4px;width:100%;padding:10px;border:1.5px dashed var(--g);border-radius:10px;background:rgba(200,134,10,.05);color:var(--g);font-size:12.5px;font-weight:700;cursor:pointer">+ '+(TAG_GROUPS.length?'Create or edit tags':'Create tags')+'</button>';
+  var btn='<button type="button" onclick="openTagManager()" style="margin-top:4px;width:100%;padding:10px;border:1.5px dashed #6366F1;border-radius:10px;background:rgba(99,102,241,.05);color:#6366F1;font-size:12.5px;font-weight:700;cursor:pointer">+ '+(TAG_GROUPS.length?'Create or edit tags':'Create tags')+'</button>';
   if(!TAG_GROUPS.length) return '<div style="font-size:12px;color:var(--ink3);line-height:1.5;margin-bottom:10px">No tags yet \u2014 create your first tag groups (Material, Arms, Table Top\u2026).</div>'+btn;
   var sel=(editingProdId&&PRODUCT_TAGS[editingProdId])||[];
   return TAG_GROUPS.map(function(g){
@@ -6393,8 +6394,8 @@ function saveProd(mode){
   if(_oo) ONORDER[pid]=true; else delete ONORDER[pid];
   var _mt=(document.getElementById('pf-maketime')?document.getElementById('pf-maketime').value:'').trim();
   if(_mt) MAKINGTIME[pid]=_mt; else delete MAKINGTIME[pid];
-  if(supa){ try{ supa.from('app_settings').upsert({key:'onorder',value:{ids:Object.keys(ONORDER).filter(function(k){return ONORDER[k];})}}); supa.from('app_settings').upsert({key:'making_time',value:MAKINGTIME}); }catch(e){} }
-  closeProdForm(); renderProducts(); toast(editingProdId?'Product updated':'Product added');
+  if(mode==='draft')DRAFTS[pid]=true; else if(mode==='publish')delete DRAFTS[pid]; if(supa){ try{ supa.from('app_settings').upsert({key:'onorder',value:{ids:Object.keys(ONORDER).filter(function(k){return ONORDER[k];})}}); supa.from('app_settings').upsert({key:'making_time',value:MAKINGTIME}); supa.from('app_settings').upsert({key:'product_drafts',value:{ids:Object.keys(DRAFTS).filter(function(k){return DRAFTS[k];})}}); }catch(e){} }
+  closeProdForm(); renderProducts(); toast(mode==='draft'?'Saved as draft':(mode==='publish'?'Product published':(editingProdId?'Product updated':'Product added')));
 }
 
 /* ══════════════════════════════════════
