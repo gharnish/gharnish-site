@@ -6298,17 +6298,7 @@ function qaEnsure(){
   +'</div>';
   document.body.appendChild(o);
 }
-function openQuickAdd(){
-  qaEnsure(); QA.imgs=[]; QA.tags=[];
-  var chips=dynCats().map(function(e){ return '<div class="qa-cat'+(QA.cat===e[0]?' sel':'')+'" data-cat="'+e[0]+'" onclick="qaPickCat(\''+e[0]+'\')"><span class="em">'+catIcon(e[0])+'</span>'+e[1]+'</div>'; }).join('');
-  document.getElementById('qa-cats').innerHTML=chips;
-  ['qa-name','qa-price','qa-mrp','qa-desc'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
-  var st=document.getElementById('qa-stock'); if(st) st.classList.add('on');
-  qaResetPhoto();
-  qaRenderTags();
-  document.getElementById('qa-overlay').classList.add('open');
-  qaGo(1);
-}
+function openQuickAdd(){ openProdFormAdvanced(); }
 function qaRenderTags(){
   var box=document.getElementById('qa-tags'), wrap=document.getElementById('qa-tags-wrap'); if(!box) return;
   if(!TAG_GROUPS.length){ if(wrap) wrap.style.display='none'; return; }
