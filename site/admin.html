@@ -703,12 +703,14 @@ input,select,textarea{font-family:inherit;}
   <div class="modal">
     <div class="modal-hd">
       <div class="modal-title" id="prod-modal-title">Add Product</div>
+      <button class="btn-preview" onclick="pfPreview()">Preview</button>
       <button class="modal-close" onclick="closeProdForm()">&times;</button>
     </div>
     <div class="modal-body" id="prod-modal-body"></div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeProdForm()">Cancel</button>
-      <button class="btn-save" onclick="saveProd()">Save Product</button>
+      <button class="btn-draft" onclick="saveProd('draft')">Save as Draft</button>
+      <button class="btn-publish" onclick="saveProd('publish')">Publish Product</button>
     </div>
   </div>
 </div>
@@ -3566,7 +3568,29 @@ function pfEnsurePageStyle(){
     +'.pf-xrm:hover{background:var(--g);color:#fff}'
     +'.pf-xadd{border:1.5px dashed #D5CFC4;border-radius:999px;padding:8px 14px;font-size:12.5px;font-weight:600;color:var(--ink2);background:#fff;cursor:pointer;font-family:inherit}'
     +'.pf-xadd:hover{border-color:var(--g);color:var(--g)}'
-    +'.pf-xadd:focus{outline:none;border-color:var(--g)}';
+    +'.pf-xadd:focus{outline:none;border-color:var(--g)}'
+    +'.overlay.prod-fullpage .modal-title{margin-right:auto}'
+    +'.overlay.prod-fullpage details.pf-collapse>summary{list-style:none;cursor:pointer;display:block;position:relative;padding-right:30px}'
+    +'.overlay.prod-fullpage details.pf-collapse>summary::-webkit-details-marker{display:none}'
+    +'.overlay.prod-fullpage details.pf-collapse>summary .pf-card-h{margin-bottom:0}'
+    +'.overlay.prod-fullpage details.pf-collapse[open]>summary .pf-card-h{margin-bottom:18px}'
+    +'.overlay.prod-fullpage details.pf-collapse>summary:after{content:"";position:absolute;right:6px;top:15px;width:9px;height:9px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .18s}'
+    +'.overlay.prod-fullpage details.pf-collapse[open]>summary:after{transform:rotate(-135deg);top:19px}'
+    +'.overlay.prod-fullpage .pf-ic{background:linear-gradient(135deg,rgba(99,102,241,.16),rgba(99,102,241,.07));color:#6366F1}'
+    +'.overlay.prod-fullpage .theme-chip:hover,.overlay.prod-fullpage .venue-chip:hover,.overlay.prod-fullpage .badge-chip:hover{border-color:#6366F1}'
+    +'.overlay.prod-fullpage .theme-chip.sel,.overlay.prod-fullpage .venue-chip.sel,.overlay.prod-fullpage .badge-chip.sel{border-color:#6366F1;background:rgba(99,102,241,.10);color:#6366F1}'
+    +'.overlay.prod-fullpage .f-input:focus,.overlay.prod-fullpage .f-select:focus,.overlay.prod-fullpage .f-textarea:focus{border-color:#6366F1;box-shadow:0 0 0 3px rgba(99,102,241,.15)}'
+    +'.overlay.prod-fullpage .pf-xrm{background:rgba(99,102,241,.16);color:#6366F1}'
+    +'.overlay.prod-fullpage .pf-xrm:hover{background:#6366F1;color:#fff}'
+    +'.overlay.prod-fullpage .pf-xadd:hover,.overlay.prod-fullpage .pf-xadd:focus{border-color:#6366F1;color:#6366F1}'
+    +'.overlay.prod-fullpage .modal-footer{justify-content:flex-end;gap:10px}'
+    +'.overlay.prod-fullpage .btn-publish{background:#6366F1;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-weight:700;cursor:pointer;font-family:inherit;flex:none}'
+    +'.overlay.prod-fullpage .btn-publish:hover{background:#5449e0}'
+    +'.overlay.prod-fullpage .btn-draft{background:#EEF0FE;color:#4B45C6;border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-family:inherit;flex:none}'
+    +'.overlay.prod-fullpage .btn-draft:hover{background:#E2E5FD}'
+    +'.overlay.prod-fullpage .modal-footer .btn-cancel{background:#F1EFEB;color:var(--ink2);border:none;border-radius:12px;flex:none}'
+    +'.overlay.prod-fullpage .btn-preview{background:rgba(255,255,255,.13);color:#fff;border:none;border-radius:10px;padding:8px 15px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}'
+    +'.overlay.prod-fullpage .btn-preview:hover{background:rgba(255,255,255,.22)}';
   document.head.appendChild(s);
 }
 function closeProdForm(){
@@ -5657,24 +5681,24 @@ function openProdFormAdvanced(id){
     +'<div class="f-row"><div class="f-field"><label>Seats</label><select class="f-select" id="pf-seats"><option value="">-</option>'+[2,4,6,8].map(n=>'<option value="'+n+'"'+(p?.seats===n?' selected':'')+'>'+n+'-Seater</option>').join('')+'</select></div>'
     +'<div class="f-field"><label>Shape</label><select class="f-select" id="pf-shape"><option value="">-</option>'+[['round','Round'],['square','Square'],['rect','Rectangular']].map(([k,v])=>'<option value="'+k+'"'+(p?.shape===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
     +'</div></div>'
-    +'<button type="button" class="pf-adv-toggle" onclick="pfToggleAdv(this)">Show advanced options ▾</button>'+'<div id="pf-adv" class="pf-adv-wrap" style="display:none">'+'<div class="pf-card">'+pfHd('chair','Seating Attributes','Comfort and configuration')+''
+    +'<details class="pf-card pf-collapse" open><summary class="pf-sum">'+pfHd('chair','Seating Attributes','Comfort and configuration')+'</summary>'
     +'<div class="f-row"><div class="f-field"><label>Armrests</label><select class="f-select" id="pf-arms"><option value="">Auto-detect</option><option value="arm"'+(ca.arms==='arm'?' selected':'')+'>With arms</option><option value="armless"'+(ca.arms==='armless'?' selected':'')+'>Armless</option></select></div>'
     +'<div class="f-field"><label>Stackable</label><select class="f-select" id="pf-stack"><option value="">No (default)</option><option value="yes"'+(ca.stack==='yes'?' selected':'')+'>Yes, stackable</option></select></div>'
     +'<div class="f-field"><label>Comfort</label><select class="f-select" id="pf-comfort"><option value="">Medium</option><option value="2"'+(String(ca.comfort)==='2'?' selected':'')+'>Firm</option><option value="3"'+(String(ca.comfort)==='3'?' selected':'')+'>Medium</option><option value="4"'+(String(ca.comfort)==='4'?' selected':'')+'>High</option><option value="5"'+(String(ca.comfort)==='5'?' selected':'')+'>Plush</option></select></div></div>'
-    +'</div>'
-    +'<div class="pf-card">'+pfHd('list','Specifications','Key specs shown on the product page')+''
+    +'</details>'
+    +'<details class="pf-card pf-collapse"><summary class="pf-sum">'+pfHd('list','Specifications','Key specs shown on the product page')+'</summary>'
     +'<div id="specs-list">'+renderSpecRows(prodSpecs)+'</div>'
     +'<button class="spec-add-btn" onclick="addSpecRow()">+ Add Spec</button>'
-    +'</div>'
-    +'<div class="pf-card">'+pfHd('pin','Suitable For','Where can this product be used?')+''
+    +'</details>'
+    +'<details class="pf-card pf-collapse"><summary class="pf-sum">'+pfHd('pin','Suitable For','Where can this product be used?')+'</summary>'
     +'<div class="f-field"><label>Themes</label><div class="themes-row" id="pf-themes">'+ALL_THEMES.map(([k,v])=>'<div class="theme-chip'+((p?.themes||[]).includes(k)?' sel':'')+'" data-t="'+k+'">'+v+'</div>').join('')+'</div></div>'
     +'<div class="f-field"><label>Suitable venues <span style="font-size:11px;color:var(--ink3);font-weight:400">(powers the estimator &amp; recommendations)</span></label><div class="themes-row" id="pf-venues">'+VENUE_OPTS.map(([k,v])=>'<div class="venue-chip'+(((VENUE_TAGS[p?.id]||[]).includes(k))?' sel':'')+'" data-v="'+k+'">'+v+'</div>').join('')+'</div></div>'
-    +'</div>'
-    +'<div class="pf-card">'+pfHd('search','SEO &amp; Meta','Improve discoverability')+''
+    +'</details>'
+    +'<details class="pf-card pf-collapse"><summary class="pf-sum">'+pfHd('search','SEO &amp; Meta','Improve discoverability')+'</summary>'
     +'<div class="f-field"><label>SEO Title</label><input class="f-input" id="pf-seo-title" value="'+(p?.seoTitle||'')+'" placeholder="Leave blank to use product name"></div>'
     +'<div class="f-field"><label>Meta Description</label><textarea class="f-textarea" id="pf-seo-desc" style="min-height:60px" placeholder="Short description for search engines (max 160 chars)">'+(p?.seoDesc||'')+'</textarea></div>'
-    +'</div>'
-    +'</div>'+'</div><div class="pf-side">'
+    +'</details>'
+    +'</div><div class="pf-side">'
     +'<div class="pf-card">'+pfHd('image','Photos','Upload product photos')+''
     +'<div class="pfm-wrap"><div class="pfm-grid" id="pf-media-grid"></div><div class="pfm-hint">First photo is the cover · ★ makes a photo the cover · × removes it. Auto-compressed under 100&nbsp;KB.</div></div>'
     +'<input type="file" id="pf-media-file" accept="image/*" multiple style="display:none" onchange="pfMediaAddFiles(this)">'
@@ -5866,6 +5890,7 @@ function pfCatsForSection(sec){
   var pfx = sec==='residential'?'res-':(sec==='office'?'off-':(sec==='banquet'?'bnq-':''));
   return dynCats().filter(function(c){ if(pfx) return c[0].indexOf(pfx)===0; return !/^(res-|off-|bnq-)/.test(c[0]); });
 }
+function pfPreview(){ var n=(document.getElementById('pf-name')||{}).value||''; if(!editingProdId){ toast('Save the product first, then Preview.','#C8860A'); return; } var slug=String(n+'-'+editingProdId).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); try{ window.open('https://gharnish.app/product/'+slug,'_blank'); }catch(e){} }
 function pfRenderXcats(){
   var host=document.getElementById('pf-xcats'); if(!host) return;
   var sec=(document.getElementById('pf-section')||{}).value||'';
@@ -6277,7 +6302,7 @@ function qaSave(addAnother){
 }
 
 // Override saveProd to capture extra fields
-function saveProd(){
+function saveProd(mode){
   const name=(document.getElementById('pf-name')?.value||'').trim();
   const cat=document.getElementById('pf-cat')?.value||'chair';
   const tier=document.getElementById('pf-tier')?.value||'essential';
@@ -6295,7 +6320,7 @@ function saveProd(){
   const bestseller=document.getElementById('pf-bestseller')?.classList.contains('on')||false;
   const pfSection=document.getElementById('pf-section')?.value||'';
   const pfInternal=document.getElementById('pf-internal')?.classList.contains('on')||false;
-  const pfHidden=document.getElementById('pf-hidden')?.classList.contains('on')||false;
+  let pfHidden=document.getElementById('pf-hidden')?.classList.contains('on')||false; if(mode==='draft')pfHidden=true; else if(mode==='publish')pfHidden=false;
   const image=document.getElementById('prod-image-val')?.value||null;
   const seats=parseInt(document.getElementById('pf-seats')?.value)||null;
   const shape=document.getElementById('pf-shape')?.value||null;
