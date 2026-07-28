@@ -646,6 +646,7 @@ input,select,textarea{font-family:inherit;}
         Dashboard
       </div>
       <div class="nav-section-label">Catalog</div>
+      <div class="nav-item" data-page="gallery"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Gallery</div>
       <div class="nav-item" data-page="products">
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
         Products
@@ -1035,7 +1036,7 @@ async function showApp(){
     await loadTablePricing();
     await loadTopFinishes();
     try{ ghLoadCustUnread(); setupCustRealtime(); loadSeller(); loadVendors(); }catch(e){}
-    await loadGallery();
+    await loadGallery(); await loadAssetLib();
     migrateLocalSpecs();
   } else {
     badge.innerHTML='<span class="supa-badge supa-no">○ localStorage only</span>';
@@ -2592,7 +2593,7 @@ function navigate(page){
   });
   const mc = document.getElementById('main-content');
   mc.classList.toggle('mc-wide', page==='products');
-  const renders = {dashboard:renderDashboard,products:renderProducts,categories:renderCategories,homepage:renderHomepage,recommended:renderRecommended,projects:renderProjects,analytics:renderAnalytics,leads:renderLeads,settings:renderSettings,inventory:renderInventory,reviews:renderReviews,tablepricing:renderTablePricing,customers:renderCustomers,quotations:renderQuotations,sales:renderSales,vendors:renderVendors,running:renderRunning,transactions:renderTransactions};
+  const renders = {dashboard:renderDashboard,gallery:renderGallery,products:renderProducts,categories:renderCategories,homepage:renderHomepage,recommended:renderRecommended,projects:renderProjects,analytics:renderAnalytics,leads:renderLeads,settings:renderSettings,inventory:renderInventory,reviews:renderReviews,tablepricing:renderTablePricing,customers:renderCustomers,quotations:renderQuotations,sales:renderSales,vendors:renderVendors,running:renderRunning,transactions:renderTransactions};
   if(renders[page]){
     try{ renders[page](); }catch(e){ mc.innerHTML='<div style="padding:24px;color:#C62828;font-family:Poppins,sans-serif">Error loading page: '+e.message+'</div>'; console.error(e); }
   } else {
@@ -5354,7 +5355,7 @@ function bulkComfort(val){
 /* ══════════════════════════════════════
    GALLERY + VIDEO  (app_settings: gallery)
 ══════════════════════════════════════ */
-var GALLERY={};
+var GALLERY={}; var ASSETLIB=[];
 async function loadGallery(){
   if(!supa) return;
   try{
@@ -5399,6 +5400,72 @@ function pfMediaSync(){
   var g=document.getElementById('pf-gallery'); if(g) g.value=PFM.slice(1).join('\n');
   if(typeof _prodDirty!=='undefined') _prodDirty=true;
 }
+async function loadAssetLib(){ if(!supa)return; try{ const {data,error}=await supa.from('app_settings').select('value').eq('key','asset_library').maybeSingle(); if(!error&&data&&data.value){ var v=(typeof data.value==='string'?JSON.parse(data.value):data.value); ASSETLIB=(v&&v.images)?v.images:(Array.isArray(v)?v:[]); } }catch(e){} }
+function saveAssetLib(){ if(!supa)return; supa.from('app_settings').upsert({key:'asset_library',value:{images:ASSETLIB}}).then(function(r){ if(r&&r.error) toast('Gallery save failed: '+r.error.message,'#C62828'); }); }
+function galEnsureStyle(){
+  if(document.getElementById('gal-style')) return;
+  var s=document.createElement('style'); s.id='gal-style'; s.textContent=
+    '.gal-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:8px}'
+    +'.gal-cell{position:relative;aspect-ratio:1;border-radius:14px;overflow:hidden;background:var(--c2);border:1px solid rgba(0,0,0,.06)}'
+    +'.gal-cell img{width:100%;height:100%;object-fit:cover;display:block}'
+    +'.gal-rm{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:none;background:rgba(0,0,0,.55);color:#fff;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center}'
+    +'.gal-up{aspect-ratio:1;border:1.5px dashed var(--g);border-radius:14px;background:rgba(200,134,10,.05);color:var(--g);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700}'
+    +'.galp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px;max-height:58vh;overflow-y:auto}'
+    +'.galp-thumb{position:relative;aspect-ratio:1;border-radius:12px;overflow:hidden;cursor:pointer;border:2px solid transparent}'
+    +'.galp-thumb img{width:100%;height:100%;object-fit:cover;display:block}'
+    +'.galp-thumb.sel{border-color:var(--g)}'
+    +'.galp-check{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;font-size:13px;display:none;align-items:center;justify-content:center}'
+    +'.galp-thumb.sel .galp-check{display:flex}';
+  document.head.appendChild(s);
+}
+function renderGallery(){
+  galEnsureStyle();
+  var mc=document.getElementById('main-content');
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Photo Gallery</div><div class="page-sub">Upload photos once, then pick them when creating a product</div></div></div>'
+    +'<input type="file" id="gal-file" accept="image/*" multiple style="display:none" onchange="galUpload(this)">'
+    +'<div class="gal-grid" id="gal-grid"></div>';
+  galRenderGrid();
+}
+function galRenderGrid(){
+  var box=document.getElementById('gal-grid'); if(!box) return;
+  var h='<button type="button" class="gal-up" onclick="document.getElementById(\'gal-file\').click()"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:24px;height:24px"><path d="M12 5v14M5 12h14"/></svg><span>Upload</span></button>';
+  ASSETLIB.forEach(function(u,i){ h+='<div class="gal-cell"><img src="'+u+'" loading="lazy"><button class="gal-rm" title="Remove" onclick="galRemove('+i+')">×</button></div>'; });
+  box.innerHTML=h;
+}
+function galUpload(input){
+  var files=Array.prototype.slice.call(input.files||[]); if(!files.length) return; input.value='';
+  if(!supa){ toast('Connect Supabase first','#C62828'); return; }
+  toast('Uploading '+files.length+' photo'+(files.length>1?'s':'')+'…');
+  var done=0, total=files.length;
+  files.forEach(function(f,idx){
+    ghCompressImage(f,{max:1600,square:false,targetKB:220}).then(function(r){
+      var blob=ghDataURLtoBlob(r.dataUrl); var ct=blob.type;
+      var path='library/'+Date.now()+'-'+idx+'.'+((ct&&ct.indexOf('webp')>-1)?'webp':'jpg');
+      return supa.storage.from('project-media').upload(path,blob,{cacheControl:'3600',upsert:false,contentType:ct}).then(function(res){
+        if(res.error){ toast('Upload failed: '+res.error.message,'#C62828'); return; }
+        var pub=supa.storage.from('project-media').getPublicUrl(path); var url=pub&&pub.data&&pub.data.publicUrl; if(url) ASSETLIB.unshift(url);
+      });
+    }).catch(function(){ toast('Upload error','#C62828'); }).then(function(){ done++; if(done===total){ saveAssetLib(); galRenderGrid(); toast('Gallery updated'); } });
+  });
+}
+function galRemove(i){ ghConfirm('Remove this photo from the gallery? Products already using it keep it.', function(){ ASSETLIB.splice(i,1); saveAssetLib(); galRenderGrid(); }); }
+function pfPickGallery(){
+  galEnsureStyle();
+  var ov=document.getElementById('gal-pick-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='gal-pick-ov'; ov.className='qm-ov'; document.body.appendChild(ov); }
+  var body = ASSETLIB.length ? ASSETLIB.map(function(u){ return '<div class="galp-thumb" data-u="'+encodeURIComponent(u)+'" onclick="this.classList.toggle(\'sel\')"><img src="'+u+'" loading="lazy"><span class="galp-check">✓</span></div>'; }).join('') : '<div style="padding:26px;text-align:center;color:var(--ink3);grid-column:1/-1">No photos yet — upload some on the Gallery page first.</div>';
+  ov.innerHTML='<div class="qm-card" style="max-width:720px"><div style="display:flex;align-items:center;margin-bottom:14px"><b style="font-size:16px;font-family:Poppins,sans-serif">Choose from Gallery</b><button onclick="pfPickClose()" style="margin-left:auto;background:var(--c2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">×</button></div><div class="galp-grid">'+body+'</div>'+(ASSETLIB.length?'<button class="cust-add-btn" style="width:100%;margin-top:14px" onclick="pfPickAdd()">Add selected photos</button>':'')+'</div>';
+  ov.classList.add('open');
+}
+function pfPickClose(){ var ov=document.getElementById('gal-pick-ov'); if(ov)ov.classList.remove('open'); }
+function pfPickAdd(){
+  var ov=document.getElementById('gal-pick-ov'); if(!ov)return;
+  var sel=ov.querySelectorAll('.galp-thumb.sel'); var n=0;
+  sel.forEach(function(t){ var u=decodeURIComponent(t.getAttribute('data-u')); if(typeof PFM!=='undefined' && PFM.indexOf(u)<0){ PFM.push(u); n++; } });
+  if(n){ pfMediaRender(); pfMediaSync(); }
+  pfPickClose();
+  toast(n?(n+' photo'+(n>1?'s':'')+' added'):'Nothing selected');
+}
 function pfMediaRender(){
   var box=document.getElementById('pf-media-grid'); if(!box) return;
   var h='';
@@ -5408,6 +5475,7 @@ function pfMediaRender(){
       +'<button type="button" class="pfm-rm" title="Remove" onclick="pfMediaRemove('+i+')">\u00d7</button></div>';
   });
   h+='<button type="button" class="pfm-add" onclick="document.getElementById(\'pf-media-file\').click()"><svg fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Add photos</span></button>';
+  h+='<button type="button" class="pfm-add pfm-pick" onclick="pfPickGallery()"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>From Gallery</span></button>';
   box.innerHTML=h;
 }
 function pfMediaAddFiles(input){
