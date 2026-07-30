@@ -250,7 +250,7 @@ input,select,textarea{font-family:inherit;}
 .pcard .prod-actions{display:flex;gap:4px;}
 .pcard .btn-icon{width:30px;height:30px;}
 .pfm-wrap{margin-bottom:14px;}
-.pfm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;}
+.pfm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;}.pfm-grid.pfm-dragover{outline:2px dashed #6366F1;outline-offset:5px;background:rgba(99,102,241,.05);border-radius:12px;}
 .pfm-thumb{position:relative;border-radius:var(--r2);overflow:hidden;border:1.5px solid rgba(0,0,0,.08);background:#fff;aspect-ratio:1;}
 .pfm-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .pfm-thumb.cover{border-color:var(--g);box-shadow:0 0 0 2px rgba(200,134,10,.22);}
@@ -1714,7 +1714,7 @@ function ghSKey(){
 function qDateBar(){ var f=window._qDateFrom||'', t=window._qDateTo||''; var lb='font-size:10px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em'; return '<div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap"><span style="'+lb+'">From</span><input type="date" class="cust-in" style="margin:0;width:150px" value="'+f+'" onchange="qSetDate(\'from\',this.value)"><span style="'+lb+'">To</span><input type="date" class="cust-in" style="margin:0;width:150px" value="'+t+'" onchange="qSetDate(\'to\',this.value)">'+((f||t)?'<button onclick="qSetDate(\'clear\')" class="cust-hbtn" style="background:var(--c2);color:var(--ink2);padding:7px 13px;font-size:11px">Clear dates</button>':'')+'</div>'; }
 function qSetDate(k,v){ if(k==='from')window._qDateFrom=v||''; else if(k==='to')window._qDateTo=v||''; else {window._qDateFrom='';window._qDateTo='';} if(typeof renderQuotations==='function') renderQuotations(); }
 function qLoadList(){
-  var el=document.getElementById('q-listwrap'); if(!el)return;
+  var el=document.getElementById('q-listwrap'); if(!el)return; qMenuEnsureStyle();
   if(!supa){ el.innerHTML='<div class="sc" style="padding:20px">Not connected.</div>'; return; }
   Promise.all([
     cacheOrders().then(function(rows){ return _cacheSortByCreated(rows).filter(function(o){ return (o.meta || o.status==='Quotation' || o.status==='Invoice') && ghInRange(o.created_at, window._qDateFrom||'', window._qDateTo||''); }); },function(){return [];}),
@@ -1730,7 +1730,7 @@ function qLoadList(){
     var hi=amounts.length?Math.max.apply(null,amounts):0;
     var insights='<div class="cust-cols" style="margin-bottom:16px"><div class="cust-sec"><h4>Most quoted products</h4>'+qProdBars(topProds)+'</div><div class="cust-sec"><h4>Quote amounts</h4><div class="cust-row"><div style="flex:1;font-size:13px">Average quote</div><div style="font-weight:700">'+custMoney(avg)+'</div></div><div class="cust-row"><div style="flex:1;font-size:13px">Highest</div><div style="font-weight:700">'+custMoney(hi)+'</div></div><div class="cust-row"><div style="flex:1;font-size:13px">Total value</div><div style="font-weight:700">'+custMoney(tQ+tI)+'</div></div></div></div>';
     if(!rows.length){ el.innerHTML=summary+'<div class="sc" style="padding:34px;text-align:center;color:var(--ink3)">No quotations yet. Tap \u201c+ Create quotation\u201d to make your first one.</div>'; return; }
-    el.innerHTML=summary+insights+'<div style="display:flex;flex-direction:column;gap:8px">'+rows.map(function(o,idx){ var isInv=o.status==='Invoice'; var col=isInv?'#1B7A4D':(o.status==='Quotation'?'#7C3AED':(o.status==='Delivered'?'#1B7A4D':'#C8860A')); return '<div class="q-listrow" data-s="'+ghSKey(o.title,nameBy[o.mobile],o.mobile,o.ref,o.status,(srcBy[o.mobile]==='app'?'app-signup':''))+'"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;color:var(--ink)">'+escA(o.title||'Quote')+'</div><div style="font-size:12px;color:var(--ink3)">'+escA(nameBy[o.mobile]||('+91 '+o.mobile))+(srcBy[o.mobile]==='app'?'<span class="app-badge" title="Customer signed up in the app">APP</span>':'')+' \u00b7 '+custDate(o.created_at)+'</div></div><span class="lead-badge" style="background:'+col+'1f;color:'+col+'">'+escA(o.status)+'</span><div style="font-family:Poppins;font-weight:800;font-size:15px;color:var(--ink);min-width:92px;text-align:right">'+custMoney(o.amount||0)+'</div>'+((o.status==='Quotation'&&o.meta)?'<button onclick="qConvertRow('+idx+')" class="cust-hbtn" style="background:#7C3AED1f;color:#7C3AED;padding:6px 12px;font-size:11.5px">\u2192 Running</button><button onclick="qSaleRow('+idx+')" class="cust-hbtn" style="background:#1B7A4D1f;color:#1B7A4D;padding:6px 12px;font-size:11.5px">\u2192 Sale</button>':'')+'<button onclick="qEditRow('+idx+')" class="cust-hbtn" style="background:var(--c2);color:var(--ink2);padding:6px 13px;font-size:11.5px">Edit</button>'+(o.invoice_url?'<a href="'+escA(o.invoice_url)+'" target="_blank" class="cust-hbtn" style="background:var(--g);color:#fff;padding:6px 14px;font-size:11.5px">PDF</a>':'')+'<button onclick="qDeleteRow('+idx+')" class="cust-hbtn" style="background:rgba(198,40,40,.1);color:#C62828;padding:6px 12px;font-size:11.5px">Delete</button></div>'; }).join('')+'</div>';
+    el.innerHTML=summary+insights+'<div style="display:flex;flex-direction:column;gap:8px">'+rows.map(function(o,idx){ var isInv=o.status==='Invoice'; var col=isInv?'#1B7A4D':(o.status==='Quotation'?'#7C3AED':(o.status==='Delivered'?'#1B7A4D':'#C8860A')); return '<div class="q-listrow" onclick="qEditRow('+idx+')" style="cursor:pointer" data-s="'+ghSKey(o.title,nameBy[o.mobile],o.mobile,o.ref,o.status,(srcBy[o.mobile]==='app'?'app-signup':''))+'"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;color:var(--ink)">'+escA(o.title||'Quote')+'</div><div style="font-size:12px;color:var(--ink3)">'+escA(nameBy[o.mobile]||('+91 '+o.mobile))+(srcBy[o.mobile]==='app'?'<span class="app-badge" title="Customer signed up in the app">APP</span>':'')+' \u00b7 '+custDate(o.created_at)+'</div></div><span class="lead-badge" style="background:'+col+'1f;color:'+col+'">'+escA(o.status)+'</span><div style="font-family:Poppins;font-weight:800;font-size:15px;color:var(--ink);min-width:92px;text-align:right">'+custMoney(o.amount||0)+'</div>'+'<button class="q-kebab" onclick="event.stopPropagation();qRowMenu(event,'+idx+')" title="Actions" aria-label="Actions">\u22ef</button></div>'; }).join('')+'</div>';
   });
 }
 function qF(lbl,key,val){ var extra=(key==='gstin')?' onblur="qGstinBlur(this.value)" maxlength="15" autocapitalize="characters" spellcheck="false"':''; return '<div class="q-ff"><label>'+lbl+'</label><input class="cust-in" id="qf-'+key+'" style="margin:0'+(key==='gstin'?';text-transform:uppercase':'')+'" placeholder="'+lbl.replace(' *','')+'" value="'+escA(val==null?'':String(val))+'" oninput="qHdr(\''+key+'\',this.value)"'+extra+'></div>'; }
@@ -1952,6 +1952,39 @@ function uploadSellerLogo(input){
     GH_SELLER.logoUrl=supa.storage.from('project-media').getPublicUrl(path).data.publicUrl;
     persistSeller(); toast('Logo saved','#1B7A4D'); if(typeof currentPage!=='undefined'&&currentPage==='settings') renderSettings();
   },function(){ toast('Upload failed','#C62828'); });
+}
+function qMenuEnsureStyle(){
+  if(document.getElementById('qmenu-style')) return;
+  var s=document.createElement('style'); s.id='qmenu-style'; s.textContent=
+    '.q-kebab{flex:none;width:34px;height:34px;border-radius:9px;border:none;background:var(--c2);color:var(--ink2);font-size:19px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}'
+    +'.q-kebab:hover{background:rgba(0,0,0,.09)}'
+    +'.q-listrow{cursor:pointer;transition:box-shadow .15s}'
+    +'.q-listrow:hover{box-shadow:0 5px 18px rgba(0,0,0,.10)}'
+    +'.q-rowmenu{position:fixed;z-index:100060;background:#fff;border-radius:12px;box-shadow:0 14px 44px rgba(0,0,0,.22);padding:6px;min-width:210px;display:flex;flex-direction:column;gap:2px;border:1px solid rgba(0,0,0,.06)}'
+    +'.q-rmi{text-align:left;background:none;border:none;padding:11px 13px;border-radius:8px;font-size:13.5px;font-weight:600;cursor:pointer;font-family:inherit}'
+    +'.q-rmi:hover{background:var(--c2)}';
+  document.head.appendChild(s);
+}
+function qMenuClose(){ var m=document.getElementById('q-rowmenu'); if(m) m.remove(); }
+function qOpenPdf(i){ var o=_qListRows[i]; if(o && o.invoice_url) window.open(o.invoice_url,'_blank'); }
+function qRowMenu(ev,idx){
+  if(ev && ev.stopPropagation) ev.stopPropagation();
+  qMenuEnsureStyle(); qMenuClose();
+  var o=_qListRows[idx]; if(!o) return;
+  var btn=ev && (ev.currentTarget||ev.target);
+  var items=[];
+  if(o.status==='Quotation' && o.meta){ items.push(['\u2192 Convert to Running','#7C3AED','qConvertRow('+idx+')']); items.push(['\u2192 Record as Sale','#1B7A4D','qSaleRow('+idx+')']); }
+  items.push(['Edit quotation','var(--ink2)','qEditRow('+idx+')']);
+  if(o.invoice_url) items.push(['Open PDF','#C8860A','qOpenPdf('+idx+')']);
+  items.push(['Delete','#C62828','qDeleteRow('+idx+')']);
+  var menu=document.createElement('div'); menu.id='q-rowmenu'; menu.className='q-rowmenu';
+  menu.innerHTML=items.map(function(it){ return '<button class="q-rmi" style="color:'+it[1]+'" onclick="qMenuClose();'+it[2]+'">'+it[0]+'</button>'; }).join('');
+  document.body.appendChild(menu);
+  var mw=210, left=8, top=8, rect=null;
+  if(btn && btn.getBoundingClientRect){ rect=btn.getBoundingClientRect(); left=Math.max(8,Math.min(rect.right-mw, window.innerWidth-mw-8)); top=rect.bottom+6; }
+  menu.style.left=left+'px'; menu.style.top=top+'px';
+  var mh=menu.offsetHeight; if(top+mh>window.innerHeight-8){ menu.style.top=Math.max(8,(rect?rect.top:top)-mh-6)+'px'; }
+  setTimeout(function(){ document.addEventListener('click',qMenuClose,{once:true}); document.addEventListener('scroll',qMenuClose,{once:true,capture:true}); },0);
 }
 function qEditRow(i){ qEditQuote(_qListRows[i]); }
 function qConvertRow(i){ var o=_qListRows[i]; if(!o)return; if(!o.meta){ toast('Only itemised quotes can convert. Open & rebuild it first.','#C8860A'); return; } _convReturn='list'; _curCust={mobile:o.mobile,name:''}; custConvertOrder(o,false); }
@@ -5481,13 +5514,18 @@ function pfMediaRender(){
   h+='<button type="button" class="pfm-add pfm-pick" onclick="pfPickGallery()"><svg fill="none" stroke="currentColor" stroke-width="1.7" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg><span>From Gallery</span></button>';
   box.innerHTML=h;
 }
-function pfMediaAddFiles(input){
-  var files=Array.prototype.slice.call(input.files||[]); if(!files.length) return; input.value='';
+function pfMediaProcessFiles(files){
+  files=Array.prototype.slice.call(files||[]); if(!files.length) return;
   files.forEach(function(f){
+    if(f.type && f.type.indexOf('image')!==0) return;
     ghCompressImage(f,{max:800,square:true,targetKB:100}).then(function(r){ PFM.push(r.dataUrl); pfMediaRender(); pfMediaSync(); })
     .catch(function(){ var rd=new FileReader(); rd.onload=function(e){ PFM.push(e.target.result); pfMediaRender(); pfMediaSync(); }; rd.readAsDataURL(f); });
   });
 }
+function pfMediaAddFiles(input){ pfMediaProcessFiles(input.files); input.value=''; }
+function pfMediaDragOver(ev){ ev.preventDefault(); var el=document.getElementById('pf-media-grid'); if(el) el.classList.add('pfm-dragover'); }
+function pfMediaDragLeave(ev){ var el=document.getElementById('pf-media-grid'); if(el) el.classList.remove('pfm-dragover'); }
+function pfMediaDrop(ev){ ev.preventDefault(); var el=document.getElementById('pf-media-grid'); if(el) el.classList.remove('pfm-dragover'); var dt=ev.dataTransfer; if(dt && dt.files && dt.files.length) pfMediaProcessFiles(dt.files); }
 function pfMediaRemove(i){ PFM.splice(i,1); pfMediaRender(); pfMediaSync(); }
 function pfMediaCover(i){ if(i>0&&i<PFM.length){ var x=PFM.splice(i,1)[0]; PFM.unshift(x); pfMediaRender(); pfMediaSync(); } }
 function pfGalWrite(arr){ var ta=document.getElementById('pf-gallery'); if(ta) ta.value=arr.join('\n'); }
@@ -5770,7 +5808,7 @@ function openProdFormAdvanced(id){
     +'</details>'
     +'</div><div class="pf-side">'
     +'<div class="pf-card">'+pfHd('image','Photos','Upload product photos')+''
-    +'<div class="pfm-wrap"><div class="pfm-grid" id="pf-media-grid"></div><div class="pfm-hint">First photo is the cover · ★ makes a photo the cover · × removes it. Auto-compressed under 100&nbsp;KB.</div></div>'
+    +'<div class="pfm-wrap" ondragover="pfMediaDragOver(event)" ondragleave="pfMediaDragLeave(event)" ondrop="pfMediaDrop(event)"><div class="pfm-grid" id="pf-media-grid"></div><div class="pfm-hint">First photo is the cover · ★ makes a photo the cover · × removes it. Auto-compressed under 100&nbsp;KB. Drag &amp; drop images here to add.</div></div>'
     +'<input type="file" id="pf-media-file" accept="image/*" multiple style="display:none" onchange="pfMediaAddFiles(this)">'
     +'<input type="hidden" id="prod-image-val" value="'+(p?.image||'')+'">'
     +'<textarea id="pf-gallery" style="display:none">'+((p&&GALLERY[p.id]&&GALLERY[p.id].images)?GALLERY[p.id].images.join('\n'):'')+'</textarea>'
