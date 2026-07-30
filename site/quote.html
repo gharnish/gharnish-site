@@ -250,14 +250,14 @@ input,select,textarea{font-family:inherit;}
 .pcard .prod-actions{display:flex;gap:4px;}
 .pcard .btn-icon{width:30px;height:30px;}
 .pfm-wrap{margin-bottom:14px;}
-.pfm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;}.pfm-grid.pfm-dragover{outline:2px dashed #6366F1;outline-offset:5px;background:rgba(99,102,241,.05);border-radius:12px;}
+.pfm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;}.pfm-grid.pfm-dragover{outline:2px dashed #78716C;outline-offset:5px;background:rgba(120,113,108,.05);border-radius:12px;}
 .pfm-thumb{position:relative;border-radius:var(--r2);overflow:hidden;border:1.5px solid rgba(0,0,0,.08);background:#fff;aspect-ratio:1;}
 .pfm-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
 .pfm-thumb.cover{border-color:var(--g);box-shadow:0 0 0 2px rgba(200,134,10,.22);}
 .pfm-badge{position:absolute;bottom:0;left:0;right:0;background:rgba(200,134,10,.94);color:#fff;font-size:9px;font-weight:800;letter-spacing:.05em;text-align:center;padding:3px;}
 .pfm-rm{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;background:rgba(26,21,16,.82);color:#fff;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;padding:0;}
 .pfm-star{position:absolute;top:5px;left:5px;width:22px;height:22px;border-radius:50%;background:rgba(200,134,10,.92);color:#fff;font-size:12px;line-height:1;display:flex;align-items:center;justify-content:center;border:none;cursor:pointer;padding:0;}
-.pfm-add{aspect-ratio:1;border:1.5px dashed rgba(99,102,241,.5);border-radius:var(--r2);background:rgba(99,102,241,.05);color:#6366F1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:11px;font-weight:700;}
+.pfm-add{aspect-ratio:1;border:1.5px dashed rgba(120,113,108,.5);border-radius:var(--r2);background:rgba(120,113,108,.05);color:#78716C;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:11px;font-weight:700;}
 .pfm-add svg{width:24px;height:24px;}
 .pfm-hint{font-size:11.5px;color:var(--ink3);margin-top:9px;line-height:1.5;}
 .tpbo-list{padding:10px 12px 12px}
@@ -891,13 +891,14 @@ ensureSupa();
 /* ══ CONSTANTS ══ */
 const CAT_LABEL = {
   'chair':'Indoor Chairs','stool':'Bar Stools',
+  'restaurant-tables':'Restaurant Tables',
   'table-round':'Round Tables','table-square':'Square Tables',
   'table-rect':'Rectangular Tables','table-base':'Table Bases',
   'booth':'Booth & Sofas','outdoor-chair':'Outdoor Chairs',
   'outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets',
 };
-const CAT_ICON = {'chair':'🪑','stool':'🪑','table-round':'⭕','table-square':'⬜','table-rect':'▬','table-base':'⚓','booth':'🛋️','outdoor-chair':'🌿','outdoor-table':'☀️','restaurant-set':'🍽️'};
-const CAT_ICON_KEY = {'chair':'chair','stool':'stool','table-round':'roundtable','table-square':'roundtable','table-rect':'recttable','table-base':'roundtable','booth':'booth','outdoor-chair':'outchair','outdoor-table':'outtable','restaurant-set':'recttable'};
+const CAT_ICON = {'chair':'🪑','stool':'🪑','table-round':'⭕','table-square':'⬜','table-rect':'▬','restaurant-tables':'▬','table-base':'⚓','booth':'🛋️','outdoor-chair':'🌿','outdoor-table':'☀️','restaurant-set':'🍽️'};
+const CAT_ICON_KEY = {'chair':'chair','stool':'stool','table-round':'roundtable','table-square':'roundtable','table-rect':'recttable','restaurant-tables':'recttable','table-base':'roundtable','booth':'booth','outdoor-chair':'outchair','outdoor-table':'outtable','restaurant-set':'recttable'};
 const TIER_LABEL = {essential:'Economic',premium:'Premium',luxury:'Luxury'};
 var RES_CATS=[['res-dining-set','Dining Table Sets'],['res-dining-table','Dining Tables'],['res-dining-chair','Dining Chairs'],['res-sofa','Sofas'],['res-bed','Beds'],['res-centre-table','Centre Tables'],['res-side-table','Side Tables']];
 var OFFICE_CATS=[['off-general','Office Furniture']];
@@ -3209,7 +3210,7 @@ function prodRow(p,idx,total){
     +'</div>'
     +'<div class="pcard-body">'
     +'<div class="pcard-name">'+p.name+'</div>'
-    +'<div class="pcard-meta">'+(CAT_LABEL[p.cat]||p.cat)+(p.internal?' <span class="badge" style="background:#5B5BBC22;color:#5B5BBC">INTERNAL</span>':'')+(p.hidden?' <span class="badge" style="background:#C6282822;color:#C62828">HIDDEN</span>':'')+(p.section==='residential'?' <span class="badge" style="background:#0E7C6B22;color:#0E7C6B">RESIDENTIAL</span>':'')+(p.section==='office'?' <span class="badge" style="background:#5B4B8A22;color:#5B4B8A">OFFICE</span>':'')+(p.section==='banquet'?' <span class="badge" style="background:#B4602222;color:#B46022">BANQUET</span>':'')+(DRAFTS[p.id]?' <span class="badge" style="background:#6366F122;color:#6366F1">DRAFT</span>':'')+'</div>'
+    +'<div class="pcard-meta">'+(CAT_LABEL[p.cat]||p.cat)+(p.internal?' <span class="badge" style="background:#5B5BBC22;color:#5B5BBC">INTERNAL</span>':'')+(p.hidden?' <span class="badge" style="background:#C6282822;color:#C62828">HIDDEN</span>':'')+(p.section==='residential'?' <span class="badge" style="background:#0E7C6B22;color:#0E7C6B">RESIDENTIAL</span>':'')+(p.section==='office'?' <span class="badge" style="background:#5B4B8A22;color:#5B4B8A">OFFICE</span>':'')+(p.section==='banquet'?' <span class="badge" style="background:#B4602222;color:#B46022">BANQUET</span>':'')+(DRAFTS[p.id]?' <span class="badge" style="background:#78716C22;color:#78716C">DRAFT</span>':'')+'</div>'
     +'<div class="pcard-badges">'+stockBadge+'</div>'+prodCostVendorUI(p)
     +'<div class="pcard-foot">'
     +'<div class="pcard-price" id="ppr-'+p.id+'" title="Click to edit price" onclick="event.stopPropagation();prodPriceEdit(\''+p.id+'\')" style="cursor:pointer;border-bottom:1px dashed rgba(200,134,10,.55)">'+fmt(p.price)+'</div>'
@@ -3631,18 +3632,18 @@ function pfEnsurePageStyle(){
     +'.overlay.prod-fullpage details.pf-collapse[open]>summary .pf-card-h{margin-bottom:18px}'
     +'.overlay.prod-fullpage details.pf-collapse>summary:after{content:"";position:absolute;right:6px;top:15px;width:9px;height:9px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);transition:transform .18s}'
     +'.overlay.prod-fullpage details.pf-collapse[open]>summary:after{transform:rotate(-135deg);top:19px}'
-    +'.overlay.prod-fullpage .pf-ic{background:linear-gradient(135deg,rgba(99,102,241,.16),rgba(99,102,241,.07));color:#6366F1}'
-    +'.overlay.prod-fullpage .theme-chip:hover,.overlay.prod-fullpage .venue-chip:hover,.overlay.prod-fullpage .badge-chip:hover{border-color:#6366F1}'
-    +'.overlay.prod-fullpage .theme-chip.sel,.overlay.prod-fullpage .venue-chip.sel,.overlay.prod-fullpage .badge-chip.sel{border-color:#6366F1;background:rgba(99,102,241,.10);color:#6366F1}'
-    +'.overlay.prod-fullpage .f-input:focus,.overlay.prod-fullpage .f-select:focus,.overlay.prod-fullpage .f-textarea:focus{border-color:#6366F1;box-shadow:0 0 0 3px rgba(99,102,241,.15)}'
-    +'.overlay.prod-fullpage .pf-xrm{background:rgba(99,102,241,.16);color:#6366F1}'
-    +'.overlay.prod-fullpage .pf-xrm:hover{background:#6366F1;color:#fff}'
-    +'.overlay.prod-fullpage .pf-xadd:hover,.overlay.prod-fullpage .pf-xadd:focus{border-color:#6366F1;color:#6366F1}'
+    +'.overlay.prod-fullpage .pf-ic{background:linear-gradient(135deg,rgba(120,113,108,.16),rgba(120,113,108,.07));color:#78716C}'
+    +'.overlay.prod-fullpage .theme-chip:hover,.overlay.prod-fullpage .venue-chip:hover,.overlay.prod-fullpage .badge-chip:hover{border-color:#78716C}'
+    +'.overlay.prod-fullpage .theme-chip.sel,.overlay.prod-fullpage .venue-chip.sel,.overlay.prod-fullpage .badge-chip.sel{border-color:#78716C;background:rgba(120,113,108,.10);color:#78716C}'
+    +'.overlay.prod-fullpage .f-input:focus,.overlay.prod-fullpage .f-select:focus,.overlay.prod-fullpage .f-textarea:focus{border-color:#78716C;box-shadow:0 0 0 3px rgba(120,113,108,.15)}'
+    +'.overlay.prod-fullpage .pf-xrm{background:rgba(120,113,108,.16);color:#78716C}'
+    +'.overlay.prod-fullpage .pf-xrm:hover{background:#78716C;color:#fff}'
+    +'.overlay.prod-fullpage .pf-xadd:hover,.overlay.prod-fullpage .pf-xadd:focus{border-color:#78716C;color:#78716C}'
     +'.overlay.prod-fullpage .modal-footer{justify-content:flex-end;gap:10px}'
-    +'.overlay.prod-fullpage .btn-publish{background:#6366F1;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-weight:700;cursor:pointer;font-family:inherit;flex:none}'
-    +'.overlay.prod-fullpage .btn-publish:hover{background:#5449e0}'
-    +'.overlay.prod-fullpage .btn-draft{background:#EEF0FE;color:#4B45C6;border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-family:inherit;flex:none}'
-    +'.overlay.prod-fullpage .btn-draft:hover{background:#E2E5FD}'
+    +'.overlay.prod-fullpage .btn-publish{background:#78716C;color:#fff;border:none;border-radius:12px;padding:12px 22px;font-weight:700;cursor:pointer;font-family:inherit;flex:none}'
+    +'.overlay.prod-fullpage .btn-publish:hover{background:#5F594F}'
+    +'.overlay.prod-fullpage .btn-draft{background:#EFEDEA;color:#57534E;border:none;border-radius:12px;padding:12px 18px;font-weight:700;cursor:pointer;font-family:inherit;flex:none}'
+    +'.overlay.prod-fullpage .btn-draft:hover{background:#E6E3DE}'
     +'.overlay.prod-fullpage .modal-footer .btn-cancel{background:#F1EFEB;color:var(--ink2);border:none;border-radius:12px;flex:none}'
     +'.overlay.prod-fullpage .btn-preview{background:rgba(255,255,255,.13);color:#fff;border:none;border-radius:10px;padding:8px 15px;font-weight:600;font-size:13px;cursor:pointer;font-family:inherit}'
     +'.overlay.prod-fullpage .btn-preview:hover{background:rgba(255,255,255,.22)}';
@@ -3653,7 +3654,7 @@ function closeProdForm(){
   if(_prodDirty){ ghConfirm('Discard this product? Your unsaved changes will be lost.', shut); return; }
   shut();
 }
-function onPFCatChange(){ const c=document.getElementById('pf-cat')?.value; const tf=document.getElementById('pf-table-fields'); if(tf) tf.style.display=['table-round','table-square','table-rect'].includes(c)?'block':'none'; try{ if(typeof pfRenderSubs==='function') pfRenderSubs(); }catch(e){} }
+function onPFCatChange(){ const c=document.getElementById('pf-cat')?.value; const tf=document.getElementById('pf-table-fields'); if(tf) tf.style.display=['table-round','table-square','table-rect','restaurant-tables'].includes(c)?'block':'none'; try{ if(typeof pfRenderSubs==='function') pfRenderSubs(); }catch(e){} }
 
 
 /* ── Image compression (runs client-side on EVERY upload) ──
@@ -5513,7 +5514,7 @@ function pfPickGallery(){
   var ov=document.getElementById('gal-pick-ov');
   if(!ov){ ov=document.createElement('div'); ov.id='gal-pick-ov'; ov.className='qm-ov'; document.body.appendChild(ov); }
   var body = ASSETLIB.length ? ASSETLIB.map(function(u){ return '<div class="galp-thumb" data-u="'+encodeURIComponent(u)+'" onclick="this.classList.toggle(\'sel\')"><img src="'+u+'" loading="lazy"><span class="galp-check">✓</span></div>'; }).join('') : '<div style="padding:26px;text-align:center;color:var(--ink3);grid-column:1/-1">No photos yet — upload some on the Gallery page first.</div>';
-  ov.innerHTML='<div class="qm-card" style="max-width:720px"><div style="display:flex;align-items:center;margin-bottom:14px"><b style="font-size:16px;font-family:Poppins,sans-serif">Choose from Gallery</b><button onclick="pfPickClose()" style="margin-left:auto;background:var(--c2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">×</button></div><div class="galp-grid">'+body+'</div>'+(ASSETLIB.length?'<button class="cust-add-btn" style="width:100%;margin-top:14px" onclick="pfPickAdd()">Add selected photos</button>':'')+'</div>';
+  ov.innerHTML='<div class="qm-card" style="max-width:720px"><div style="display:flex;align-items:center;margin-bottom:14px"><b style="font-size:16px;font-family:Poppins,sans-serif">Choose from Gallery</b><button onclick="pfPickClose()" style="margin-left:auto;background:var(--c2);border:none;width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:16px">×</button></div><div class="galp-grid">'+body+'</div>'+(ASSETLIB.length?'<button class="cust-add-btn" style="width:100%;margin-top:16px;padding:14px;border-radius:12px;background:var(--g);color:#fff;border:none;font-weight:700;font-size:14px;cursor:pointer" onclick="pfPickAdd()">Add selected photos</button>':'')+'</div>';
   ov.classList.add('open');
 }
 function pfPickClose(){ var ov=document.getElementById('gal-pick-ov'); if(ov)ov.classList.remove('open'); }
@@ -5788,10 +5789,10 @@ function openProdFormAdvanced(id){
   document.getElementById('prod-modal-body').innerHTML=
     '<div class="form-err" id="prod-err" style="display:none"></div>'
     +'<div class="pf-grid"><div class="pf-main">'
-    +'<div class="pf-card">'+pfHd('info','General Information','Basic details about your product')+''
+    +'<div class="pf-card">'+pfHd('info','Product Details','Basic details about your product')+''
     +'<div class="f-field"><label>Product Name *</label><input class="f-input" id="pf-name" value="'+(p?.name||'')+'" placeholder="e.g. Verona Bistro Chair"></div>'
     +'<div class="f-row"><div class="f-field"><label>Section *</label><select class="f-select" id="pf-section" onchange="onPFSectionChange()"><option value="">Restaurant / Commercial</option><option value="residential"'+(p&&p.section==='residential'?' selected':'')+'>Home Furniture</option><option value="office"'+(p&&p.section==='office'?' selected':'')+'>Office Furniture</option><option value="banquet"'+(p&&p.section==='banquet'?' selected':'')+'>Banquet</option></select></div>'
-    +'<div class="f-field"><label>Category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+pfCatsForSection(p&&p.section?p.section:'').map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
+    +'<div class="f-field"><label>Category *</label><select class="f-select" id="pf-cat" onchange="onPFCatChange()">'+pfCatOptions(p&&p.section?p.section:'', p&&p.cat).map(([k,v])=>'<option value="'+k+'"'+(p?.cat===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div></div>'
     +'<div class="pf-taxo"><div class="f-field" style="flex:1 1 100%;margin-bottom:13px"><label>Sub-category <span class="pf-opt">optional — a finer type inside the category</span></label><div class="themes-row" id="pf-subs"></div><div class="pf-hint" id="pf-subs-empty" style="display:none">No sub-categories for this category yet.</div></div>'
     +'<div class="f-field" style="flex:1 1 100%;margin-bottom:0"><label>Also appears in <span class="pf-opt">optional — also list this product in other categories</span></label><div class="pf-xwrap" id="pf-xcats"></div></div></div>'
     +'<div class="f-row"><div class="f-field"><label>Tier</label><select class="f-select" id="pf-tier">'+Object.entries(TIER_LABEL).map(([k,v])=>'<option value="'+k+'"'+(p?.tier===k?' selected':'')+'>'+v+'</option>').join('')+'</select></div>'
@@ -5879,7 +5880,7 @@ function removeSpec(i){ prodSpecs.splice(i,1); document.getElementById('specs-li
 
 // Override openProdForm to use advanced form
 function openProdForm(id){ openProdFormAdvanced(id); }
-function onPFSectionChange(){ var sec=document.getElementById('pf-section'); var catSel=document.getElementById('pf-cat'); if(!sec||!catSel)return; var cur=catSel.value; var opts=pfCatsForSection(sec.value); catSel.innerHTML=opts.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>';}).join(''); try{ if(typeof pfRenderXcats==='function') pfRenderXcats(); }catch(e){} try{ if(typeof onPFCatChange==='function') onPFCatChange(); }catch(e){} }
+function onPFSectionChange(){ var sec=document.getElementById('pf-section'); var catSel=document.getElementById('pf-cat'); if(!sec||!catSel)return; var cur=catSel.value; var opts=pfCatOptions(sec.value, cur); catSel.innerHTML=opts.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===cur?' selected':'')+'>'+c[1]+'</option>';}).join(''); try{ if(typeof pfRenderXcats==='function') pfRenderXcats(); }catch(e){} try{ if(typeof onPFCatChange==='function') onPFCatChange(); }catch(e){} }
 function openCustomProd(){ openProdFormAdvanced(); setTimeout(function(){ var t=document.getElementById('pf-internal'); if(t) t.classList.add('on'); },80); }
 
 /* ═══════════ TABLE BUILDER — choose which catalog bases appear ═══════════ */
@@ -6019,7 +6020,10 @@ function scSave(){
 }
 function pfCatsForSection(sec){
   var pfx = sec==='residential'?'res-':(sec==='office'?'off-':(sec==='banquet'?'bnq-':''));
-  return dynCats().filter(function(c){ if(pfx) return c[0].indexOf(pfx)===0; return !/^(res-|off-|bnq-)/.test(c[0]); });
+  var LEGACY_TABLES=['table-round','table-square','table-rect'];
+  return dynCats().filter(function(c){ if(LEGACY_TABLES.indexOf(c[0])>=0) return false; if(pfx) return c[0].indexOf(pfx)===0; return !/^(res-|off-|bnq-)/.test(c[0]); });
+}
+function pfCatOptions(sec,curKey){ var opts=pfCatsForSection(sec); if(curKey && !opts.some(function(c){return c[0]===curKey;})){ opts=[[curKey,(typeof CAT_LABEL!=='undefined'&&CAT_LABEL[curKey])||curKey]].concat(opts); } return opts;
 }
 function pfPreview(){ var n=(document.getElementById('pf-name')||{}).value||''; if(!editingProdId){ toast('Save the product first, then Preview.','#C8860A'); return; } var slug=String(n+'-'+editingProdId).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); try{ window.open('https://gharnish.app/product/'+slug,'_blank'); }catch(e){} }
 function pfRenderXcats(){
@@ -6081,7 +6085,7 @@ function migrateLocalSpecs(){
 }
 function pcatHas(p,key){ if(!p) return false; if(p.cat===key) return true; var xs=PRODUCT_CATEGORIES[p.id]; return !!(xs&&xs.indexOf(key)>-1); }
 function pfTagPicker(){
-  var btn='<button type="button" onclick="openTagManager()" style="margin-top:4px;width:100%;padding:10px;border:1.5px dashed #6366F1;border-radius:10px;background:rgba(99,102,241,.05);color:#6366F1;font-size:12.5px;font-weight:700;cursor:pointer">+ '+(TAG_GROUPS.length?'Create or edit tags':'Create tags')+'</button>';
+  var btn='<button type="button" onclick="openTagManager()" style="margin-top:4px;width:100%;padding:10px;border:1.5px dashed #78716C;border-radius:10px;background:rgba(120,113,108,.05);color:#78716C;font-size:12.5px;font-weight:700;cursor:pointer">+ '+(TAG_GROUPS.length?'Create or edit tags':'Create tags')+'</button>';
   if(!TAG_GROUPS.length) return '<div style="font-size:12px;color:var(--ink3);line-height:1.5;margin-bottom:10px">No tags yet \u2014 create your first tag groups (Material, Arms, Table Top\u2026).</div>'+btn;
   var sel=(editingProdId&&PRODUCT_TAGS[editingProdId])||[];
   return TAG_GROUPS.map(function(g){
