@@ -4130,7 +4130,7 @@ H.push('</div>');
   }
 
   H.push(logoWallHTML(false));
-  H.push('<div class="hs" data-sec="categories"><div class="hs-hd"><div><div class="hs-title">Shop by Category</div></div></div>');
+  H.push('<div class="hs" data-sec="categories"><div class="hs-hd" style="flex-direction:column;align-items:flex-start;gap:12px"><div class="hs-title">Shop by Category</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+[['restaurant','Restaurant'],['residential','Residential'],['banquet','Banquet'],['office','Office']].map(function(t){ var on=(ghCurSec()===t[0]); return '<button onclick="ghSetSection(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div>'+'</div></div>');
   H.push('<div class="cat-img-grid">');
   orderedCards().forEach(function(c){
     var n=cardCount(c.cats);
