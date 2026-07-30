@@ -3983,8 +3983,7 @@ var CATMETA={};
 function ghIsResCat(k){ return /^res-/.test(k||''); }
 function ghIsOffCat(k){ return /^off-/.test(k||''); }
 function ghIsBnqCat(k){ return /^bnq-/.test(k||''); }
-function ghHomeCatTab(sec){ S.homeCatSec=(sec==='residential'||sec==='office'||sec==='banquet')?sec:'restaurant'; render(); var e=document.querySelector('[data-sec="categories"]'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); }
-function ghHomeCatOpen(key){ var ks=(typeof ghCatSec==='function')?ghCatSec(key):'restaurant'; if(ks!==ghCurSec()){ S.section=(ks==='residential'||ks==='office'||ks==='banquet')?ks:'restaurant'; if(typeof ghApplySection==='function') ghApplySection(); } var m={'indoor-chair':'indoor-chairs','outdoor-chair':'outdoor-chair','table':'table-merged','table-base':'table-base','booth':'booth','restaurant-set':'restaurant-set'}; S.tab='home'; S.homeView='catalog'; S.filters.cat=m[key]||key; S.filters.chairRange='all'; S.filters.priceMin=null; S.filters.priceMax=null; S.filters.tableSeats='all'; S.filters.arms='all'; S.filters.stack='all'; S.filters.comfort='all'; render(); setTimeout(function(){window.scrollTo(0,0);},30); }
+function ghHomeSec(sec){ S.section=(sec==='residential'||sec==='office'||sec==='banquet')?sec:'restaurant'; if(typeof ghApplySection==='function') ghApplySection(); S.tab='home'; S.homeView='landing'; S.selectedProduct=null; S.selectedProject=null; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section,from:'home_tabs'}); }catch(e){} render(); var e=document.querySelector('[data-sec="categories"]'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); }
 function ghCatSec(k){ return ghIsResCat(k)?'residential':(ghIsOffCat(k)?'office':(ghIsBnqCat(k)?'banquet':'restaurant')); }
 var OFFICE_CAT_CARDS=[{key:'off-general',label:'Office Furniture',sub:'Desks, chairs & workstations for your workspace',icon:'chair',cats:['off-general']}];
 try{ if(typeof CAT_LABEL!=='undefined') CAT_LABEL['off-general']='Office Furniture'; }catch(e){}
@@ -4131,10 +4130,10 @@ H.push('</div>');
     H.push('<div class="prod-hscroll">'); ghPicks.forEach(function(p){ H.push(phCard(p)); }); H.push('</div></div>');
   }
 
-  H.push(logoWallHTML(false));
-  H.push('<div class="hs" data-sec="categories"><div class="hs-hd" style="flex-direction:column;align-items:flex-start;gap:12px"><div class="hs-title">Shop by Category</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+[['restaurant','Restaurant'],['residential','Residential'],['banquet','Banquet'],['office','Office']].map(function(t){ var on=((S.homeCatSec||'restaurant')===t[0]); return '<button onclick="ghHomeCatTab(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div>'+'</div></div>');
+  if(ghCurSec()==='restaurant') H.push(logoWallHTML(false));
+  H.push('<div class="hs" data-sec="categories"><div class="hs-hd" style="flex-direction:column;align-items:flex-start;gap:12px"><div class="hs-title">Shop by Category</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+[['restaurant','Restaurant'],['residential','Residential'],['banquet','Banquet'],['office','Office']].map(function(t){ var on=(ghCurSec()===t[0]); return '<button onclick="ghHomeSec(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div>'+'</div></div>');
   H.push('<div class="cat-img-grid">');
-  (function(){var _hs=S.homeCatSec||'restaurant';return (_hs==='banquet'?BANQUET_CAT_CARDS:(_hs==='office'?OFFICE_CAT_CARDS:(_hs==='residential'?RES_CAT_CARDS:orderedCards())));})().forEach(function(c){
+  (function(){var _hs=ghCurSec();return (_hs==='banquet'?BANQUET_CAT_CARDS:(_hs==='office'?OFFICE_CAT_CARDS:(_hs==='residential'?RES_CAT_CARDS:orderedCards())));})().forEach(function(c){
     var n=(function(cats){var _src=(typeof GH_ALL!=='undefined'&&GH_ALL.length)?GH_ALL:prods;return _src.filter(function(p){return cats.some(function(cc){return prodInCat(p,cc);});}).length;})(c.cats);
     var adminCats=(function(){try{return JSON.parse(localStorage.getItem('gh_categories')||'null');}catch(e){return null;}})();
     var adminImg=adminCats&&adminCats[c.cats[0]]?adminCats[c.cats[0]].image:'';
@@ -4146,7 +4145,7 @@ H.push('</div>');
       : (prodImg
         ? 'background-image:url('+prodImg+');background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#EEF1F4'
         : 'background:linear-gradient(135deg,var(--dark,#1a1208) 0%,#2a1f00 100%)');
-    H.push('<div class="cat-img-card" data-catkey="'+c.key+'" onclick="ghHomeCatOpen(\''+c.key+'\')" style="cursor:pointer">');
+    H.push('<div class="cat-img-card" data-catkey="'+c.key+'" onclick="catNav(this)" style="cursor:pointer">');
     H.push('<div class="cat-img-card-bg" style="'+bgStyle+';pointer-events:none"></div>');
     H.push('<div class="cat-img-card-overlay" style="pointer-events:none"></div>');
     if(!img) H.push('<div class="cat-img-card-icon-bg" style="pointer-events:none">'+svgIcon(c.icon)+'</div>');
@@ -4157,8 +4156,9 @@ H.push('</div>');
     H.push('</div></div>');
   });
   H.push('</div></div>');
-  H.push('<div style="margin:14px 16px 4px"><div onclick="ghSetSection(\'residential\')" style="cursor:pointer;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(120deg,#1f1912,#2e2418);border:1px solid rgba(212,164,76,.35);padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 8px 26px rgba(31,25,18,.28)"><div style="width:52px;height:52px;border-radius:14px;background:rgba(212,164,76,.18);display:flex;align-items:center;justify-content:center;flex:none;font-size:26px">\ud83c\udfe1</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E7B85C;margin-bottom:4px">Now at Gharnish</div><div style="font-family:\'Fraunces\',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px">Home Furniture</div><div style="font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.4">Dining sets \u00b7 sofas \u00b7 beds \u00b7 centre &amp; side tables</div></div><span style="flex:none;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;font-size:13px;font-weight:800;padding:11px 18px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 16px rgba(176,126,68,.4)">Explore \u2192</span></div></div>');
+  if(ghCurSec()==='restaurant') H.push('<div style="margin:14px 16px 4px"><div onclick="ghSetSection(\'residential\')" style="cursor:pointer;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(120deg,#1f1912,#2e2418);border:1px solid rgba(212,164,76,.35);padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 8px 26px rgba(31,25,18,.28)"><div style="width:52px;height:52px;border-radius:14px;background:rgba(212,164,76,.18);display:flex;align-items:center;justify-content:center;flex:none;font-size:26px">\ud83c\udfe1</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E7B85C;margin-bottom:4px">Now at Gharnish</div><div style="font-family:\'Fraunces\',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px">Home Furniture</div><div style="font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.4">Dining sets \u00b7 sofas \u00b7 beds \u00b7 centre &amp; side tables</div></div><span style="flex:none;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;font-size:13px;font-weight:800;padding:11px 18px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 16px rgba(176,126,68,.4)">Explore \u2192</span></div></div>');
 
+  if(ghCurSec()==='restaurant'){
   // Chairs by Price (always shown)
   H.push('<div class="hs" data-sec="price-range">');
   H.push('<div class="hs-hd"><div><div class="hs-title">Chairs by Price</div><div class="hs-sub">Find your budget range</div></div>');
@@ -4175,6 +4175,7 @@ H.push('</div>');
   H.push('</div></div>');
 
   H.push(comfortRowHTML());
+  }
   // Product sections
   if(secOn('indoor-chairs')&&catProds('chair',10).length){
     H.push('<div class="hs" data-sec="indoor-chairs"><div class="hs-hd"><div><div class="hs-title">Indoor Chairs</div></div>');
@@ -7308,7 +7309,6 @@ function render(){
   document.body.classList.toggle('detail-open', !!(S.selectedProject||S.selectedProduct));
   if(S.selectedProject){ renderProjectDetail(S.selectedProject); return; }
   if(S.selectedProduct){ renderProductDetail(S.selectedProduct); return; }
-  if(S.tab==='home' && S.section==='residential' && S.homeView!=='catalog'){ S.tab='categories'; if(S.catView!=='products') S.catView='list'; }
   if(S.tab==='home') renderHome();
   else if(S.tab==='categories'){ if(S.catView==='products') renderCatalog(); else renderCategoriesPage(); }
   else if(S.tab==='calculator'){ renderCalculator(); window.scrollTo({top:0}); }
@@ -7494,7 +7494,7 @@ document.querySelectorAll('.bnav-btn').forEach(function(b){
   b.onclick=function(){
     if(b.dataset.tab==='guides'){ ghOpenGuide(null); return; }
     S.tab=b.dataset.tab; S.selectedProduct=null; S.selectedProject=null; S.selectedCat=null;
-    if(b.dataset.tab==='home') S.homeView='landing';
+    if(b.dataset.tab==='home'){ S.homeView='landing'; S.section='restaurant'; if(typeof ghApplySection==='function') ghApplySection(); }
     if(b.dataset.tab==='categories') S.catView='list';
     render(); setTimeout(function(){window.scrollTo(0,0);},30);
   };
