@@ -4569,7 +4569,7 @@ function scoreProduct(p, tier, venueType, covers){
 function getSmartRecommendations(tier, venueType, covers){
   var cacheKey=tier+'_'+venueType+'_'+(covers||0);
   if(aiMatchCache[cacheKey]) return aiMatchCache[cacheKey];
-  var scored = PRODUCTS.map(function(p){
+  var scored = PRODUCTS.filter(function(p){return (typeof ghSecOf!=='function')||ghSecOf(p)==='restaurant';}).map(function(p){
     return {p:p, score:scoreProduct(p,tier,venueType,covers)};
   }).filter(function(x){return x.score>0;}).sort(function(a,b){return b.score-a.score;});
   var result = {
@@ -7451,8 +7451,8 @@ document.addEventListener('click', function(e){
     var existing = document.getElementById('inline-reco');
     if(existing){ existing.scrollIntoView({behavior:'smooth'}); return; }
     var tier = S.calc&&S.calc.tier||'premium';
-    var recs = PRODUCTS.filter(function(p){return p.tier===tier;}).slice(0,8);
-    if(!recs.length) recs = PRODUCTS.slice(0,8);
+    var recs = PRODUCTS.filter(function(p){return p.tier===tier && ghSecOf(p)==='restaurant';}).slice(0,8);
+    if(!recs.length) recs = PRODUCTS.filter(function(p){return ghSecOf(p)==='restaurant';}).slice(0,8);
     var div = document.createElement('div');
     div.id = 'inline-reco';
     div.style.cssText = 'padding:0 16px 100px';
