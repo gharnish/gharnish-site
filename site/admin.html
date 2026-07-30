@@ -1210,6 +1210,7 @@ function custRenderList(){
 function custFilterStatus(s){ _custStatusFilter=(s==='All'?'':s); custRenderList(); }
 function custToggleApp(){ _custAppOnly=!_custAppOnly; custRenderList(); }
 var _ghFormSubmit=null, _ghFormFields=[];
+var _ghFormMapsFields=[];
 function ghForm(opts){
   var m=document.getElementById('gh-form-modal'); if(!m){ m=document.createElement('div'); m.id='gh-form-modal'; m.className='qm-ov'; /* backdrop click no longer closes — prevents accidental data loss */ document.body.appendChild(m); }
   var body=(opts.fields||[]).map(function(f){
@@ -1220,11 +1221,11 @@ function ghForm(opts){
     else { input='<input class="cust-in" id="ghf-'+f.key+'" type="'+(f.type||'text')+'" style="margin:0" placeholder="'+escA(f.placeholder||'')+'" value="'+escA(f.value==null?'':f.value)+'"'+(f.oninput?' oninput="'+f.oninput+'"':'')+'>'; }
     return '<div class="ghf-field'+(f.half?' half':'')+'"><label>'+escA(f.label)+'</label>'+input+'</div>';
   }).join('');
-  _ghFormSubmit=opts.onSubmit||null; _ghFormFields=(opts.fields||[]).map(function(f){return f.key;});
+  _ghFormSubmit=opts.onSubmit||null; _ghFormFields=(opts.fields||[]).map(function(f){return f.key;}); _ghFormMapsFields=(opts.fields||[]).filter(function(f){return f.gmaps;}).map(function(f){return f.key;});
   ghFormEnsureStyle();
   m.innerHTML='<div class="qm-card ghf-card"><div class="ghf-hd">'+(opts.icon?'<div class="ghf-ic">'+opts.icon+'</div>':'')+'<div style="flex:1;min-width:0"><div class="ghf-ttl">'+escA(opts.title||'')+'</div>'+(opts.note?'<div class="ghf-sub">'+escA(opts.note)+'</div>':'')+'</div><button class="ghf-x" onclick="ghFormClose()" aria-label="Close">\u00d7</button></div><div class="ghf-grid">'+body+'</div><div class="ghf-foot"><button class="ghf-cancel" onclick="ghFormClose()">Cancel</button><button class="ghf-save" onclick="ghFormDo()">'+escA(opts.submitLabel||'Save')+'</button></div></div>';
   m.classList.add('open');
-  setTimeout(function(){ var fi=m.querySelector('input,select,textarea'); if(fi)fi.focus(); },60);
+  setTimeout(function(){ var fi=m.querySelector('input,select,textarea'); if(fi)fi.focus(); try{ ghFormInitMaps(); }catch(e){} },60);
 }
 function ghFormEnsureStyle(){
   if(document.getElementById('ghform-style')) return;
@@ -1248,8 +1249,18 @@ function ghFormEnsureStyle(){
     +'#gh-form-modal .ghf-cancel{flex:0 0 auto;padding:13px 18px;border-radius:12px;border:none;background:#F1EFEB;color:var(--ink2);font-weight:700;font-size:14px;cursor:pointer;font-family:inherit}'
     +'#gh-form-modal .ghf-cancel:hover{background:#E9E5DE}'
     +'#gh-form-modal .ghf-save{flex:1;padding:13px;border-radius:12px;border:none;background:var(--g);color:#fff;font-weight:700;font-size:14.5px;cursor:pointer;font-family:inherit;box-shadow:0 6px 16px rgba(200,134,10,.28)}'
-    +'#gh-form-modal .ghf-save:hover{filter:brightness(.96)}';
+    +'#gh-form-modal .ghf-save:hover{filter:brightness(.96)}'
+    +'.pac-container{z-index:2147483000!important;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.22);font-family:inherit;margin-top:4px;border:none}'
+    +'.pac-item{padding:7px 12px;font-size:13px;cursor:pointer}';
   document.head.appendChild(s);
+}
+function gmCityFromPlace(p){ try{ if(!p) return ''; var comps=p.address_components||[]; function pick(types){ for(var i=0;i<comps.length;i++){ for(var t=0;t<types.length;t++){ if((comps[i].types||[]).indexOf(types[t])>-1) return comps[i].long_name; } } return ''; } return pick(['locality','postal_town','administrative_area_level_2','administrative_area_level_1'])||p.name||''; }catch(e){ return (p&&p.name)||''; } }
+function ghFormInitMaps(){
+  if(!_ghFormMapsFields||!_ghFormMapsFields.length) return;
+  function attach(){ if(!(window.google&&google.maps&&google.maps.places)) return; _ghFormMapsFields.forEach(function(key){ var inp=document.getElementById('ghf-'+key); if(!inp||inp._gmac) return; inp._gmac=1; inp.setAttribute('autocomplete','off'); try{ var ac=new google.maps.places.Autocomplete(inp,{types:['(cities)'],fields:['name','address_components'],componentRestrictions:{country:'in'}}); ac.addListener('place_changed',function(){ var city=gmCityFromPlace(ac.getPlace()); if(city) inp.value=city; }); }catch(e){} }); }
+  if(window.google&&google.maps&&google.maps.places){ attach(); return; }
+  var go=function(){ if(typeof gmapsReady==='function') gmapsReady().then(attach).catch(function(){}); };
+  if(!GMAPS_KEY && typeof loadGmapsKey==='function'){ loadGmapsKey(function(){ if(GMAPS_KEY) go(); }); } else if(GMAPS_KEY){ go(); }
 }
 function ghFormClose(){ var m=document.getElementById('gh-form-modal'); if(m)m.classList.remove('open'); }
 function ghFormVal(k){ var e=document.getElementById('ghf-'+k); return e?e.value:''; }
@@ -1359,7 +1370,7 @@ function ecpChangeMobile(oldMob,newMob,upd){
 }
 function custAddPrompt(){
   if(!supa){ toast('Connect Supabase first','#C62828'); return; }
-  ghForm({title:'Add customer', note:'Save a new customer to your directory.', icon:'<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>', fields:[{key:'name',label:'Full name',type:'text',placeholder:'e.g. Ramesh Kumar'},{key:'mobile',label:'Mobile (10 digits)',type:'text',half:true,placeholder:'9876543210'},{key:'city',label:'City (optional)',type:'text',half:true,placeholder:'Hyderabad'},{key:'ctype',label:'Customer type',type:'select',half:true,options:CUST_TYPES.map(function(s){return [s,s];})},{key:'source',label:'Lead source',type:'select',half:true,options:LEAD_SOURCES.map(function(s){return [s,s];})}], submitLabel:'Save customer', onSubmit:function(v){ var name=(v.name||'').trim(); var mobile=(v.mobile||'').replace(/\D/g,''); if(!name){ toast('Name required','#C62828'); return false; } if(mobile.length!==10){ toast('Enter a valid 10-digit mobile','#C62828'); return false; } supa.from('customers').upsert({mobile:mobile,name:name,city:(v.city||'').trim(),customer_type:v.ctype||null,lead_source:v.source||null,signup_source:'admin',updated_at:new Date().toISOString()},{onConflict:'mobile'}).then(function(r){ if(r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Customer saved','#1B7A4D'); custLoad(); }); }});
+  ghForm({title:'Add customer', note:'Save a new customer to your directory.', icon:'<svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>', fields:[{key:'name',label:'Full name',type:'text',placeholder:'e.g. Ramesh Kumar'},{key:'mobile',label:'Mobile (10 digits)',type:'text',half:true,placeholder:'9876543210'},{key:'city',label:'City (optional)',type:'text',half:true,gmaps:true,placeholder:'Start typing a city\u2026'},{key:'ctype',label:'Customer type',type:'select',half:true,options:CUST_TYPES.map(function(s){return [s,s];})},{key:'source',label:'Lead source',type:'select',half:true,options:LEAD_SOURCES.map(function(s){return [s,s];})}], submitLabel:'Save customer', onSubmit:function(v){ var name=(v.name||'').trim(); var mobile=(v.mobile||'').replace(/\D/g,''); if(!name){ toast('Name required','#C62828'); return false; } if(mobile.length!==10){ toast('Enter a valid 10-digit mobile','#C62828'); return false; } supa.from('customers').upsert({mobile:mobile,name:name,city:(v.city||'').trim(),customer_type:v.ctype||null,lead_source:v.source||null,signup_source:'admin',updated_at:new Date().toISOString()},{onConflict:'mobile'}).then(function(r){ if(r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Customer saved','#1B7A4D'); custLoad(); }); }});
 }
 function custAvatar(c,sz){ sz=sz||44; var ini=(c.name||'?').charAt(0).toUpperCase(); return c.photo_url?('<img src="'+escA(c.photo_url)+'" style="width:'+sz+'px;height:'+sz+'px;border-radius:50%;object-fit:cover;flex:none">'):('<span class="cust-av" style="width:'+sz+'px;height:'+sz+'px;font-size:'+(sz/2.4)+'px">'+ini+'</span>'); }
 function custUploadPhoto(input){ var f=input.files&&input.files[0]; if(!f||!_curCust)return; toast('Uploading\u2026'); var path='customers/'+_curCust.mobile+'-'+Date.now()+'.png'; supa.storage.from('project-media').upload(path,f,{cacheControl:'3600',upsert:true,contentType:f.type||'image/png'}).then(function(up){ if(up&&up.error){ toast('Upload failed: '+up.error.message,'#C62828'); return; } var url=supa.storage.from('project-media').getPublicUrl(path).data.publicUrl; _curCust.photo_url=url; supa.from('customers').update({photo_url:url}).eq('mobile',_curCust.mobile).then(function(){},function(){}); var i=_CUSTOMERS.find(function(x){return x.mobile===_curCust.mobile;}); if(i)i.photo_url=url; toast('Photo saved','#1B7A4D'); custLoadDetail(_curCust.mobile); },function(){ toast('Upload failed','#C62828'); }); }
