@@ -1333,7 +1333,7 @@ input[type="number"]:focus{border-color:var(--g);outline:none;}
 .phcard{flex:none;width:148px;background:var(--c1);border-radius:14px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.08);border:1px solid rgba(0,0,0,.05);cursor:pointer;transition:transform .15s;}
 .phcard:active{transform:scale(.96);}
 .phcard-img{height:148px;background:#fff;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;}
-.phcard-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:8px;}
+.phcard-img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;padding:0;}
 .phcard-img svg{width:56px;height:56px;color:var(--g);opacity:.8;}
 .phcard-badge{position:absolute;top:6px;left:6px;font-size:8.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;padding:3px 7px;border-radius:999px;}
 .badge-rdy{background:rgba(46,125,50,.12);color:#2E7D32;border:1px solid rgba(46,125,50,.2);}
@@ -2350,7 +2350,7 @@ function buildProductList(){
 function catToIcon(cat){
   const map = {
     'chair':'chair','stool':'stool',
-    'table-round':'roundtable','table-square':'roundtable',
+    'restaurant-tables':'recttable','table-round':'roundtable','table-square':'roundtable',
     'table-rect':'recttable','table-base':'roundtable',
     'booth':'booth','outdoor-chair':'outchair','outdoor-table':'outtable'
   };
@@ -2370,7 +2370,7 @@ function priceToPriceRange(price){
 /* Auto SKU ID */
 function genId(cat){
   const prefix = {
-    'chair':'GHC','stool':'GHS','table-round':'GHTR',
+    'chair':'GHC','stool':'GHS','restaurant-tables':'GHRT','table-round':'GHTR',
     'table-square':'GHTS','table-rect':'GHTQ',
     'table-base':'GHBASE','booth':'GHB',
     'outdoor-chair':'GHO-C','outdoor-table':'GHO-T'
@@ -2863,7 +2863,7 @@ function chairPrice(venue,tier){
 /* SST removed */
 const THEME_LABEL={cafe:'Modern Caf\u00e9',qsr:'Casual QSR',hotel:'Boutique Hotel','fine-dining':'Fine Dining',rooftop:'Rooftop / Outdoor'};
 const TIER_LABEL={essential:'Economic',premium:'Premium',luxury:'Luxury'};
-const CAT_LABEL={chair:'Dining Chairs',stool:'Bar & Counter Stools','table-round':'Round Tables','table-rect':'Rectangular Tables',booth:'Booths','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables'};
+const CAT_LABEL={chair:'Dining Chairs',stool:'Bar & Counter Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-rect':'Rectangular Tables',booth:'Booths','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables'};
 Object.assign(CAT_LABEL,{'res-dining-set':'Dining Table Sets','res-dining-table':'Dining Tables','res-dining-chair':'Dining Chairs','res-sofa':'Sofas','res-bed':'Beds','res-centre-table':'Centre Tables','res-side-table':'Side Tables'});
 const VENUE_LABEL={'fine-dining':'Fine Dining','cafe':'Caf\u00e9 / All-Day'};
 const BUDGET_LABEL={'u2':'Under \u20b92,00,000','2-5':'\u20b92\u20135L','5-10':'\u20b95\u201310L','10p':'\u20b910L+'};
@@ -6717,8 +6717,8 @@ var GH_CAT_SEO={
   "table-merged":{title:"Restaurant & Cafe Tables \u2013 Round, Square & Rect | Gharnish",desc:"Restaurant & cafe tables in round, square & rectangular tops. Custom sizes, 100s of laminates, ready stock, delivery in Hyderabad, Bangalore & India."}
 };
 
-var GH_CAT_KW={chair:'Restaurant & Cafe Chair',stool:'Bar / Counter Stool','table-round':'Round Restaurant Table','table-square':'Cafe Square Table','table-rect':'Rectangular Table','table-base':'Table Base',booth:'Booth Seating','outdoor-chair':'Outdoor Chair','outdoor-table':'Outdoor Table'};
-var GH_CAT_NOUN={chair:'dining chair',stool:'bar stool','table-round':'round restaurant table','table-square':'square cafe table','table-rect':'rectangular dining table','table-base':'table base',booth:'booth / banquette seat','outdoor-chair':'outdoor chair','outdoor-table':'outdoor table'};
+var GH_CAT_KW={chair:'Restaurant & Cafe Chair',stool:'Bar / Counter Stool','restaurant-tables':'Restaurant Table','table-round':'Round Restaurant Table','table-square':'Cafe Square Table','table-rect':'Rectangular Table','table-base':'Table Base',booth:'Booth Seating','outdoor-chair':'Outdoor Chair','outdoor-table':'Outdoor Table'};
+var GH_CAT_NOUN={chair:'dining chair',stool:'bar stool','restaurant-tables':'restaurant table','table-round':'round restaurant table','table-square':'square cafe table','table-rect':'rectangular dining table','table-base':'table base',booth:'booth / banquette seat','outdoor-chair':'outdoor chair','outdoor-table':'outdoor table'};
 var GH_TIERW={essential:'commercial-grade',premium:'premium',luxury:'luxury'};
 function ghClip(s,n){ if(s.length<=n) return s; var c=s.slice(0,n); if(c.indexOf(' ')>-1) c=c.slice(0,c.replace(/\s+$/,'').lastIndexOf(' ')); return c.replace(/[\s,\u2013-]+$/,''); }
 function ghProdSeo(p){
