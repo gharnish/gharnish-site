@@ -4121,32 +4121,7 @@ function renderLanding(){
   H.push('</div>');
   H.push('</div>');
 
-    // ── Design-from-a-restaurant journey (hero feature) ──
-  H.push('<div class="journey-band"><a class="jb-slim" href="/our-work" onclick="event.preventDefault();goToOurWork()"><span class="jb-slim-ic">\u2728</span><span class="jb-slim-tx"><b>Start with a real restaurant</b> \u2014 browse finished projects &amp; buy the look</span><span class="jb-slim-go">Explore \u2192</span></a></div>');
-
-// ── Our Work / Projects ──
-  H.push('<div class="hs" data-sec="projects" id="home-projects"><div class="hs-hd"><div><div class="hs-title">Get ideas from real restaurants</div><div class="hs-sub">Open a project \u2192 Start With This Setup \u2192 build your quote</div></div><a href="/our-work" class="hs-all" onclick="event.preventDefault();goToOurWork()" style="font-size:13px;font-weight:700;color:var(--g);text-decoration:none;white-space:nowrap">View all \u2192</a></div></div>');
-  H.push('<div class="proj-scroll">');
-  PROJECTS.forEach(function(pr){
-    var firstImg=(pr.media||[]).filter(function(m){return ghMediaKind(m)==='image';})[0];
-    var topStyle=firstImg
-      ? 'background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.66)),url('+firstImg+');background-size:cover;background-position:center'
-      : 'background:linear-gradient(140deg,'+pr.color+',rgba(0,0,0,.5))';
-    H.push('<a class="proj-card" href="/our-work/'+ghProjSlug(pr)+'" onclick="return ghProjNav(event,\''+pr.id+'\')">');
-    H.push('<div class="proj-top" style="'+topStyle+'">');
-    H.push('<span class="proj-year">'+pr.year+'</span>');
-    H.push('<div class="proj-name">'+pr.name+'</div>');
-    H.push('<div class="proj-type">'+pr.type+'</div>');
-    H.push('</div>');
-    H.push('<div class="proj-foot"><span>'+ghShortLoc(pr)+'</span><span class="proj-covers">'+pr.covers+' covers</span></div>');
-    H.push('</a>');
-  });
-  H.push('</div>');
-  if(ghProjsWithGeo().length){
-    H.push('<div class="hm-map-wrap"><div id="home-map" class="hm-map"></div>'
-      +'<button id="ow-near-btn" class="ow-near hm-near" onclick="ghFindNearMe()">\ud83d\udccd Projects near me</button></div>');
-  }
-  H.push('</div>');
+H.push('</div>');
   // ── Picks for you + Recently viewed (free personalization) ──
   var ghPicks=getPicksForYou(), ghRecent=getRecentProducts();
   if(ghPicks.length){
