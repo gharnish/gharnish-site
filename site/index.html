@@ -3983,6 +3983,8 @@ var CATMETA={};
 function ghIsResCat(k){ return /^res-/.test(k||''); }
 function ghIsOffCat(k){ return /^off-/.test(k||''); }
 function ghIsBnqCat(k){ return /^bnq-/.test(k||''); }
+function ghHomeCatTab(sec){ S.homeCatSec=(sec==='residential'||sec==='office'||sec==='banquet')?sec:'restaurant'; render(); var e=document.querySelector('[data-sec="categories"]'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); }
+function ghHomeCatOpen(key){ var ks=(typeof ghCatSec==='function')?ghCatSec(key):'restaurant'; if(ks!==ghCurSec()){ S.section=(ks==='residential'||ks==='office'||ks==='banquet')?ks:'restaurant'; if(typeof ghApplySection==='function') ghApplySection(); } var m={'indoor-chair':'indoor-chairs','outdoor-chair':'outdoor-chair','table':'table-merged','table-base':'table-base','booth':'booth','restaurant-set':'restaurant-set'}; S.tab='home'; S.homeView='catalog'; S.filters.cat=m[key]||key; S.filters.chairRange='all'; S.filters.priceMin=null; S.filters.priceMax=null; S.filters.tableSeats='all'; S.filters.arms='all'; S.filters.stack='all'; S.filters.comfort='all'; render(); setTimeout(function(){window.scrollTo(0,0);},30); }
 function ghCatSec(k){ return ghIsResCat(k)?'residential':(ghIsOffCat(k)?'office':(ghIsBnqCat(k)?'banquet':'restaurant')); }
 var OFFICE_CAT_CARDS=[{key:'off-general',label:'Office Furniture',sub:'Desks, chairs & workstations for your workspace',icon:'chair',cats:['off-general']}];
 try{ if(typeof CAT_LABEL!=='undefined') CAT_LABEL['off-general']='Office Furniture'; }catch(e){}
@@ -4130,10 +4132,10 @@ H.push('</div>');
   }
 
   H.push(logoWallHTML(false));
-  H.push('<div class="hs" data-sec="categories"><div class="hs-hd" style="flex-direction:column;align-items:flex-start;gap:12px"><div class="hs-title">Shop by Category</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+[['restaurant','Restaurant'],['residential','Residential'],['banquet','Banquet'],['office','Office']].map(function(t){ var on=(ghCurSec()===t[0]); return '<button onclick="ghSetSection(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div>'+'</div></div>');
+  H.push('<div class="hs" data-sec="categories"><div class="hs-hd" style="flex-direction:column;align-items:flex-start;gap:12px"><div class="hs-title">Shop by Category</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+[['restaurant','Restaurant'],['residential','Residential'],['banquet','Banquet'],['office','Office']].map(function(t){ var on=((S.homeCatSec||'restaurant')===t[0]); return '<button onclick="ghHomeCatTab(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div>'+'</div></div>');
   H.push('<div class="cat-img-grid">');
-  orderedCards().forEach(function(c){
-    var n=cardCount(c.cats);
+  (function(){var _hs=S.homeCatSec||'restaurant';return (_hs==='banquet'?BANQUET_CAT_CARDS:(_hs==='office'?OFFICE_CAT_CARDS:(_hs==='residential'?RES_CAT_CARDS:orderedCards())));})().forEach(function(c){
+    var n=(function(cats){var _src=(typeof GH_ALL!=='undefined'&&GH_ALL.length)?GH_ALL:prods;return _src.filter(function(p){return cats.some(function(cc){return prodInCat(p,cc);});}).length;})(c.cats);
     var adminCats=(function(){try{return JSON.parse(localStorage.getItem('gh_categories')||'null');}catch(e){return null;}})();
     var adminImg=adminCats&&adminCats[c.cats[0]]?adminCats[c.cats[0]].image:'';
     var customImg=catCardImg(c)||adminImg||'';
@@ -4144,7 +4146,7 @@ H.push('</div>');
       : (prodImg
         ? 'background-image:url('+prodImg+');background-size:contain;background-repeat:no-repeat;background-position:center;background-color:#EEF1F4'
         : 'background:linear-gradient(135deg,var(--dark,#1a1208) 0%,#2a1f00 100%)');
-    H.push('<div class="cat-img-card" data-catkey="'+c.key+'" onclick="catNav(this)" style="cursor:pointer">');
+    H.push('<div class="cat-img-card" data-catkey="'+c.key+'" onclick="ghHomeCatOpen(\''+c.key+'\')" style="cursor:pointer">');
     H.push('<div class="cat-img-card-bg" style="'+bgStyle+';pointer-events:none"></div>');
     H.push('<div class="cat-img-card-overlay" style="pointer-events:none"></div>');
     if(!img) H.push('<div class="cat-img-card-icon-bg" style="pointer-events:none">'+svgIcon(c.icon)+'</div>');
