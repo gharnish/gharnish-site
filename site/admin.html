@@ -1704,6 +1704,13 @@ async function custBuildQuotePDF(items){
 }
 
 var _quoteReturn='detail';
+function qInitMaps(){
+  try{ gmPacEnsure(); }catch(e){}
+  function attach(){ if(!(window.google&&google.maps&&google.maps.places)) return; [['qf-billing','billing'],['qf-shipTo','shipTo']].forEach(function(pair){ var inp=document.getElementById(pair[0]); if(!inp||inp._gmac) return; inp._gmac=1; inp.setAttribute('autocomplete','off'); try{ var ac=new google.maps.places.Autocomplete(inp,{types:['geocode'],fields:['name','formatted_address','address_components'],componentRestrictions:{country:'in'}}); ac.addListener('place_changed',function(){ var p=ac.getPlace(); if(!p) return; var addr=p.formatted_address||p.name||inp.value; inp.value=addr; _quote[pair[1]]=addr; var comps=p.address_components||[]; function pick(t){ for(var i=0;i<comps.length;i++){ if((comps[i].types||[]).indexOf(t)>-1) return comps[i]; } return null; } var st=pick('administrative_area_level_1'); if(st && typeof gmStateCode==='function'){ var code=gmStateCode(st.long_name); if(code){ _quote.posCode=code; var ps=document.getElementById('qf-pos'); if(ps) ps.value=code; try{ qRenderTotals(); }catch(e){} } } }); }catch(e){} }); }
+  if(window.google&&google.maps&&google.maps.places){ attach(); return; }
+  var go=function(){ if(typeof gmapsReady==='function') gmapsReady().then(attach).catch(function(){}); };
+  if(!GMAPS_KEY && typeof loadGmapsKey==='function'){ loadGmapsKey(function(){ if(GMAPS_KEY) go(); }); } else if(GMAPS_KEY){ go(); }
+}
 function qStyle(){ if(document.getElementById('q-style'))return; var s=document.createElement('style'); s.id='q-style'; s.textContent=
   '.q-layout{display:grid;grid-template-columns:1fr 344px;gap:16px;align-items:start}'
   +'@media(max-width:1000px){.q-layout{grid-template-columns:1fr}}'
@@ -1850,7 +1857,7 @@ function renderQuoteBuilder(){
         +'<div class="q-card q-totcard"><div id="q-totals" style="font-size:14px"></div><button class="cust-add-btn q-genbtn" id="qgen" onclick="qGenerate()" style="width:100%;padding:14px;margin-top:14px">'+(_quote.editId?'Update':'Generate')+' '+(_quote.docType==='Tax Invoice'?'Tax Invoice':'Quotation')+' PDF</button></div>'
       +'</div>'
     +'</div>';
-  qRenderProducts(); qRenderItems(); qRenderTotals(); qSyncToggles(); qLoadRepeat();
+  qRenderProducts(); qRenderItems(); qRenderTotals(); qSyncToggles(); qLoadRepeat(); try{ qInitMaps(); }catch(e){}
 }
 function qFindItemByPid(pid){ if(!pid)return -1; for(var i=0;i<_quote.items.length;i++){ if(_quote.items[i].pid===pid) return i; } return -1; }
 function qSearchProds(v){ _qSearch=v; qRenderProducts(); }
@@ -4345,17 +4352,17 @@ function saveGmapsKey(){
 }
 // Loads the Maps JS API once. Resolves when google.maps is ready.
 function gmapsReady(){
+  if(window.google&&window.google.maps&&window.google.maps.places) return Promise.resolve();
   if(_gmapsLoading) return _gmapsLoading;
   _gmapsLoading=new Promise(function(res,rej){
-    if(window.google&&window.google.maps&&window.google.maps.places){ res(); return; }
-    if(!GMAPS_KEY){ _gmapsLoading=null; rej(new Error('no-key')); return; }
-    var s=document.createElement('script');
-    s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_KEY)+'&libraries=places&v=weekly';
-    s.async=true; s.defer=true;
-    s.onload=function(){ res(); };
-    s.onerror=function(){ _gmapsLoading=null; rej(new Error('load-failed')); };
-    document.head.appendChild(s);
+    if(!GMAPS_KEY){ rej(new Error('no-key')); return; }
+    var s=document.querySelector('script[data-ghmaps]');
+    if(!s){ s=document.createElement('script'); s.setAttribute('data-ghmaps','1'); s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(GMAPS_KEY)+'&libraries=places&v=weekly'; s.async=true; s.defer=true; document.head.appendChild(s); }
+    s.addEventListener('load',function(){ res(); });
+    s.addEventListener('error',function(){ rej(new Error('load-failed')); });
+    if(window.google&&window.google.maps&&window.google.maps.places) res();
   });
+  _gmapsLoading.catch(function(){ _gmapsLoading=null; });
   return _gmapsLoading;
 }
 function gmShortLabel(p){
