@@ -1310,6 +1310,7 @@ function custEditProfile(){
     +'</div>'
     +'<div class="ll-foot"><button class="ll-cancel" onclick="ecpClose()">Cancel</button><button class="ll-go" onclick="ecpSave()">Save and update</button></div></div>';
   host.style.display='flex';
+  try{ ecpInitMaps(); }catch(e){}
 }
 function ecpCopyBilling(){
   ['country','line1','line2','pincode','city'].forEach(function(k){ var b=document.getElementById('ecp-b-'+k), sEl=document.getElementById('ecp-s-'+k); if(b&&sEl) sEl.value=b.value; });
@@ -1337,6 +1338,15 @@ function ecpSave(){
     if(r&&r.error){ toast('Save failed: '+r.error.message,'#C62828'); return; }
     Object.assign(_curCust,upd); toast('Customer updated','#1B7A4D'); ecpClose(); custLoadDetail(_curCust.mobile);
   },function(){ toast('Save failed','#C62828'); });
+}
+function gmPacEnsure(){ if(document.getElementById('gm-pac-style'))return; var s=document.createElement('style'); s.id='gm-pac-style'; s.textContent='.pac-container{z-index:2147483000!important;border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.22);font-family:inherit;margin-top:4px;border:none}.pac-item{padding:7px 12px;font-size:13px;cursor:pointer}'; document.head.appendChild(s); }
+function ecpInitMaps(){
+  gmPacEnsure();
+  var ids=['ecp-billing-city','ecp-shipping-city'];
+  function attach(){ if(!(window.google&&google.maps&&google.maps.places)) return; ids.forEach(function(id){ var inp=document.getElementById(id); if(!inp||inp._gmac)return; inp._gmac=1; inp.setAttribute('autocomplete','off'); try{ var ac=new google.maps.places.Autocomplete(inp,{types:['(cities)'],fields:['name','address_components'],componentRestrictions:{country:'in'}}); ac.addListener('place_changed',function(){ var city=(typeof gmCityFromPlace==='function')?gmCityFromPlace(ac.getPlace()):''; if(city) inp.value=city; }); }catch(e){} }); }
+  if(window.google&&google.maps&&google.maps.places){ attach(); return; }
+  var go=function(){ if(typeof gmapsReady==='function') gmapsReady().then(attach).catch(function(){}); };
+  if(!GMAPS_KEY && typeof loadGmapsKey==='function'){ loadGmapsKey(function(){ if(GMAPS_KEY) go(); }); } else if(GMAPS_KEY){ go(); }
 }
 function ecpClose(){ var h=document.getElementById('ecp-ov'); if(h) h.style.display='none'; }
 function ecpChangeMobile(oldMob,newMob,upd){
