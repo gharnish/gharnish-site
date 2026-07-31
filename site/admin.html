@@ -645,6 +645,7 @@ input,select,textarea{font-family:inherit;}
       </div>
       <div class="nav-section-label">Catalog</div>
       <div class="nav-item" data-page="gallery"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Gallery</div>
+      <div class="nav-item" data-page="notifyreq"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Notify Requests</div>
       <div class="nav-item" data-page="products">
         <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 3H8a2 2 0 00-2 2v2h12V5a2 2 0 00-2-2z"/></svg>
         Products
@@ -2739,7 +2740,7 @@ function navigate(page){
   });
   const mc = document.getElementById('main-content');
   mc.classList.toggle('mc-wide', page==='products'||page==='studio');
-  const renders = {dashboard:renderDashboard,gallery:renderGallery,products:renderProducts,studio:renderStudio,categories:renderCategories,homepage:renderHomepage,recommended:renderRecommended,projects:renderProjects,analytics:renderAnalytics,leads:renderLeads,settings:renderSettings,inventory:renderInventory,reviews:renderReviews,tablepricing:renderTablePricing,customers:renderCustomers,quotations:renderQuotations,sales:renderSales,vendors:renderVendors,running:renderRunning,transactions:renderTransactions};
+  const renders = {dashboard:renderDashboard,gallery:renderGallery,notifyreq:renderNotifyReq,products:renderProducts,studio:renderStudio,categories:renderCategories,homepage:renderHomepage,recommended:renderRecommended,projects:renderProjects,analytics:renderAnalytics,leads:renderLeads,settings:renderSettings,inventory:renderInventory,reviews:renderReviews,tablepricing:renderTablePricing,customers:renderCustomers,quotations:renderQuotations,sales:renderSales,vendors:renderVendors,running:renderRunning,transactions:renderTransactions};
   if(renders[page]){
     try{ renders[page](); }catch(e){ mc.innerHTML='<div style="padding:24px;color:#C62828;font-family:Poppins,sans-serif">Error loading page: '+e.message+'</div>'; console.error(e); }
   } else {
@@ -5584,6 +5585,21 @@ function galEnsureStyle(){
     +'#gal-pick-ov .qm-card{background:#fff;border-radius:16px;padding:20px 20px 22px;width:100%;max-width:720px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 70px rgba(0,0,0,.35)}';
   document.head.appendChild(s);
 }
+function renderNotifyReq(){
+  var mc=document.getElementById('main-content');
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Notify Requests</div><div class="page-sub">Customers waiting for restock / upcoming stock</div></div><button class="settings-save-btn" onclick="renderNotifyReq()">Refresh</button></div><div id="nr-wrap"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
+  if(!supa){ document.getElementById('nr-wrap').innerHTML='<div class="sc" style="padding:20px">Not connected.</div>'; return; }
+  supa.from('stock_notify').select('*').order('created_at',{ascending:false}).then(function(r){
+    var el=document.getElementById('nr-wrap'); if(!el)return;
+    if(r.error){ el.innerHTML='<div class="sc" style="padding:20px;color:#C62828">'+escA(r.error.message)+'</div>'; return; }
+    var rows=r.data||[];
+    if(!rows.length){ el.innerHTML='<div class="sc" style="padding:34px;text-align:center;color:var(--ink3)">No notify requests yet. Customers can tap \u201cNotify me\u201d on out-of-stock or upcoming products.</div>'; return; }
+    var byProd={}; rows.forEach(function(x){ var k=x.product_id||x.product_name||'?'; if(!byProd[k]) byProd[k]={name:x.product_name||x.product_id,pid:x.product_id,items:[]}; byProd[k].items.push(x); });
+    var groups=Object.keys(byProd).map(function(k){return byProd[k];}).sort(function(a,b){return b.items.length-a.items.length;});
+    el.innerHTML=groups.map(function(g){ return '<div class="sc" style="margin-bottom:12px;padding:14px 16px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div style="font-weight:800;font-size:14px;color:var(--ink);flex:1;min-width:0">'+escA(g.name||'Product')+'</div><span class="lead-badge" style="background:#0E74901f;color:#0E7490">'+g.items.length+' waiting</span><button onclick="nrClear(\''+escA(g.pid||'')+'\')" class="cust-hbtn" style="background:rgba(198,40,40,.1);color:#C62828;padding:5px 11px;font-size:11.5px">Clear</button></div><div style="display:flex;flex-wrap:wrap;gap:7px">'+g.items.map(function(x){ var mob=(x.mobile||'').replace(/\D/g,''); return '<a href="https://wa.me/91'+mob+'?text='+encodeURIComponent('Hi! Good news \u2014 '+(g.name||'your item')+' is now available at Gharnish.')+'" target="_blank" class="lead-badge" style="background:var(--c2);color:var(--ink2);text-decoration:none">+91 '+escA(x.mobile||'')+' \u00b7 '+escA(x.kind||'')+'</a>'; }).join('')+'</div></div>'; }).join('');
+  },function(){ var el=document.getElementById('nr-wrap'); if(el) el.innerHTML='<div class="sc" style="padding:20px">Load failed.</div>'; });
+}
+function nrClear(pid){ ghConfirm('Clear all notify requests for this product? Do this after you\u2019ve messaged them.', function(){ var q=supa.from('stock_notify').delete(); if(pid) q=q.eq('product_id',pid); else q=q.is('product_id',null); q.then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Cleared','#1B7A4D'); renderNotifyReq(); },function(){ toast('Failed','#C62828'); }); }); }
 function renderGallery(){
   galEnsureStyle();
   var mc=document.getElementById('main-content');
