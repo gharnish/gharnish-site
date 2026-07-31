@@ -16,7 +16,16 @@ function ghSlug(s){ return String(s==null?"":s).toLowerCase().replace(/[^a-z0-9]
 function prodSlug(p){ return ghSlug((p.name||"")+"-"+(p.id||"")); }
 function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;"); }
 function inr(n){ return "\u20B9"+Number(n||0).toLocaleString("en-IN"); }
-async function sb(base,key,path){ const r=await fetch(base+"/rest/v1/"+path,{headers:{apikey:key,Authorization:"Bearer "+key,Accept:"application/json"}}); if(!r.ok) return []; return r.json().catch(()=>[]); }
+async function sb(base,key,path){
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), 6000);
+  try {
+    const r = await fetch(base+"/rest/v1/"+path,{headers:{apikey:key,Authorization:"Bearer "+key,Accept:"application/json"},signal:ctrl.signal});
+    if(!r.ok) return [];
+    return await r.json().catch(()=>[]);
+  } catch(e){ return []; }
+  finally { clearTimeout(t); }
+}
 
 // human-readable category label + which /shop bucket it maps to.
 // Slugs MUST match sitemap.xml and shop/[[path]].js CATS keys.
@@ -232,6 +241,6 @@ export async function onRequestGet(context){
   const related = products.filter(x => x.id !== p.id && catInfo(x).shop === ci.shop).slice(0,8);
 
   return new Response(renderProduct(p, related, origin), {
-    headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=1800" }
+    headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=0, s-maxage=60, must-revalidate" }
   });
 }
