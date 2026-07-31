@@ -3131,7 +3131,7 @@ function renderDashboard(){
     +Object.entries(CAT_LABEL).map(([k,v])=>{
       const n=prods.filter(p=>p.cat===k).length; if(!n) return '';
       const pct=Math.round(n/prods.length*100);
-      return '<div class="dsh-row"><div style="font-size:19px;width:26px;text-align:center;flex:none">'+CAT_ICON[k]+'</div>'
+      return '<div class="dsh-row"><div style="font-size:19px;width:26px;text-align:center;flex:none">'+catIcon(k)+'</div>'
         +'<div style="flex:1;font-size:13.5px;font-weight:600;color:var(--ink)">'+v+'</div>'
         +'<div class="dsh-catbar"><i style="width:'+pct+'%"></i></div>'
         +'<div style="font-family:Poppins,sans-serif;font-size:12.5px;font-weight:700;color:var(--ink2);width:26px;text-align:right;flex:none">'+n+'</div></div>';
