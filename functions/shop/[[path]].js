@@ -93,6 +93,7 @@ function page({ title, desc, canonical, origin, jsonld, body }){
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://djedmaezxvuzmwjnooel.supabase.co">
 <title>${esc(title)}</title>
 <meta name="description" content="${esc(desc)}">
 <link rel="canonical" href="${esc(canonical)}">
@@ -262,5 +263,5 @@ export async function onRequestGet(context){
   else if(CATS[slug]){ html = renderCategory(slug, CATS[slug], products, origin); }
   else { html = renderHub(products, origin); }
 
-  return new Response(html, { headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=0, s-maxage=60, must-revalidate" } });
+  return new Response(html, { headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=60, s-maxage=60, stale-while-revalidate=600" } });
 }
