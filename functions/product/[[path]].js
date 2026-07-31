@@ -213,7 +213,14 @@ function renderProduct(p, related, origin){
   });
 }
 
+// Crawlers & social scrapers get the SSR product page; real visitors get the app.
+const BOT_RE = /bot|crawl|spider|slurp|google|bing|yandex|baidu|duckduck|facebookexternalhit|facebot|twitterbot|linkedinbot|whatsapp|telegram|slackbot|discordbot|pinterest|embedly|quora|redditbot|applebot|petalbot|semrush|ahrefs|mj12|ia_archiver|screaming|lighthouse/i;
+
 export async function onRequestGet(context){
+  const ua = (context.request && context.request.headers.get("user-agent")) || "";
+  if(!BOT_RE.test(ua)){
+    return context.next();   // real visitor → app renders /product/* in-app
+  }
   const env = context.env||{};
   const base = (env.SUPABASE_URL||SUPABASE_URL_DEFAULT).replace(/\/+$/,"");
   const key  = env.SUPABASE_KEY||SUPABASE_KEY_DEFAULT;
@@ -241,6 +248,6 @@ export async function onRequestGet(context){
   const related = products.filter(x => x.id !== p.id && catInfo(x).shop === ci.shop).slice(0,8);
 
   return new Response(renderProduct(p, related, origin), {
-    headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=60, s-maxage=60, stale-while-revalidate=600" }
+    headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=60, s-maxage=60, stale-while-revalidate=600", "Vary":"User-Agent" }
   });
 }
