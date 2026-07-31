@@ -241,6 +241,6 @@ export async function onRequestGet(context){
   const related = products.filter(x => x.id !== p.id && catInfo(x).shop === ci.shop).slice(0,8);
 
   return new Response(renderProduct(p, related, origin), {
-    headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=0, s-maxage=60, must-revalidate" }
+    headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=60, s-maxage=60, stale-while-revalidate=600" }
   });
 }
