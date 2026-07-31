@@ -1079,7 +1079,7 @@ function bindNav(){
 
 /* ══════════ CUSTOMERS CRM (Phase 2) ══════════ */
 var _CUSTOMERS=[], _custQuery='', _curCust=null, _custData={orders:[],payments:[],messages:[],activity:[],notes:[]};
-var _custUnread={}, _custGlobalChannel=null, _custStatusFilter='', _custAppOnly=false;
+var _custUnread={}, _custGlobalChannel=null, _custStatusFilter='', _custAppOnly=false, _custTypeFilter='', _custSourceFilter='';
 var _custView='list', _custOrdersAll=[], _custPaymentsAll=[], _custAggLoaded=false;
 var LEAD_SOURCES=['Google','YouTube','Walk-in','Referral','Repeat'];
 var CUST_TYPES=['Consumer','Architect/Interior','Reseller'];
@@ -1173,6 +1173,7 @@ function custRenderView(){
   el.innerHTML='<div class="tool-row" style="margin-bottom:12px"><div class="search-box"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg><input type="text" id="cust-search" placeholder="Search name, mobile or city\u2026" value="'+escA(_custQuery)+'" oninput="custSearch(this.value)"></div></div>'
     +'<div class="lead-filters">'+['All'].concat(LEAD_STATUS).map(function(s){return '<button class="lead-filter'+(((s==='All'&&!_custStatusFilter)||_custStatusFilter===s)?' on':'')+'" onclick="custFilterStatus(\''+s+'\')">'+s+'</button>'
       }).join('')+'<button class="lead-filter'+(_custAppOnly?' on':'')+'" onclick="custToggleApp()" style="border-color:rgba(27,122,77,.35)">\ud83d\udcf1 App signups</button>'+'</div>'
+    +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap"><select class="cust-in" style="width:auto;margin:0;padding:8px 12px;font-size:12.5px" onchange="custFilterType(this.value)"><option value="">All types</option>'+CUST_TYPES.map(function(t){return '<option'+(_custTypeFilter===t?' selected':'')+'>'+escA(t)+'</option>';}).join('')+'</select>'+'<select class="cust-in" style="width:auto;margin:0;padding:8px 12px;font-size:12.5px" onchange="custFilterSource(this.value)"><option value="">All sources</option>'+LEAD_SOURCES.map(function(t){return '<option'+(_custSourceFilter===t?' selected':'')+'>'+escA(t)+'</option>';}).join('')+'</select></div>'
     +custDateBar()+'<div id="cust-list"></div>';
   custRenderList();
 }
@@ -1224,12 +1225,14 @@ function custRenderList(){
   var el=document.getElementById('cust-list'); if(!el) return;
   var q=(_custQuery||'').trim().toLowerCase();
   var today=new Date(new Date().toDateString());
-  var list=_CUSTOMERS.filter(function(c){ var okq=!q || (c.name||'').toLowerCase().indexOf(q)>-1 || (c.mobile||'').indexOf(q)>-1 || (c.city||'').toLowerCase().indexOf(q)>-1; var oks=(!_custStatusFilter || (c.lead_status||'New')===_custStatusFilter) && (!_custAppOnly || c.signup_source==='app'); var okd=ghInRange(c.created_at, window._custDateFrom||'', window._custDateTo||''); return okq&&oks&&okd; });
+  var list=_CUSTOMERS.filter(function(c){ var okq=!q || (c.name||'').toLowerCase().indexOf(q)>-1 || (c.mobile||'').indexOf(q)>-1 || (c.city||'').toLowerCase().indexOf(q)>-1; var oks=(!_custStatusFilter || (c.lead_status||'New')===_custStatusFilter) && (!_custAppOnly || c.signup_source==='app') && (!_custTypeFilter || (c.customer_type||'')===_custTypeFilter) && (!_custSourceFilter || (c.lead_source||'')===_custSourceFilter); var okd=ghInRange(c.created_at, window._custDateFrom||'', window._custDateTo||''); return okq&&oks&&okd; });
   if(!list.length){ el.innerHTML='<div class="sc" style="padding:26px;text-align:center;color:var(--ink3)">No customers'+(q||_custStatusFilter?' match this filter.':' yet \u2014 they appear here when someone signs in, or add one manually.')+'</div>'; return; }
   el.innerHTML='<div class="cust-grid">'+list.map(function(c){ var ini=(c.name||'?').charAt(0).toUpperCase(); var un=_custUnread[c.mobile]||0; var st=c.lead_status||'New'; var col=LEAD_COLOR[st]||'#2563EB'; var overdue=c.next_followup && (new Date(c.next_followup) < today); return '<button class="cust-card" onclick="openCustomer(\''+escA(c.mobile)+'\')"><span class="cust-av" style="position:relative">'+ini+(un?'<span style="position:absolute;top:-4px;right:-4px;min-width:17px;height:17px;padding:0 4px;background:#C62828;color:#fff;font-size:9.5px;font-weight:800;border-radius:999px;display:flex;align-items:center;justify-content:center;border:2px solid #fff">'+un+'</span>':'')+'</span><span class="cust-info"><span class="cust-nm">'+escA(c.name||'Unknown')+(c.signup_source==='app'?'<span class="app-badge" title="Signed up in the customer app">APP</span>':'')+'</span><span class="cust-mt">+91 '+escA(c.mobile)+(c.city?' \u00b7 '+escA(c.city):'')+'</span></span><span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex:none"><span class="lead-badge" style="background:'+col+'1f;color:'+col+'">'+escA(st)+'</span>'+(overdue?'<span style="font-size:9.5px;color:#C62828;font-weight:800">Follow-up due</span>':'')+'</span></button>'; }).join('')+'</div>';
 }
 function custFilterStatus(s){ _custStatusFilter=(s==='All'?'':s); custRenderList(); }
 function custToggleApp(){ _custAppOnly=!_custAppOnly; custRenderList(); }
+function custFilterType(v){ _custTypeFilter=v||''; custRenderList(); }
+function custFilterSource(v){ _custSourceFilter=v||''; custRenderList(); }
 var _ghFormSubmit=null, _ghFormFields=[];
 var _ghFormMapsFields=[];
 function ghForm(opts){
@@ -1787,11 +1790,11 @@ function qStyle(){ if(document.getElementById('q-style'))return; var s=document.
   document.head.appendChild(s);
 }
 function qReset(){ _qCat=''; _qSearch=''; _quote={items:[],editId:null,docType:'Quotation',quoteNo:'',date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),reference:'',name:'',mobile:'',company:'',gstin:'',billing:'',shipTo:'',posCode:'36',transport:0,transportTax:18,labour:0,labourTax:18}; }
-var _ghLogo=null; var _qCat='', _qSearch='', _qListRows=[];
+var _ghLogo=null; var _qCat='', _qSearch='', _qListRows=[], _qRepeatOnly=false;
 function renderQuotations(){
   custStyle(); qStyle();
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Quotations</div><div class="page-sub">All quotations &amp; tax invoices</div></div><button class="settings-save-btn" onclick="qReset();renderQuoteBuilder()">+ Create quotation</button></div>'+ghSearchBar('q-find','Search quote no, name, mobile or reference\u2026')+qDateBar()+'<div id="q-listwrap"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Quotations</div><div class="page-sub">All quotations &amp; tax invoices</div></div><button class="settings-save-btn" onclick="qReset();renderQuoteBuilder()">+ Create quotation</button></div>'+ghSearchBar('q-find','Search quote no, name, mobile or reference\u2026')+qDateBar()+'<div style="padding:2px 0 2px"><button class="lead-filter'+(_qRepeatOnly?' on':'')+'" onclick="qToggleRepeatOnly()" style="border-color:rgba(14,116,144,.4)">\ud83d\udd01 Repeat only</button></div><div id="q-listwrap"><div class="gh-skwrap"><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div><div class="gh-skrow"></div></div></div>';
   qLoadList();
 }
 function ghSearchBar(id,ph){
@@ -1840,7 +1843,7 @@ function qLoadList(){
     var hi=amounts.length?Math.max.apply(null,amounts):0;
     var insights='<div class="cust-cols" style="margin-bottom:16px"><div class="cust-sec"><h4>Most quoted products</h4>'+qProdBars(topProds)+'</div><div class="cust-sec"><h4>Quote amounts</h4><div class="cust-row"><div style="flex:1;font-size:13px">Average quote</div><div style="font-weight:700">'+custMoney(avg)+'</div></div><div class="cust-row"><div style="flex:1;font-size:13px">Highest</div><div style="font-weight:700">'+custMoney(hi)+'</div></div><div class="cust-row"><div style="flex:1;font-size:13px">Total value</div><div style="font-weight:700">'+custMoney(tQ+tI)+'</div></div></div></div>';
     if(!rows.length){ el.innerHTML=summary+'<div class="sc" style="padding:34px;text-align:center;color:var(--ink3)">No quotations yet. Tap \u201c+ Create quotation\u201d to make your first one.</div>'; return; }
-    el.innerHTML=summary+insights+'<div style="display:flex;flex-direction:column;gap:8px">'+rows.map(function(o,idx){ var isInv=o.status==='Invoice'; var col=isInv?'#1B7A4D':(o.status==='Quotation'?'#7C3AED':(o.status==='Delivered'?'#1B7A4D':'#C8860A')); return '<div class="q-listrow" onclick="qEditRow('+idx+')" style="cursor:pointer" data-s="'+ghSKey(o.title,nameBy[o.mobile],o.mobile,o.ref,o.status,(srcBy[o.mobile]==='app'?'app-signup':''))+'"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;color:var(--ink)">'+escA(o.title||'Quote')+'</div><div style="font-size:12px;color:var(--ink3)">'+escA(nameBy[o.mobile]||('+91 '+o.mobile))+(srcBy[o.mobile]==='app'?'<span class="app-badge" title="Customer signed up in the app">APP</span>':'')+' \u00b7 '+custDate(o.created_at)+'</div></div><span class="lead-badge" style="background:'+col+'1f;color:'+col+'">'+escA(o.status)+'</span>'+(qOrderRepeat(o)?'<span class="lead-badge" style="background:#0E74901f;color:#0E7490">Repeat</span>':'')+qLocChip(o)+'<div style="font-family:Poppins;font-weight:800;font-size:15px;color:var(--ink);min-width:92px;text-align:right">'+custMoney(o.amount||0)+'</div>'+'<button class="q-kebab" onclick="event.stopPropagation();qRowMenu(event,'+idx+')" title="Actions" aria-label="Actions">\u22ef</button></div>'; }).join('')+'</div>';
+    el.innerHTML=summary+insights+'<div style="display:flex;flex-direction:column;gap:8px">'+rows.map(function(o,idx){ if(_qRepeatOnly && !qOrderRepeat(o)) return ''; var isInv=o.status==='Invoice'; var col=isInv?'#1B7A4D':(o.status==='Quotation'?'#7C3AED':(o.status==='Delivered'?'#1B7A4D':'#C8860A')); return '<div class="q-listrow" onclick="qEditRow('+idx+')" style="cursor:pointer" data-s="'+ghSKey(o.title,nameBy[o.mobile],o.mobile,o.ref,o.status,(srcBy[o.mobile]==='app'?'app-signup':''))+'"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;color:var(--ink)">'+escA(o.title||'Quote')+'</div><div style="font-size:12px;color:var(--ink3)">'+escA(nameBy[o.mobile]||('+91 '+o.mobile))+(srcBy[o.mobile]==='app'?'<span class="app-badge" title="Customer signed up in the app">APP</span>':'')+' \u00b7 '+custDate(o.created_at)+'</div></div><span class="lead-badge" style="background:'+col+'1f;color:'+col+'">'+escA(o.status)+'</span>'+(qOrderRepeat(o)?'<span class="lead-badge" style="background:#0E74901f;color:#0E7490">Repeat</span>':'')+qLocChip(o)+'<div style="font-family:Poppins;font-weight:800;font-size:15px;color:var(--ink);min-width:92px;text-align:right">'+custMoney(o.amount||0)+'</div>'+'<button class="q-kebab" onclick="event.stopPropagation();qRowMenu(event,'+idx+')" title="Actions" aria-label="Actions">\u22ef</button></div>'; }).join('')+'</div>';
   });
 }
 function qF(lbl,key,val){ var extra=(key==='gstin')?' onblur="qGstinBlur(this.value)" maxlength="15" autocapitalize="characters" spellcheck="false"':''; return '<div class="q-ff"><label>'+lbl+'</label><input class="cust-in" id="qf-'+key+'" style="margin:0'+(key==='gstin'?';text-transform:uppercase':'')+'" placeholder="'+lbl.replace(' *','')+'" value="'+escA(val==null?'':String(val))+'" oninput="qHdr(\''+key+'\',this.value)"'+extra+'></div>'; }
@@ -2115,6 +2118,7 @@ function qRowMenu(ev,idx){
   var mh=menu.offsetHeight; if(top+mh>window.innerHeight-8){ menu.style.top=Math.max(8,(rect?rect.top:top)-mh-6)+'px'; }
   setTimeout(function(){ document.addEventListener('click',qMenuClose,{once:true}); document.addEventListener('scroll',qMenuClose,{once:true,capture:true}); },0);
 }
+function qToggleRepeatOnly(){ _qRepeatOnly=!_qRepeatOnly; if(typeof renderQuotations==='function') renderQuotations(); }
 function qEditRow(i){ qEditQuote(_qListRows[i]); }
 function qConvertRow(i){ var o=_qListRows[i]; if(!o)return; if(!o.meta){ toast('Only itemised quotes can convert. Open & rebuild it first.','#C8860A'); return; } _convReturn='list'; _curCust={mobile:o.mobile,name:''}; custConvertOrder(o,false); }
 function qSaleRow(i){ var o=_qListRows[i]; if(!o)return; if(!o.meta){ toast('Only itemised quotes can convert.','#C8860A'); return; } _convReturn='list'; _curCust={mobile:o.mobile,name:''}; custConvertOrder(o,true); }
