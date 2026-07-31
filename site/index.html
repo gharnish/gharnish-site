@@ -3151,7 +3151,7 @@ function availBadge(p){
   if(ghIsMTO(p)) return '<span class="pcard-lead oo">Made to order</span>'+_inc;
   if(qty!==null){
     if(qty<=0) return '<span class="pcard-lead out">Sold out</span>'+_inc;
-    return '<span class="pcard-lead '+(qty<=5?'low':'in')+'">'+qty+' Pc Available</span>'+_inc;
+    return '<span class="pcard-lead '+(qty<=5?'low':'in')+'">'+(qty<=5?('Only '+qty+' left'):(qty+' Pc Available'))+'</span>'+_inc;
   }
   return '<span class="pcard-lead in">In Stock</span>'+_inc;
 }
@@ -4168,6 +4168,7 @@ H.push('</div>');
   });
   H.push('</div></div>');
   (function(){ var _na=(PRODUCTS||[]).filter(function(p){ return p.created_at && isNewArrival(p) && p.stock!==false; }).sort(function(a,b){ return (new Date(b.created_at||0))-(new Date(a.created_at||0)); }); if(_na.length){ H.push('<div class="hs" data-sec="newarrivals"><div class="hs-hd"><div><div class="hs-title">New Arrivals</div><div class="hs-sub">Fresh additions to the range</div></div><span class="hs-view" onclick="ghGoCollection(\'new\')">View All</span></div>'); H.push('<div class="prod-hscroll">'); _na.slice(0,12).forEach(function(p){ H.push(phCard(p)); }); H.push('</div></div>'); } })();
+  (function(){ var _bs=(PRODUCTS||[]).filter(function(p){ return isBestseller(p) && p.stock!==false; }); if(_bs.length){ H.push('<div class="hs" data-sec="bestsellers"><div class="hs-hd"><div><div class="hs-title">Best Sellers</div><div class="hs-sub">Most-loved by our customers</div></div><span class="hs-view" onclick="ghGoCollection(\'best\')">View All</span></div>'); H.push('<div class="prod-hscroll">'); _bs.slice(0,12).forEach(function(p){ H.push(phCard(p)); }); H.push('</div></div>'); } })();
   (function(){ var _st=(PRODUCTS||[]).filter(function(p){ return (typeof INVENTORY_QTY!=='undefined') && typeof INVENTORY_QTY[p.id]==='number' && INVENTORY_QTY[p.id]>0 && p.stock!==false; }).sort(function(a,b){ return (INVENTORY_QTY[b.id]||0)-(INVENTORY_QTY[a.id]||0); }); if(_st.length){ H.push('<div class="hs" data-sec="stocked"><div class="hs-hd"><div><div class="hs-title">In Stock Now</div><div class="hs-sub">Most-stocked \u2014 ready for fast delivery</div></div><span class="hs-view" onclick="S.tab=\'stocked\';render();window.scrollTo({top:0})">View All</span></div>'); H.push('<div class="prod-hscroll">'); _st.slice(0,12).forEach(function(p){ H.push(phCard(p)); }); H.push('</div></div>'); } })();
   if(ghCurSec()==='restaurant') H.push('<div style="margin:14px 16px 4px"><div onclick="ghSetSection(\'residential\')" style="cursor:pointer;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(120deg,#1f1912,#2e2418);border:1px solid rgba(212,164,76,.35);padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 8px 26px rgba(31,25,18,.28)"><div style="width:52px;height:52px;border-radius:14px;background:rgba(212,164,76,.18);display:flex;align-items:center;justify-content:center;flex:none;font-size:26px">\ud83c\udfe1</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E7B85C;margin-bottom:4px">Now at Gharnish</div><div style="font-family:\'Fraunces\',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px">Home Furniture</div><div style="font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.4">Dining sets \u00b7 sofas \u00b7 beds \u00b7 centre &amp; side tables</div></div><span style="flex:none;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;font-size:13px;font-weight:800;padding:11px 18px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 16px rgba(176,126,68,.4)">Explore \u2192</span></div></div>');
 
@@ -7350,7 +7351,7 @@ function offerCard(p){
   var onOrder=((typeof ONORDER_IDS!=='undefined' && ONORDER_IDS[p.id]) || p.stock===false);
   var stockHtml;
   if(onOrder){ stockHtml='<span class="oc-stock onorder">On Order</span>'; }
-  else if(qty!==null){ stockHtml = qty<=0 ? '<span class="oc-stock out">Sold out</span>' : '<span class="oc-stock '+(qty<=5?'low':'in')+'">'+qty+' Pc Available</span>'; }
+  else if(qty!==null){ stockHtml = qty<=0 ? '<span class="oc-stock out">Sold out</span>' : '<span class="oc-stock '+(qty<=5?'low':'in')+'">'+(qty<=5?('Only '+qty+' left'):(qty+' Pc Available'))+'</span>'; }
   else { stockHtml='<span class="oc-stock in">In Stock</span>'; }
   return '<div class="phcard" data-pid="'+p.id+'" onclick="S.selectedProduct=this.dataset.pid;render();window.scrollTo({top:0,behavior:\'smooth\'})">'
     +'<div class="phcard-img">'
