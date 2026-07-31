@@ -2115,6 +2115,7 @@ body.detail-open #ai-fab{display:none}
     </div>
     <button class="dnav-link" onclick="goToOurWork()">Our Work</button>
     <button class="bnav-btn dnav-link" data-tab="calculator">Get an Estimate</button>
+    <button class="bnav-btn dnav-link" data-tab="stocked">In Stock</button>
     <button class="bnav-btn dnav-link" data-tab="offers">Offers</button>
     <button class="bnav-btn dnav-link" data-tab="guides">Guides</button>
     <button class="dnav-link" onclick="openPage('about')">About</button>
@@ -3142,14 +3143,16 @@ function updateNav(){
 /* ─────────────── HOME ─────────────── */
 
 function ghIsMTO(p){ return (typeof ONORDER_IDS!=='undefined' && ONORDER_IDS[p.id]) || p.stock===false; }
+function ghIncomingBadge(p){ try{ var it=(typeof INVENTORY_INCOMING!=='undefined')?INVENTORY_INCOMING[p.id]:null; if(!it) return ''; var q=+it.qty||0; var d=it.date||''; if(q<=0 && !d) return ''; if(d){ var t=new Date(d+'T00:00:00'); var today=new Date(new Date().toDateString()); if(!isNaN(t.getTime()) && t<today) return ''; } var dt=d?(new Date(d+'T00:00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short'})):''; return '<span class="pcard-lead" style="background:#EAF3FF;color:#0C5FB3;margin-left:6px">\uD83D\uDE9A '+(q>0?(q+' arriving'):'Restocking')+(dt?(' \u00b7 '+dt):'')+'</span>'; }catch(e){ return ''; } }
 function availBadge(p){
   var qty=(typeof INVENTORY_QTY!=='undefined' && typeof INVENTORY_QTY[p.id]==='number')?INVENTORY_QTY[p.id]:null;
-  if(ghIsMTO(p)) return '<span class="pcard-lead oo">Made to order</span>';
+  var _inc=ghIncomingBadge(p);
+  if(ghIsMTO(p)) return '<span class="pcard-lead oo">Made to order</span>'+_inc;
   if(qty!==null){
-    if(qty<=0) return '<span class="pcard-lead out">Sold out</span>';
-    return '<span class="pcard-lead '+(qty<=5?'low':'in')+'">'+qty+' Pc Available</span>';
+    if(qty<=0) return '<span class="pcard-lead out">Sold out</span>'+_inc;
+    return '<span class="pcard-lead '+(qty<=5?'low':'in')+'">'+qty+' Pc Available</span>'+_inc;
   }
-  return '<span class="pcard-lead in">In Stock</span>';
+  return '<span class="pcard-lead in">In Stock</span>'+_inc;
 }
 
 function homeCard(p){
@@ -3913,6 +3916,7 @@ function ghClientSendMsg(){
 function ghLogActivity(type,title,detail){ if(!ghLoggedIn()||!supa) return; try{ supa.from('customer_activity').insert({mobile:GH_USER.mobile,name:GH_USER.name,city:GH_USER.city,type:type,title:title,detail:detail||null,created_at:new Date().toISOString()}).then(function(){},function(){}); }catch(e){} }
 try{ updateAccountBtn(); }catch(e){}
 
+function renderStocked(){ var app=document.getElementById('app'); if(!app) return; var list=(PRODUCTS||[]).filter(function(p){ return typeof INVENTORY_QTY[p.id]==='number' && INVENTORY_QTY[p.id]>0 && p.stock!==false; }).sort(function(a,b){ return (INVENTORY_QTY[b.id]||0)-(INVENTORY_QTY[a.id]||0); }); var H=['<div class="home-wrap">']; H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">In Stock Now</div><div style="font-size:13px;color:var(--ink3)">Ready-stock products, most available first \u2014 fast pan-India delivery</div></div>'); if(!list.length){ H.push('<div style="padding:44px 16px;text-align:center;color:var(--ink3)">No stocked items right now \u2014 please check back soon.</div>'); } else { H.push('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:14px 16px 90px">'); list.forEach(function(p){ H.push(phCard(p)); }); H.push('</div>'); } H.push(footerHTML()); H.push('</div>'); app.innerHTML=H.join(''); try{ document.querySelectorAll('.bnav-btn').forEach(function(b){b.classList.toggle('active',b.dataset.tab==='stocked');}); }catch(e){} }
 function phCard(p){
     var d=discountPct(p.price);
     var hasImg=!!p.image;
@@ -4037,6 +4041,7 @@ var HERO_IMAGE_URL='';
 var CLEARANCE_IDS={};
 var CLEARANCE_MRP={};
 var INVENTORY_QTY={};
+var INVENTORY_INCOMING={};
 var CUSTOMIZABLE_IDS={};
 var ONORDER_IDS={};
 var MAKE_TIME={};
@@ -4156,6 +4161,7 @@ H.push('</div>');
     H.push('</div></div>');
   });
   H.push('</div></div>');
+  (function(){ var _st=(PRODUCTS||[]).filter(function(p){ return (typeof INVENTORY_QTY!=='undefined') && typeof INVENTORY_QTY[p.id]==='number' && INVENTORY_QTY[p.id]>0 && p.stock!==false; }).sort(function(a,b){ return (INVENTORY_QTY[b.id]||0)-(INVENTORY_QTY[a.id]||0); }); if(_st.length){ H.push('<div class="hs" data-sec="stocked"><div class="hs-hd"><div><div class="hs-title">In Stock Now</div><div class="hs-sub">Most-stocked \u2014 ready for fast delivery</div></div><span class="hs-view" onclick="S.tab=\'stocked\';render();window.scrollTo({top:0})">View All</span></div>'); H.push('<div class="prod-hscroll">'); _st.slice(0,12).forEach(function(p){ H.push(phCard(p)); }); H.push('</div></div>'); } })();
   if(ghCurSec()==='restaurant') H.push('<div style="margin:14px 16px 4px"><div onclick="ghSetSection(\'residential\')" style="cursor:pointer;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(120deg,#1f1912,#2e2418);border:1px solid rgba(212,164,76,.35);padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 8px 26px rgba(31,25,18,.28)"><div style="width:52px;height:52px;border-radius:14px;background:rgba(212,164,76,.18);display:flex;align-items:center;justify-content:center;flex:none;font-size:26px">\ud83c\udfe1</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E7B85C;margin-bottom:4px">Now at Gharnish</div><div style="font-family:\'Fraunces\',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px">Home Furniture</div><div style="font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.4">Dining sets \u00b7 sofas \u00b7 beds \u00b7 centre &amp; side tables</div></div><span style="flex:none;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;font-size:13px;font-weight:800;padding:11px 18px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 16px rgba(176,126,68,.4)">Explore \u2192</span></div></div>');
 
   if(ghCurSec()==='restaurant'){
@@ -7317,6 +7323,7 @@ function render(){
   else if(S.tab==='blog') renderBlogTab();
   else if(S.tab==='cart') renderCart();
   else if(S.tab==='ourwork'){ renderOurWork(); }
+  else if(S.tab==='stocked') renderStocked();
   else if(S.tab==='offers') renderOffers();
   else if(S.tab==='admin') renderAdmin();
   else if(S.tab==='account') renderAccountPage();
@@ -7677,6 +7684,7 @@ ghLoadMapsKey();
     if(!res.error && res.data && res.data.value){
       var v=(typeof res.data.value==='string'?JSON.parse(res.data.value):res.data.value);
       INVENTORY_QTY=(v&&v.items&&typeof v.items==='object')?v.items:{};
+      INVENTORY_INCOMING=(v&&v.incoming&&typeof v.incoming==='object')?v.incoming:{};
       render();
     }
   }catch(e){}

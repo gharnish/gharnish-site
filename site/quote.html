@@ -5175,14 +5175,14 @@ function downloadCSVTemplate(){
 /* ══════════════════════════════════════
    INVENTORY  (stored in app_settings: inventory)
 ══════════════════════════════════════ */
-var INVENTORY={threshold:5,items:{}};
+var INVENTORY={threshold:5,items:{},incoming:{}};
 async function loadInventory(){
   if(!supa) return;
   try{
     const {data,error}=await supa.from('app_settings').select('value').eq('key','inventory').maybeSingle();
     if(!error && data && data.value){
       var v=(typeof data.value==='string'?JSON.parse(data.value):data.value)||{};
-      INVENTORY={threshold:(typeof v.threshold==='number'?v.threshold:5), items:(v.items&&typeof v.items==='object'?v.items:{})};
+      INVENTORY={threshold:(typeof v.threshold==='number'?v.threshold:5), items:(v.items&&typeof v.items==='object'?v.items:{}), incoming:(v.incoming&&typeof v.incoming==='object'?v.incoming:{})};
     }
   }catch(e){}
 }
@@ -5911,6 +5911,8 @@ function openProdFormAdvanced(id){
     +'<div class="f-row"><div class="f-field"><label>Min. Order Qty</label><input class="f-input" type="number" id="pf-moq" value="'+(p?.moq||1)+'" min="1" placeholder="1"></div>'
     +'<div class="f-field" style="justify-content:flex-end"><div class="toggle-row" style="border:none;padding:8px 0;margin-top:auto"><span class="toggle-lbl">In Stock</span><div class="toggle-sw'+(p?.stock!==false?' on':'')+'" id="pf-stock" onclick="this.classList.toggle(\'on\')"><div class="toggle-th"></div></div></div></div></div>'
     +'<div class="f-field"><label>Stock Quantity (Pc Available)</label><input class="f-input" type="number" id="pf-stockqty" min="0" placeholder="e.g. 30" value="'+((p&&INVENTORY&&INVENTORY.items&&typeof INVENTORY.items[p.id]==='number')?INVENTORY.items[p.id]:'')+'"><div style="font-size:11px;color:var(--ink3);margin-top:4px">Shown as e.g. "30 Pc Available". Blank = "In Stock".</div></div>'
+    +'<div class="f-row"><div class="f-field"><label>Upcoming Stock (Pc) <span style="font-weight:400;color:var(--ink3);font-size:11px">\u2014 optional</span></label><input class="f-input" type="number" id="pf-incoming-qty" min="0" placeholder="e.g. 50" value="'+((p&&INVENTORY&&INVENTORY.incoming&&INVENTORY.incoming[p.id]&&INVENTORY.incoming[p.id].qty)?INVENTORY.incoming[p.id].qty:'')+'"></div>'
+    +'<div class="f-field"><label>Arriving On</label><input class="f-input" type="date" id="pf-incoming-date" value="'+((p&&INVENTORY&&INVENTORY.incoming&&INVENTORY.incoming[p.id]&&INVENTORY.incoming[p.id].date)?INVENTORY.incoming[p.id].date:'')+'"><div style="font-size:11px;color:var(--ink3);margin-top:4px">Shown to customers as \u201carriving\u201d.</div></div></div>'
     +'</div>'
     +'<div class="pf-card">'+pfHd('text','Description','Tell customers about your product')+''
     +'<div class="f-field"><label>Short Description <span style="font-weight:400;color:var(--ink3);font-size:11px">— optional, shown as the product subtitle</span></label><textarea class="f-textarea" id="pf-mat" placeholder="e.g. Solid teak frame, genuine leather seat, commercial-grade upholstery">'+(p?.material||'')+'</textarea></div>'
@@ -6606,6 +6608,12 @@ function saveProd(mode){
   var _wasQty=(typeof INVENTORY.items[pid]==='number')?INVENTORY.items[pid]:null;
   var _newQty=(_sqRaw==='')?null:Math.max(0,parseInt(_sqRaw)||0);
   if(_newQty!==_wasQty){ if(_newQty===null){ delete INVENTORY.items[pid]; } else { INVENTORY.items[pid]=_newQty; } saveInventory(); }
+  if(!INVENTORY.incoming) INVENTORY.incoming={};
+  var _incQ=(document.getElementById('pf-incoming-qty')?.value||'').trim();
+  var _incD=(document.getElementById('pf-incoming-date')?.value||'').trim();
+  var _incN=(_incQ===''&&_incD==='')?null:{qty:(_incQ===''?0:Math.max(0,parseInt(_incQ)||0)),date:_incD||''};
+  var _incW=INVENTORY.incoming[pid]||null;
+  if(JSON.stringify(_incN)!==JSON.stringify(_incW)){ if(_incN===null){ delete INVENTORY.incoming[pid]; } else { INVENTORY.incoming[pid]=_incN; } saveInventory(); }
   var _gv=(document.getElementById('pf-gallery')?.value||'').split(/\n+/).map(function(s){return s.trim();}).filter(Boolean);
   var _vv=(document.getElementById('pf-video')?.value||'').trim();
   var _curG=GALLERY[pid]||{};
