@@ -6988,9 +6988,27 @@ function ghResolveRoute(path){
     } else if(seg[1]){
       // /shop/<category> — accepts SEO bucket names and app keys alike
       var _k=GH_SHOP_ALIAS[seg[1]]||seg[1];
+      if(seg[2]){
+        // /shop/<parentKey>/<subSlug> — subcategory landing (needs subcats + products loaded)
+        var _haveSubs=(typeof SUBCATS!=='undefined'&&SUBCATS&&(SUBCATS[seg[1]]||SUBCATS[_k]));
+        if(!_haveSubs || !(GH_ALL&&GH_ALL.length)){ S._pendingPath=path; return false; }
+        var _pk=seg[1];
+        var _subs=SUBCATS[_pk]||SUBCATS[_k]||[];
+        var _sub=null; for(var _si=0;_si<_subs.length;_si++){ if(ghSlug(_subs[_si].name)===seg[2]){ _sub=_subs[_si]; break; } }
+        if(_sub){
+          var _sec=null;
+          for(var _sj=0;_sj<GH_ALL.length;_sj++){ var _spp=GH_ALL[_sj]; if(PRODUCT_SUBCATS[_spp.id]&&PRODUCT_SUBCATS[_spp.id].indexOf(_sub.key)>-1){ _sec=ghSecOf(_spp); break; } }
+          if(!_sec) _sec=ghCatSec(_pk);
+          if(_sec!==ghCurSec()){ S.section=_sec; ghApplySection(); }
+          S.tab='categories'; S.catView='products';
+          if(S.filters){ S.filters.cat=_pk; S.filters.sub=_sub.key; }
+          S._pendingPath=null; return true;
+        }
+        // subcategory slug not found → fall back to the parent category view below
+      }
       var _cs2=ghCatSec(_k);
       if(_cs2!==ghCurSec()){ S.section=_cs2; ghApplySection(); }
-      S.tab='categories'; S.catView='products'; if(S.filters) S.filters.cat=(GH_CAT_FILTER[_k]||_k);
+      S.tab='categories'; S.catView='products'; if(S.filters){ S.filters.cat=(GH_CAT_FILTER[_k]||_k); S.filters.sub='all'; }
     } else {
       // bare /shop → full catalogue, clear any sticky category filter
       S.tab='home'; S.homeView='catalog'; if(S.filters) S.filters.cat='all';
@@ -8003,6 +8021,7 @@ ghLoadMapsKey();
         var v=(typeof r.value==='string'?JSON.parse(r.value):r.value);
         if(v&&typeof v==='object'){ if(r.key==='subcategories') SUBCATS=v; else if(r.key==='product_subcats') PRODUCT_SUBCATS=v; }
       });
+      try{ if(S._pendingPath && GH_ALL && GH_ALL.length){ if(ghResolveRoute(S._pendingPath)){ render(); window.scrollTo(0,0); return; } } }catch(e){}
       render();
     }
   }catch(e){}

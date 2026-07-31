@@ -152,6 +152,9 @@ ${jsonld ? '<script type="application/ld+json">'+jsonld+'</script>' : ''}
   .cta{display:inline-flex;align-items:center;gap:9px;background:var(--g);color:#fff;font-weight:800;font-size:15px;padding:14px 28px;border-radius:999px;margin:24px 0 8px;box-shadow:0 8px 22px rgba(200,134,10,.3)}
   .cta:hover{background:var(--gl)}
   .wa{display:inline-flex;align-items:center;gap:8px;background:#25D366;color:#fff;font-weight:700;font-size:14px;padding:12px 22px;border-radius:999px;margin-left:10px}
+  .subchips{display:flex;flex-wrap:wrap;gap:9px;margin:2px 0 24px}
+  .subchip{background:var(--c2);border:1px solid var(--line);border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:700;color:var(--ink);transition:border-color .14s,color .14s}
+  .subchip:hover{border-color:var(--g);color:var(--g)}
   footer{border-top:1px solid var(--line);padding:34px 0;color:var(--ink3);font-size:13.5px;margin-top:40px;background:var(--bg2)}
   footer a{color:var(--g);font-weight:700}
   @media(max-width:640px){header.top nav a{display:none}.hero{padding:30px 0 14px}}
@@ -201,9 +204,10 @@ function renderHub(products, origin){
 }
 
 /* ---------- /shop/<category> ---------- */
-function renderCategory(key, c, products, origin){
+function renderCategory(key, c, products, origin, subsByParent){
   const items = products.filter(c.match);
   const grid = items.length ? `<div class="pgrid">${items.map(p=>prodCard(p,origin)).join("")}</div>` : `<p class="body-copy">New stock arriving soon &mdash; message us on WhatsApp for current availability.</p>`;
+  const chips = subsByParent ? subChips(SHOP_TO_PARENTS[key], subsByParent, origin) : "";
   const jsonld = "["+JSON.stringify({ "@context":"https://schema.org","@type":"CollectionPage",
     name:c.h1+" — Gharnish", url:origin+"/shop/"+key, description:c.intro })+","+faqSchema(c.faqs)+"]";
   const body = `<main class="wrap">
@@ -212,6 +216,7 @@ function renderCategory(key, c, products, origin){
     <h1>${esc(c.h1)} in Hyderabad &amp; Bangalore</h1>
     <p class="lead">${esc(c.intro)}</p></section>
     <p class="body-copy">${esc(c.body)}</p>
+    ${chips}
     <div class="sec-h2">Browse ${esc(c.title)} (${items.length})</div>
     ${grid}
     <div><a class="cta" href="${esc(origin)}/?cat=${esc(key)}">See all in the app &rarr;</a><a class="wa" href="https://wa.me/919059276667">WhatsApp us</a></div>
@@ -222,9 +227,10 @@ function renderCategory(key, c, products, origin){
 }
 
 /* ---------- /shop/residential ---------- */
-function renderResidential(products, origin){
+function renderResidential(products, origin, subsByParent, resParents){
   const items = products.filter(isResidential);
   const grid = items.length ? `<div class="pgrid">${items.map(p=>prodCard(p,origin)).join("")}</div>` : `<p class="body-copy">Our residential range is expanding &mdash; message us on WhatsApp for the latest.</p>`;
+  const chips = subsByParent ? subChips(resParents, subsByParent, origin) : "";
   const jsonld = "["+JSON.stringify({ "@context":"https://schema.org","@type":"CollectionPage",
     name:RES.h1+" — Gharnish", url:origin+"/shop/residential", description:RES.intro })+","+faqSchema(RES.faqs)+"]";
   const body = `<main class="wrap">
@@ -233,6 +239,7 @@ function renderResidential(products, origin){
     <h1>${esc(RES.h1)} in Hyderabad &amp; Bangalore</h1>
     <p class="lead">${esc(RES.intro)}</p></section>
     <p class="body-copy">${esc(RES.body)}</p>
+    ${chips}
     <div class="sec-h2">Browse residential furniture (${items.length})</div>
     ${grid}
     <div><a class="cta" href="${esc(origin)}/?view=residential">Shop residential in the app &rarr;</a><a class="wa" href="https://wa.me/919059276667">WhatsApp us</a></div>
@@ -240,6 +247,68 @@ function renderResidential(products, origin){
   </main>`;
   return page({ title:"Home & Residential Furniture in Hyderabad & Bangalore | Gharnish",
     desc:RES.intro.slice(0,300), canonical:origin+"/shop/residential", origin, jsonld, body });
+}
+
+/* ---------- /shop/<parentKey>/<subSlug> subcategory landing ---------- */
+function subSlugify(name){ return String(name||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/(^-|-$)/g,""); }
+// Real parent category key -> its /shop SSR category slug (for breadcrumb parent link)
+const PARENT_TO_SHOP = { "chair":"indoor-chair","restaurant-tables":"table","table-round":"table","table-square":"table","table-rect":"table","stool":"bar-stool","booth":"booth","outdoor-chair":"outdoor-chair","restaurant-set":"restaurant-set" };
+// /shop SSR category slug -> real parent key(s) that hold its subcategories (for chip links)
+const SHOP_TO_PARENTS = { "indoor-chair":["chair"],"table":["restaurant-tables"],"bar-stool":["stool"],"booth":["booth"],"outdoor-chair":["outdoor-chair"],"restaurant-set":["restaurant-set"] };
+const RES_PARENTS = ["res-dining-table","res-sofa","res-dining-chair","res-bed","res-centre-table","res-side-table"];
+function subContext(parentKey){
+  if(/^res-/.test(parentKey)) return { place:"home", aud:"homes", where:"living and dining spaces", grade:"home-grade" };
+  if(/banquet/.test(parentKey)) return { place:"banquet", aud:"banquet halls & event venues", where:"banquets, functions and events", grade:"event-grade" };
+  if(/office|commercial-sofa/.test(parentKey)) return { place:"office", aud:"offices & workspaces", where:"offices, receptions and waiting areas", grade:"commercial-grade" };
+  return { place:"restaurant", aud:"restaurants, cafés & bars", where:"restaurants, cafés, bars and hotels", grade:"commercial-grade" };
+}
+function subParentLabel(parentKey, catNames){
+  return (catNames && catNames[parentKey] && catNames[parentKey].name) || parentKey.replace(/^res-/,"").replace(/-/g," ").replace(/\b\w/g,function(c){return c.toUpperCase();});
+}
+function subFaqs(name, ctx){
+  return [
+    ["Do you deliver "+name+" in Hyderabad and Bangalore?", "Yes. In-stock "+name+" ship in 2–7 days across Hyderabad, Bangalore and pan-India, with installation on eligible orders."],
+    ["Are these "+name+" suitable for "+ctx.place+" use?", "Yes — our "+name.toLowerCase()+" are "+ctx.grade+", built to hold up in "+ctx.where+"."],
+    ["Can I order "+name+" in bulk?", "Yes. Bulk pricing applies on larger orders — share your quantity on WhatsApp and we’ll build a quote for your project."]
+  ];
+}
+function subChips(parentKeys, subsByParent, origin){
+  var links=[];
+  (parentKeys||[]).forEach(function(pk){ (subsByParent[pk]||[]).forEach(function(s){ if(s&&s.name) links.push(`<a class="subchip" href="${esc(origin)}/shop/${esc(pk)}/${esc(subSlugify(s.name))}">${esc(s.name)}</a>`); }); });
+  if(!links.length) return "";
+  return `<div class="sec-h2">Shop by type</div><div class="subchips">${links.join("")}</div>`;
+}
+function renderSubcategory(parentKey, sub, products, prodSubs, catNames, origin){
+  const subKey = sub.key, name = sub.name;
+  const items = products.filter(p => (prodSubs[p.id]||[]).indexOf(subKey) > -1);
+  const grid = items.length ? `<div class="pgrid">${items.map(p=>prodCard(p,origin)).join("")}</div>` : `<p class="body-copy">Fresh stock arriving soon &mdash; message us on WhatsApp for current availability.</p>`;
+  const ctx = subContext(parentKey);
+  const parentLabel = subParentLabel(parentKey, catNames);
+  const parentShop = PARENT_TO_SHOP[parentKey];
+  const parentHref = parentShop ? (origin+"/shop/"+parentShop) : (/^res-/.test(parentKey) ? origin+"/shop/residential" : origin+"/shop");
+  const canonical = origin+"/shop/"+parentKey+"/"+subSlugify(name);
+  const intro = `${name} from Gharnish — ${ctx.grade} ${parentLabel.toLowerCase()} for ${ctx.aud}, in ready stock and delivered across Hyderabad, Bangalore and pan-India in 2–7 days.`;
+  const bodyCopy = `Browse Gharnish’s ${name.toLowerCase()} — part of our ${parentLabel.toLowerCase()} range, built for daily use in ${ctx.where}. Every piece ships from ready stock so you can furnish in days, with bulk pricing on larger orders and installation on eligible deliveries.`;
+  const faqs = subFaqs(name, ctx);
+  const jsonld = "["+JSON.stringify({ "@context":"https://schema.org","@type":"CollectionPage", name:name+" — Gharnish", url:canonical, description:intro })
+    +","+JSON.stringify({ "@context":"https://schema.org","@type":"BreadcrumbList", itemListElement:[
+        {"@type":"ListItem",position:1,name:"Shop",item:origin+"/shop"},
+        {"@type":"ListItem",position:2,name:parentLabel,item:parentHref},
+        {"@type":"ListItem",position:3,name:name,item:canonical}
+      ]})
+    +","+faqSchema(faqs)+"]";
+  const body = `<main class="wrap">
+    <div class="crumb"><a href="${esc(origin)}/shop">Shop</a> &rsaquo; <a href="${esc(parentHref)}">${esc(parentLabel)}</a> &rsaquo; ${esc(name)}</div>
+    <section class="hero"><div class="eyebrow">${esc(parentLabel)}</div>
+    <h1>${esc(name)} in Hyderabad &amp; Bangalore</h1>
+    <p class="lead">${esc(intro)}</p></section>
+    <p class="body-copy">${esc(bodyCopy)}</p>
+    <div class="sec-h2">Browse ${esc(name)} (${items.length})</div>
+    ${grid}
+    <div><a class="cta" href="${esc(parentHref)}">See all ${esc(parentLabel)} &rarr;</a><a class="wa" href="https://wa.me/919059276667">WhatsApp us</a></div>
+    ${faqBlock(faqs)}
+  </main>`;
+  return page({ title:name+" in Hyderabad & Bangalore | "+parentLabel+" | Gharnish", desc:intro.slice(0,300), canonical, origin, jsonld, body });
 }
 
 /* ---------- handler ---------- */
@@ -258,19 +327,38 @@ export async function onRequestGet(context){
   const key  = env.SUPABASE_KEY||SUPABASE_KEY_DEFAULT;
   const origin = (env.SITE_ORIGIN||SITE_ORIGIN_DEFAULT).replace(/\/+$/,"");
   const parts = (context.params && context.params.path)||[];
-  const slug = Array.isArray(parts) ? (parts[0]||"") : String(parts||"");
+  const seg = Array.isArray(parts) ? parts : [String(parts||"")];
+  const slug = seg[0]||"";
+  const subParam = seg[1]||"";
 
   let products = [];
+  let subsByParent = {}, prodSubs = {}, catNames = {};
   try {
     products = await sb(base, key, "gharnish_products?select=id,name,cat,price,image,bestseller,sort,hidden,internal,section&order=bestseller.desc,sort.asc");
     products = products.filter(p=>!p.hidden && !p.internal);
   } catch(e){ products = []; }
+  try {
+    const rows = await sb(base, key, "app_settings?select=key,value&key=in.(subcategories,product_subcats,categories)");
+    (rows||[]).forEach(function(r){
+      if(r.key==="subcategories" && r.value && typeof r.value==="object") subsByParent = r.value;
+      else if(r.key==="product_subcats" && r.value && typeof r.value==="object") prodSubs = r.value;
+      else if(r.key==="categories" && r.value && typeof r.value==="object") catNames = r.value;
+    });
+  } catch(e){}
 
-  let html;
+  function findSub(parentKey, s){ const arr = subsByParent[parentKey]||[]; for(let i=0;i<arr.length;i++){ if(subSlugify(arr[i].name)===s) return arr[i]; } return null; }
+
+  let html, status = 200;
   if(!slug){ html = renderHub(products, origin); }
-  else if(slug==="residential"){ html = renderResidential(products, origin); }
-  else if(CATS[slug]){ html = renderCategory(slug, CATS[slug], products, origin); }
+  else if(slug==="residential"){ html = renderResidential(products, origin, subsByParent, RES_PARENTS); }
+  else if(subParam && subsByParent[slug]){
+    // /shop/<parentKey>/<subSlug> — subcategory landing
+    const sub = findSub(slug, subParam);
+    if(sub){ html = renderSubcategory(slug, sub, products, prodSubs, catNames, origin); }
+    else { html = renderHub(products, origin); status = 404; }
+  }
+  else if(CATS[slug]){ html = renderCategory(slug, CATS[slug], products, origin, subsByParent); }
   else { html = renderHub(products, origin); }
 
-  return new Response(html, { headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=60, s-maxage=60, stale-while-revalidate=600", "Vary":"User-Agent" } });
+  return new Response(html, { status, headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=60, s-maxage=60, stale-while-revalidate=600", "Vary":"User-Agent" } });
 }

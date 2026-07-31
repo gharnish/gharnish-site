@@ -10,4 +10,5 @@ Disallow: /quote.html
 
 Sitemap: https://gharnish.app/sitemap.xml
 Sitemap: https://gharnish.app/sitemap-products.xml
+Sitemap: https://gharnish.app/sitemap-subcategories.xml
 Sitemap: https://gharnish.app/sitemap-projects.xml
