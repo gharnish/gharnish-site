@@ -3701,7 +3701,7 @@ function loginDoReset(){
   },function(err){ if(btn){ btn.disabled=false; } _loginErr=(err&&err.message)||'Could not update password'; renderLoginCard(); });
   }catch(e){ if(btn){ btn.disabled=false; } _loginErr='Error: '+((e&&e.message)||e); renderLoginCard(); }
 }
-if(supa){ try{ supa.auth.onAuthStateChange(function(event){ if(event==='PASSWORD_RECOVERY'){ ghAuthEnsure(); _loginMode='reset'; _loginErr=''; renderLoginCard(); var ov=document.getElementById('gh-login-ov'); if(ov) ov.classList.add('open'); document.body.style.overflow='hidden'; } }); }catch(e){} }
+if(supa){ try{ supa.auth.onAuthStateChange(function(event){ try{ ghCheckAdmin(); }catch(_e){} if(event==='PASSWORD_RECOVERY'){ ghAuthEnsure(); _loginMode='reset'; _loginErr=''; renderLoginCard(); var ov=document.getElementById('gh-login-ov'); if(ov) ov.classList.add('open'); document.body.style.overflow='hidden'; } }); }catch(e){} }
 function setLoginMode(m){ _syncLoginData(); _loginMode=m; _otpSent=false; _loginErr=''; renderLoginCard(); }
 function _syncLoginData(){ var n=document.getElementById('ghl-name'),m=document.getElementById('ghl-mobile'),c=document.getElementById('ghl-city'),e=document.getElementById('ghl-email'),p=document.getElementById('ghl-pw'); if(m)_loginData.mobile=(m.value||'').replace(/\D/g,''); if(n)_loginData.name=(n.value||'').trim(); if(c)_loginData.city=(c.value||'').trim(); if(e)_loginData.email=(e.value||'').trim(); if(p)_loginData.pw=p.value||''; }
 function loginNoOtpSignin(){
@@ -3924,6 +3924,133 @@ function ghNotifyOv(){ var ov=document.getElementById('gh-notify-ov'); if(!ov){ 
 function ghNotifyClose(){ var ov=document.getElementById('gh-notify-ov'); if(ov) ov.style.display='none'; }
 function ghNotifyOpen(pid,kind){ var prod=ghNotifyFind(pid); var pre=(typeof GH_USER!=='undefined'&&GH_USER&&GH_USER.mobile)?GH_USER.mobile:''; var ov=ghNotifyOv(); ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:360px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.32)"><div style="font-size:17px;font-weight:800;color:var(--ink);margin-bottom:5px;font-family:Poppins,sans-serif">Get notified</div><div style="font-size:13px;color:var(--ink3);line-height:1.5;margin-bottom:14px">We\u2019ll message you when <b>'+(prod.name||'this product')+'</b> is '+(kind==="upcoming"?"available":"back in stock")+'.</div><input id="gh-notify-mob" inputmode="numeric" maxlength="10" placeholder="Your 10-digit mobile" value="'+pre+'" style="width:100%;box-sizing:border-box;padding:12px 13px;border:1.5px solid rgba(20,16,10,.15);border-radius:11px;font-size:15px;font-family:inherit;margin-bottom:14px"><div style="display:flex;gap:10px"><button onclick="ghNotifyClose()" style="flex:0 0 auto;padding:12px 16px;border:none;border-radius:11px;background:#F1EFEB;color:var(--ink2,#555);font-weight:700;cursor:pointer;font-family:inherit">Cancel</button><button onclick="ghNotifySubmit(\''+pid+'\',\''+kind+'\')" style="flex:1;padding:12px;border:none;border-radius:11px;background:var(--g);color:#fff;font-weight:700;font-size:14.5px;cursor:pointer;font-family:inherit">Notify me</button></div></div>'; ov.style.display='flex'; setTimeout(function(){ var i=document.getElementById('gh-notify-mob'); if(i)i.focus(); },50); }
 function ghNotifySubmit(pid,kind){ var mob=((document.getElementById('gh-notify-mob')||{}).value||'').replace(/\D/g,''); if(mob.length!==10){ var i=document.getElementById('gh-notify-mob'); if(i){ i.style.borderColor='#C62828'; i.focus(); } return; } var prod=ghNotifyFind(pid); try{ if(supa) supa.from('stock_notify').insert({product_id:pid,product_name:prod.name||'',mobile:mob,kind:kind||'restock'}).then(function(){},function(){}); }catch(e){} var ov=ghNotifyOv(); ov.innerHTML='<div style="background:#fff;border-radius:16px;max-width:340px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.32)"><div style="font-size:34px;margin-bottom:8px">\uD83D\uDD14</div><div style="font-size:16px;font-weight:800;color:var(--ink);font-family:Poppins,sans-serif">You\u2019re on the list!</div><div style="font-size:13px;color:var(--ink3);margin-top:5px">We\u2019ll message you the moment it\u2019s available.</div></div>'; setTimeout(ghNotifyClose,1700); }
+/* ══ ADMIN QUICK-ADD (storefront, admin-only) ══ */
+var GH_IS_ADMIN=false, _ghQAImg='', _ghQAuploading=false;
+function ghCheckAdmin(){
+  if(!supa){ GH_IS_ADMIN=false; ghAdminFabSync(); return; }
+  try{
+    supa.rpc('is_gharnish_admin').then(function(r){
+      GH_IS_ADMIN = !!(r && !r.error && r.data===true);
+      ghAdminFabSync();
+    }, function(){ GH_IS_ADMIN=false; ghAdminFabSync(); });
+  }catch(e){ GH_IS_ADMIN=false; }
+}
+function ghAdminFabEnsure(){
+  if(document.getElementById('gh-admin-fab')) return;
+  if(!document.getElementById('gh-qa-style')){
+    var st=document.createElement('style'); st.id='gh-qa-style';
+    st.textContent=
+      '#gh-admin-fab{position:fixed;right:16px;bottom:84px;z-index:9000;display:none;align-items:center;gap:8px;background:#17120b;color:#fff;border:none;border-radius:999px;padding:13px 18px;font-family:Poppins,sans-serif;font-weight:700;font-size:14px;box-shadow:0 8px 26px rgba(0,0,0,.32);cursor:pointer}'
+      +'#gh-admin-fab svg{width:18px;height:18px}'
+      +'#gh-admin-fab.on{display:flex}'
+      +'.gh-qa-ov{position:fixed;inset:0;z-index:9500;background:rgba(20,16,10,.55);display:none;align-items:flex-end;justify-content:center}'
+      +'.gh-qa-ov.open{display:flex}'
+      +'@media(min-width:640px){.gh-qa-ov.open{align-items:center}}'
+      +'.gh-qa-sheet{background:#fff;width:100%;max-width:460px;border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto}'
+      +'@media(min-width:640px){.gh-qa-sheet{border-radius:20px}}'
+      +'.gh-qa-sheet h3{font-family:Poppins,sans-serif;font-size:18px;font-weight:800;color:#17120b;margin:0 0 3px}'
+      +'.gh-qa-sub{font-size:12.5px;color:#8a7d6c;margin-bottom:6px}'
+      +'.gh-qa-l{display:block;font-size:12px;font-weight:700;color:#5b5348;margin:13px 0 6px}'
+      +'.gh-qa-in,.gh-qa-sel{width:100%;box-sizing:border-box;border:1.5px solid #e6e1d8;border-radius:12px;padding:12px 13px;font-size:15px;font-family:inherit;background:#fff;color:#17120b;outline:none}'
+      +'.gh-qa-in:focus,.gh-qa-sel:focus{border-color:#C8860A}'
+      +'.gh-qa-row{display:flex;gap:10px}.gh-qa-row>div{flex:1}'
+      +'.gh-qa-photo{border:1.5px dashed #d8d2c6;border-radius:14px;padding:16px;text-align:center;color:#8a7d6c;font-size:13px;cursor:pointer;background:#faf8f4}'
+      +'.gh-qa-photo img{max-height:120px;border-radius:10px;display:block;margin:0 auto}'
+      +'.gh-qa-ft{display:flex;gap:10px;margin-top:20px}'
+      +'.gh-qa-btn{flex:1;border:none;border-radius:12px;padding:14px;font-weight:800;font-size:14.5px;font-family:inherit;cursor:pointer}'
+      +'.gh-qa-cancel{flex:0 0 auto;background:#f1efeb;color:#5b5348}'
+      +'.gh-qa-pub{background:#17120b;color:#fff}'
+      +'.gh-qa-ok{background:#e8f5ea;color:#1B7A4D;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin-top:12px;display:none}';
+    document.head.appendChild(st);
+  }
+  var b=document.createElement('button'); b.id='gh-admin-fab';
+  b.innerHTML='<svg fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Add product';
+  b.onclick=ghQuickAddOpen;
+  document.body.appendChild(b);
+}
+function ghAdminFabSync(){ ghAdminFabEnsure(); var b=document.getElementById('gh-admin-fab'); if(b) b.classList.toggle('on', !!GH_IS_ADMIN); }
+function ghQAsecOfCat(k){ if(/^res-/.test(k))return 'residential'; if(/^off-/.test(k))return 'office'; if(/^bnq-/.test(k))return 'banquet'; return 'restaurant'; }
+function ghQAcats(sec){
+  var pfx = sec==='residential'?'res-':(sec==='office'?'off-':(sec==='banquet'?'bnq-':''));
+  var LEG=['table-round','table-square','table-rect'];
+  var out=[], seen={};
+  var meta=(CATMETA&&typeof CATMETA==='object')?CATMETA:{};
+  Object.keys(meta).sort(function(a,b){return ((meta[a]&&meta[a].order)||0)-((meta[b]&&meta[b].order)||0);}).forEach(function(k){
+    var c=meta[k]||{}; if(c.visible===false) return; if(LEG.indexOf(k)>=0) return;
+    var isPref=/^(res-|off-|bnq-)/.test(k);
+    if(pfx){ if(k.indexOf(pfx)===0){ out.push([k,c.name||k]); seen[k]=1; } }
+    else { if(!isPref){ out.push([k,c.name||k]); seen[k]=1; } }
+  });
+  if(!pfx){ (CAT_DEFS||[]).forEach(function(c){ if(!seen[c.key]){ out.push([c.key,c.label]); seen[c.key]=1; } }); }
+  return out.length?out:[['chair','Dining Chairs']];
+}
+function ghQuickAddOpen(){
+  if(!GH_IS_ADMIN){ return; }
+  ghAdminFabEnsure();
+  var ov=document.getElementById('gh-qa-ov');
+  if(!ov){ ov=document.createElement('div'); ov.id='gh-qa-ov'; ov.className='gh-qa-ov'; ov.onclick=function(e){ if(e.target===ov) ghQuickAddClose(); }; document.body.appendChild(ov); }
+  _ghQAImg='';
+  var sec=(S.section==='residential'||S.section==='office'||S.section==='banquet')?S.section:'restaurant';
+  var curCat=(S.filters&&S.filters.cat)||'all';
+  if(curCat && curCat!=='all'){ sec=ghQAsecOfCat(curCat); }
+  var cats=ghQAcats(sec);
+  var catSel=(curCat&&curCat!=='all'&&cats.some(function(c){return c[0]===curCat;}))?curCat:(cats[0]?cats[0][0]:'');
+  ov.innerHTML=
+    '<div class="gh-qa-sheet" onclick="event.stopPropagation()">'
+    +'<h3>Add a product</h3><div class="gh-qa-sub">Publishes straight to your storefront. Refine details later in the admin.</div>'
+    +'<label class="gh-qa-l">Section</label><select class="gh-qa-sel" id="gh-qa-sec" onchange="ghQASecChange()">'
+      +[['restaurant','Restaurant / Commercial'],['residential','Home Furniture'],['office','Office'],['banquet','Banquet']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===sec?' selected':'')+'>'+o[1]+'</option>';}).join('')
+    +'</select>'
+    +'<label class="gh-qa-l">Category</label><select class="gh-qa-sel" id="gh-qa-cat">'+cats.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===catSel?' selected':'')+'>'+ghEsc(c[1])+'</option>';}).join('')+'</select>'
+    +'<label class="gh-qa-l">Product name</label><input class="gh-qa-in" id="gh-qa-name" placeholder="e.g. Verona Bistro Chair" autocomplete="off">'
+    +'<div class="gh-qa-row"><div><label class="gh-qa-l">Price (₹)</label><input class="gh-qa-in" id="gh-qa-price" type="number" inputmode="numeric" placeholder="4500"></div>'
+      +'<div><label class="gh-qa-l">In stock</label><select class="gh-qa-sel" id="gh-qa-stock"><option value="1" selected>Yes</option><option value="0">No</option></select></div></div>'
+    +'<label class="gh-qa-l">Photo</label><div class="gh-qa-photo" id="gh-qa-photo" onclick="document.getElementById(\'gh-qa-file\').click()">📷 Tap to add a photo</div>'
+    +'<input type="file" id="gh-qa-file" accept="image/*" style="display:none" onchange="ghQAphoto(this)">'
+    +'<div class="gh-qa-ok" id="gh-qa-ok"></div>'
+    +'<div class="gh-qa-ft"><button class="gh-qa-btn gh-qa-cancel" onclick="ghQuickAddClose()">Close</button><button class="gh-qa-btn gh-qa-pub" id="gh-qa-pub" onclick="ghQuickAddSubmit()">Publish</button></div>'
+    +'</div>';
+  ov.classList.add('open'); document.body.style.overflow='hidden';
+}
+function ghQASecChange(){ var sec=(document.getElementById('gh-qa-sec')||{}).value||'restaurant'; var cats=ghQAcats(sec); var cs=document.getElementById('gh-qa-cat'); if(cs) cs.innerHTML=cats.map(function(c){return '<option value="'+c[0]+'">'+ghEsc(c[1])+'</option>';}).join(''); }
+function ghQAphoto(input){
+  var f=input.files&&input.files[0]; input.value=''; if(!f) return;
+  if(!supa){ ghNote('Connection unavailable','#C62828'); return; }
+  var box=document.getElementById('gh-qa-photo'); if(box) box.textContent='Uploading…'; _ghQAuploading=true;
+  ghCompressImage(f,1400,0.82).then(function(blob){
+    var path='products/'+Date.now()+'-'+Math.round(Math.random()*9999)+'.jpg';
+    return supa.storage.from('project-media').upload(path,blob,{upsert:true,contentType:'image/jpeg'}).then(function(up){
+      _ghQAuploading=false;
+      if(up.error){ ghNote('Upload failed','#C62828'); if(box)box.textContent='📷 Tap to add a photo'; return; }
+      var pub=supa.storage.from('project-media').getPublicUrl(path); _ghQAImg=(pub&&pub.data&&pub.data.publicUrl)||'';
+      if(box) box.innerHTML=_ghQAImg?'<img src="'+_ghQAImg+'">':'📷 Tap to add a photo';
+    });
+  }).catch(function(){ _ghQAuploading=false; if(box)box.textContent='📷 Tap to add a photo'; ghNote('Upload error','#C62828'); });
+}
+function ghQuickAddClose(){ var ov=document.getElementById('gh-qa-ov'); if(ov) ov.classList.remove('open'); document.body.style.overflow=''; }
+function ghQuickAddSubmit(){
+  if(_ghQAuploading){ ghNote('Wait for the photo to finish uploading'); return; }
+  var name=((document.getElementById('gh-qa-name')||{}).value||'').trim();
+  var price=parseInt((document.getElementById('gh-qa-price')||{}).value)||0;
+  var cat=(document.getElementById('gh-qa-cat')||{}).value||'';
+  var sec=(document.getElementById('gh-qa-sec')||{}).value||'restaurant';
+  var instock=((document.getElementById('gh-qa-stock')||{}).value)!=='0';
+  if(!name){ ghNote('Enter a product name','#C62828'); return; }
+  if(!price){ ghNote('Enter a price','#C62828'); return; }
+  if(!supa || !GH_IS_ADMIN){ ghNote('Admins only','#C62828'); return; }
+  var btn=document.getElementById('gh-qa-pub'); if(btn){ btn.textContent='Publishing…'; btn.disabled=true; }
+  var id=(cat||'gh').replace(/[^a-z0-9]/gi,'').slice(0,6).toUpperCase()+'-'+Date.now().toString(36);
+  var row={ id:id, name:name, cat:cat, icon:'chair', tier:'premium', price:price, stock:instock, section:(sec==='restaurant'?'':sec), image:_ghQAImg||null, bestseller:false, internal:false, hidden:false };
+  supa.from('gharnish_products').insert(row).then(function(r){
+    if(btn){ btn.textContent='Publish'; btn.disabled=false; }
+    if(r&&r.error){ ghNote('Save failed: '+r.error.message,'#C62828'); return; }
+    var ok=document.getElementById('gh-qa-ok'); if(ok){ ok.textContent='✓ “'+name+'” published — add another or close.'; ok.style.display='block'; }
+    _ghQAImg=''; var nm=document.getElementById('gh-qa-name'); if(nm)nm.value=''; var pr=document.getElementById('gh-qa-price'); if(pr)pr.value=''; var ph=document.getElementById('gh-qa-photo'); if(ph)ph.textContent='📷 Tap to add a photo'; if(nm)nm.focus();
+    ghNote('Product published ✓','#1B7A4D');
+    if(typeof loadProductsFromSupabase==='function') loadProductsFromSupabase();
+  }, function(){ if(btn){ btn.textContent='Publish'; btn.disabled=false; } ghNote('Save failed','#C62828'); });
+}
+
 function ghGoCollection(key){ S.collection=key; S.tab='collection'; S.selectedProduct=null; S.selectedProject=null; render(); window.scrollTo({top:0}); }
 function renderCollection(){ var app=document.getElementById('app'); if(!app) return; var key=S.collection||'new'; var meta=({'new':{t:'New Arrivals',s:'Just added to the Gharnish range'},'upcoming':{t:'Upcoming Stock',s:'Arriving soon \u2014 reserve ahead'},'best':{t:'Best Sellers',s:'Most-loved by our customers'},'clearance':{t:'Clearance',s:'Limited-time deals \u2014 while stocks last'}})[key]||{t:'Collection',s:''}; var list=(PRODUCTS||[]).slice(); if(key==='new'){ list=list.filter(function(p){return p.stock!==false;}).sort(function(a,b){ return (new Date(b.created_at||0))-(new Date(a.created_at||0)); }); } else if(key==='upcoming'){ list=list.filter(function(p){ var it=INVENTORY_INCOMING[p.id]; if(!it)return false; var d=it.date||''; if(d){ var t=new Date(d+'T00:00:00'); if(!isNaN(t.getTime()) && t<new Date(new Date().toDateString())) return false; } return (+it.qty>0)||!!d; }); } else if(key==='best'){ list=list.filter(function(p){ return isBestseller(p); }); } else if(key==='clearance'){ list=list.filter(function(p){ return CLEARANCE_IDS[p.id]; }); } var H=['<div class="home-wrap">']; H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">'+meta.t+'</div><div style="font-size:13px;color:var(--ink3)">'+meta.s+'</div></div>'); if(!list.length){ H.push('<div style="padding:44px 16px;text-align:center;color:var(--ink3)">Nothing here yet \u2014 check back soon.</div>'); } else { H.push('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:14px 16px 90px">'); list.slice(0,60).forEach(function(p){ H.push(phCard(p)); }); H.push('</div>'); } H.push(footerHTML()); H.push('</div>'); app.innerHTML=H.join(''); }
 function renderStocked(){ var app=document.getElementById('app'); if(!app) return; var list=(PRODUCTS||[]).filter(function(p){ return typeof INVENTORY_QTY[p.id]==='number' && INVENTORY_QTY[p.id]>0 && p.stock!==false; }).sort(function(a,b){ return (INVENTORY_QTY[b.id]||0)-(INVENTORY_QTY[a.id]||0); }); var H=['<div class="home-wrap">']; H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">In Stock Now</div><div style="font-size:13px;color:var(--ink3)">Ready-stock products, most available first \u2014 fast pan-India delivery</div></div>'); if(!list.length){ H.push('<div style="padding:44px 16px;text-align:center;color:var(--ink3)">No stocked items right now \u2014 please check back soon.</div>'); } else { H.push('<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:14px 16px 90px">'); list.forEach(function(p){ H.push(phCard(p)); }); H.push('</div>'); } H.push(footerHTML()); H.push('</div>'); app.innerHTML=H.join(''); try{ document.querySelectorAll('.bnav-btn').forEach(function(b){b.classList.toggle('active',b.dataset.tab==='stocked');}); }catch(e){} }
@@ -7575,6 +7702,7 @@ async function loadProductsFromSupabase(){
 }
 
 try{ ghResolveRoute(location.pathname); }catch(e){}
+try{ setTimeout(function(){ if(typeof ghCheckAdmin==='function') ghCheckAdmin(); }, 800); }catch(e){}
 try{ var _sp=new URLSearchParams(location.search); var _pid=_sp.get('p'); if(_pid){ S._openProjectId=_pid; S._autoSetup=(_sp.get('setup')==='1'); var _clean=location.pathname+location.hash; history.replaceState(null,'',_clean); } }catch(e){}
 try{ if(S._openProjectId && typeof PROJECTS!=='undefined' && PROJECTS.length){ var _op2=S._openProjectId; if((PROJECTS||[]).some(function(x){return x.id===_op2;})){ S._openProjectId=null; var _a2=S._autoSetup; S._autoSetup=false; if(typeof openProject==='function'){ openProject(_op2); if(_a2 && typeof startWithThisSetup==='function'){ setTimeout(function(){ startWithThisSetup(_op2); },400); } } } } }catch(e){}
 try{ render(); }catch(e){
