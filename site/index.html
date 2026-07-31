@@ -1843,6 +1843,7 @@ body.detail-open #ai-fab{display:none}
 /* ───────── HIGHLIGHTS: bestseller + ready stock ───────── */
 .pcard-badge.bs-badge{background:linear-gradient(135deg,#C8860A,#E0A82E)!important;color:#fff!important}
 .phcard-badge.badge-best{background:linear-gradient(135deg,#C8860A,#E0A82E);color:#fff;left:auto;right:6px}
+.badge-new{background:linear-gradient(135deg,#1B7A4D,#2E9E68);color:#fff}
 .pcard-ready{color:#2E7D32;font-weight:700}
 /* ───────── MENU DRAWER + STATIC PAGES + HOME FOOTER ───────── */
 #nav-menu{background:rgba(255,255,255,.12);border:none;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none;color:rgba(255,255,255,.92)}
@@ -3926,7 +3927,7 @@ function phCard(p){
     var hasImg=!!p.image;
     return '<div class="phcard" data-pid="'+p.id+'" onclick="S.selectedProduct=this.dataset.pid;render();window.scrollTo({top:0,behavior:\'smooth\'})">'
       +'<div class="phcard-img">'
-      +(isBestseller(p)?'<span class="phcard-badge badge-best">&#9733;</span>':'')
+      +(isNewArrival(p)?'<span class="phcard-badge badge-new">NEW</span>':'')+(isBestseller(p)?'<span class="phcard-badge badge-best">&#9733;</span>':'')
       +(hasImg?'<img src="'+p.image+'" loading="lazy">':svgIcon(p.icon))
       +'<span class="phcard-wish'+(wishHas(p.id)?' on':'')+'" data-wish="'+p.id+'" onclick="wishToggle(\''+p.id+'\',event)">&hearts;</span>'
       +'</div>'
@@ -4166,6 +4167,7 @@ H.push('</div>');
     H.push('</div></div>');
   });
   H.push('</div></div>');
+  (function(){ var _na=(PRODUCTS||[]).filter(function(p){ return p.created_at && isNewArrival(p) && p.stock!==false; }).sort(function(a,b){ return (new Date(b.created_at||0))-(new Date(a.created_at||0)); }); if(_na.length){ H.push('<div class="hs" data-sec="newarrivals"><div class="hs-hd"><div><div class="hs-title">New Arrivals</div><div class="hs-sub">Fresh additions to the range</div></div><span class="hs-view" onclick="ghGoCollection(\'new\')">View All</span></div>'); H.push('<div class="prod-hscroll">'); _na.slice(0,12).forEach(function(p){ H.push(phCard(p)); }); H.push('</div></div>'); } })();
   (function(){ var _st=(PRODUCTS||[]).filter(function(p){ return (typeof INVENTORY_QTY!=='undefined') && typeof INVENTORY_QTY[p.id]==='number' && INVENTORY_QTY[p.id]>0 && p.stock!==false; }).sort(function(a,b){ return (INVENTORY_QTY[b.id]||0)-(INVENTORY_QTY[a.id]||0); }); if(_st.length){ H.push('<div class="hs" data-sec="stocked"><div class="hs-hd"><div><div class="hs-title">In Stock Now</div><div class="hs-sub">Most-stocked \u2014 ready for fast delivery</div></div><span class="hs-view" onclick="S.tab=\'stocked\';render();window.scrollTo({top:0})">View All</span></div>'); H.push('<div class="prod-hscroll">'); _st.slice(0,12).forEach(function(p){ H.push(phCard(p)); }); H.push('</div></div>'); } })();
   if(ghCurSec()==='restaurant') H.push('<div style="margin:14px 16px 4px"><div onclick="ghSetSection(\'residential\')" style="cursor:pointer;border-radius:18px;overflow:hidden;position:relative;background:linear-gradient(120deg,#1f1912,#2e2418);border:1px solid rgba(212,164,76,.35);padding:20px;display:flex;align-items:center;gap:16px;box-shadow:0 8px 26px rgba(31,25,18,.28)"><div style="width:52px;height:52px;border-radius:14px;background:rgba(212,164,76,.18);display:flex;align-items:center;justify-content:center;flex:none;font-size:26px">\ud83c\udfe1</div><div style="flex:1;min-width:0"><div style="font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#E7B85C;margin-bottom:4px">Now at Gharnish</div><div style="font-family:\'Fraunces\',serif;font-size:21px;font-weight:600;color:#fff;letter-spacing:-.01em;line-height:1.1;margin-bottom:4px">Home Furniture</div><div style="font-size:12.5px;color:rgba(255,255,255,.72);line-height:1.4">Dining sets \u00b7 sofas \u00b7 beds \u00b7 centre &amp; side tables</div></div><span style="flex:none;background:linear-gradient(180deg,var(--g),#B07E44);color:#fff;font-size:13px;font-weight:800;padding:11px 18px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 16px rgba(176,126,68,.4)">Explore \u2192</span></div></div>');
 
@@ -5763,6 +5765,7 @@ function quizFinish(){
 
 /* ───────── BESTSELLER + BULK PRICING + QUOTE PDF ───────── */
 function isBestseller(p){ return !!(p && p.bestseller===true); }
+function isNewArrival(p){ if(!p||!p.created_at) return false; var t=new Date(p.created_at).getTime(); if(isNaN(t)) return false; return (Date.now()-t) < 30*864e5; }
 
 var BULK_TIERS=[{min:10,off:5},{min:25,off:8},{min:50,off:12},{min:100,off:15}];
 function bulkOff(qty){ var o=0; for(var i=0;i<BULK_TIERS.length;i++){ if(qty>=BULK_TIERS[i].min) o=BULK_TIERS[i].off; } return o; }
