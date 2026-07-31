@@ -1652,7 +1652,7 @@ async function custBuildQuotePDF(items){
   doc.setFontSize(10.5); doc.setTextColor.apply(doc,INK); doc.text(_quote.name||_curCust.name||'',M,y+14);
   doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor.apply(doc,GREY);
   var by=y+26; if(_quote.company){ doc.text(_quote.company,M,by); by+=10; } if(_quote.gstin){ doc.text('GSTIN: '+_quote.gstin,M,by); by+=10; } if(_quote.billing){ var bl=doc.splitTextToSize(_quote.billing,250); doc.text(bl,M,by); by+=bl.length*9.5; } doc.text('Ph: '+(_curCust.mobile||_quote.mobile||''),M,by); by+=10;
-  if(_quote.shipTo){ doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc,GREY); doc.text('SHIP TO',W/2+16,y); doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor.apply(doc,INK); doc.text(doc.splitTextToSize(_quote.shipTo,240),W/2+16,y+14); }
+  if(_quote.shipTo){ doc.setFont('helvetica','bold'); doc.setFontSize(8); doc.setTextColor.apply(doc,GREY); doc.text('SHIP TO',W/2+16,y); doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor.apply(doc,INK); doc.text(doc.splitTextToSize(((_quote.location&&_quote.location.label&&_quote.location.label!=='Same as billing')?(_quote.location.label+'\n'):'')+_quote.shipTo,240),W/2+16,y+14); }
   if(_quote.reference){ doc.setFont('helvetica','normal'); doc.setTextColor.apply(doc,GREY); doc.setFontSize(8); doc.text('Reference: '+_quote.reference,W/2+16,y+52); }
   y=Math.max(by,y+56)+8;
   var body=items.map(function(it,idx){ var amt=(+it.qty||0)*(+it.rate||0); var nm=(it.name||''); if(it.desc){ nm+='\n'+it.desc; } return [String(idx+1),nm,it.hsn||'',(it.tax||0)+'%',String(it.qty),money(it.rate),it.per||'PCS',money(amt)]; });
