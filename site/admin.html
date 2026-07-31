@@ -1028,6 +1028,7 @@ async function showApp(){
     await loadCatHeroImgs();
     await loadHeroImage();
     await loadInventory();
+    await loadHighlights();
     await loadClearance();
     await loadCustomizable();
     await loadOnOrder();
@@ -4105,10 +4106,25 @@ const DEFAULT_SECTIONS=[
 function lsGetSections(){ try{ return JSON.parse(localStorage.getItem('gh_sections')||'null'); }catch(e){return null;} }
 function lsSaveSections(arr){ localStorage.setItem('gh_sections',JSON.stringify(arr)); }
 
+var HL_KEYS=[['new','New Arrivals'],['stocked','In Stock Now'],['upcoming','Upcoming'],['best','Best Sellers'],['clearance','Clearance'],['projects','Projects'],['offers','Offers']];
+var HL_ADMIN=null; var _hlWork=null;
+async function loadHighlights(){ if(!supa)return; try{ const r=await supa.from('app_settings').select('value').eq('key','highlights').maybeSingle(); if(r&&r.data&&r.data.value){ var v=(typeof r.data.value==='string'?JSON.parse(r.data.value):r.data.value); HL_ADMIN=(v&&Array.isArray(v.items))?v:{items:[]}; } }catch(e){} }
+function hlItems(){ var saved=(HL_ADMIN&&HL_ADMIN.items)?HL_ADMIN.items:[]; var byKey={}; saved.forEach(function(i){byKey[i.key]=i;}); var out=[]; saved.forEach(function(i){ var def=null; for(var k=0;k<HL_KEYS.length;k++){ if(HL_KEYS[k][0]===i.key){def=HL_KEYS[k];break;} } if(def) out.push({key:i.key,label:i.label||def[1],image:i.image||'',visible:i.visible!==false}); }); HL_KEYS.forEach(function(k){ if(!byKey[k[0]]) out.push({key:k[0],label:k[1],image:'',visible:true}); }); return out; }
+function hlRerender(){ var el=document.getElementById('hl-manager'); if(el) el.innerHTML=hlManagerInner(); }
+function hlManagerHTML(){ if(!_hlWork) _hlWork=hlItems(); return '<div class="sc" style="margin-bottom:16px"><div class="sc-hd"><div class="sc-title">Homepage Highlights</div><button class="qa-btn qa-pri" onclick="saveHighlights()">Save Highlights</button></div><div class="sc-body" id="hl-manager">'+hlManagerInner()+'</div></div>'; }
+function hlManagerInner(){ var items=_hlWork||[]; return '<div style="font-size:12px;color:var(--ink3);margin-bottom:10px">The circular \u201cstory\u201d row at the top of the home page. Show/hide, rename, set a custom cover, or reorder. Blank cover = automatic image.</div>'+items.map(function(it,i){ return '<div class="section-toggle-row"><div style="display:flex;flex-direction:column;gap:3px;margin-right:8px"><button onclick="hlMove('+i+',-1)"'+(i===0?' disabled':'')+' style="border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:6px;width:28px;height:18px;font-size:9px;cursor:pointer;color:#8a7d6c;opacity:'+(i===0?'.35':'1')+'">\u25b2</button><button onclick="hlMove('+i+',1)"'+(i===items.length-1?' disabled':'')+' style="border:1px solid rgba(0,0,0,.12);background:#fff;border-radius:6px;width:28px;height:18px;font-size:9px;cursor:pointer;color:#8a7d6c;opacity:'+(i===items.length-1?'.35':'1')+'">\u25bc</button></div><div style="width:44px;height:44px;border-radius:50%;overflow:hidden;flex:none;margin-right:10px;background:var(--c2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center">'+(it.image?'<img src="'+escA(it.image)+'" style="width:100%;height:100%;object-fit:cover">':'<span style="color:var(--ink3);font-size:10px">auto</span>')+'</div><div style="flex:1;min-width:0"><input class="cust-in" style="margin:0" value="'+escA(it.label)+'" onchange="hlSetLabel('+i+',this.value)"><div style="display:flex;gap:10px;margin-top:5px;align-items:center"><label class="cust-hbtn" style="background:var(--c2);color:var(--ink);cursor:pointer;font-size:11px;padding:4px 9px;margin:0">Set cover<input type="file" accept="image/*" style="display:none" onchange="hlUpload('+i+',this)"></label>'+(it.image?'<button onclick="hlClearImg('+i+')" style="background:none;border:none;color:#C62828;font-size:11px;cursor:pointer">Remove</button>':'')+'</div></div><div class="toggle-sw'+(it.visible?' on':'')+'" onclick="hlToggle('+i+')" style="margin-left:10px"><div class="toggle-th"></div></div></div>'; }).join('')+'<button onclick="hlReset()" style="background:none;border:none;color:var(--ink3);font-size:12px;cursor:pointer;margin-top:10px;text-decoration:underline">Reset to default</button>'; }
+function hlMove(i,d){ var j=i+d; if(j<0||j>=_hlWork.length)return; var t=_hlWork[i]; _hlWork[i]=_hlWork[j]; _hlWork[j]=t; hlRerender(); }
+function hlToggle(i){ _hlWork[i].visible=!_hlWork[i].visible; hlRerender(); }
+function hlSetLabel(i,v){ if(_hlWork[i]) _hlWork[i].label=v; }
+function hlClearImg(i){ _hlWork[i].image=''; hlRerender(); }
+function hlUpload(i,input){ var f=input.files&&input.files[0]; if(!f)return; input.value=''; if(!supa){ toast('Connect Supabase first','#C62828'); return; } toast('Uploading cover\u2026'); ghCompressImage(f,{max:400,square:true,targetKB:80}).then(function(r){ var blob=ghDataURLtoBlob(r.dataUrl); var ct=blob.type; var path='highlights/'+Date.now()+'.'+((ct&&ct.indexOf('webp')>-1)?'webp':'jpg'); return supa.storage.from('project-media').upload(path,blob,{cacheControl:'3600',upsert:false,contentType:ct}).then(function(res){ if(res.error){ toast('Upload failed: '+res.error.message,'#C62828'); return; } var pub=supa.storage.from('project-media').getPublicUrl(path); var url=pub&&pub.data&&pub.data.publicUrl; if(url){ _hlWork[i].image=url; hlRerender(); toast('Cover set'); } }); }).catch(function(){ toast('Upload error','#C62828'); }); }
+function hlReset(){ _hlWork=HL_KEYS.map(function(k){return {key:k[0],label:k[1],image:'',visible:true};}); hlRerender(); }
+function saveHighlights(){ if(!supa){ toast('Connect Supabase to save','#C62828'); return; } var items=(_hlWork||[]).map(function(i){return {key:i.key,label:i.label||'',image:i.image||'',visible:i.visible!==false};}); HL_ADMIN={items:items}; supa.from('app_settings').upsert({key:'highlights',value:{items:items}}).then(function(r){ if(r&&r.error) toast('Save failed: '+r.error.message,'#C62828'); else toast('Highlights saved \u2014 live on the home page','#1B7A4D'); }); }
 function renderHomepage(){
   const settings=lsGetSettings();
   const savedSections=lsGetSections();
   const sections=savedSections||DEFAULT_SECTIONS.map(s=>({...s,visible:true}));
+  _hlWork=hlItems();
 
   const mc=document.getElementById('main-content');
   mc.innerHTML=
@@ -4148,7 +4164,7 @@ function renderHomepage(){
       +'<div class="toggle-sw'+(sec.visible!==false?' on':'')+'" data-sec-id="'+sec.id+'" onclick="toggleSection(this)"><div class="toggle-th"></div></div>'
       +'</div>'
     ).join('')
-    +'</div></div></div>';
+    +'</div></div></div>'+hlManagerHTML();
 }
 
 function toggleSection(sw){ sw.classList.toggle('on'); }
