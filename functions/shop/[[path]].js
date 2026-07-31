@@ -243,7 +243,16 @@ function renderResidential(products, origin){
 }
 
 /* ---------- handler ---------- */
+// Search engines & social scrapers get the server-rendered SEO page;
+// real visitors get the interactive app (index.html renders /shop/* in-app).
+const BOT_RE = /bot|crawl|spider|slurp|google|bing|yandex|baidu|duckduck|facebookexternalhit|facebot|twitterbot|linkedinbot|whatsapp|telegram|slackbot|discordbot|pinterest|embedly|quora|redditbot|applebot|petalbot|semrush|ahrefs|mj12|ia_archiver|screaming|lighthouse/i;
+
 export async function onRequestGet(context){
+  const ua = (context.request && context.request.headers.get("user-agent")) || "";
+  if(!BOT_RE.test(ua)){
+    // Real visitor — fall through to the SPA so they see the app, not the SEO page.
+    return context.next();
+  }
   const env = context.env||{};
   const base = (env.SUPABASE_URL||SUPABASE_URL_DEFAULT).replace(/\/+$/,"");
   const key  = env.SUPABASE_KEY||SUPABASE_KEY_DEFAULT;
@@ -263,5 +272,5 @@ export async function onRequestGet(context){
   else if(CATS[slug]){ html = renderCategory(slug, CATS[slug], products, origin); }
   else { html = renderHub(products, origin); }
 
-  return new Response(html, { headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=60, s-maxage=60, stale-while-revalidate=600" } });
+  return new Response(html, { headers:{ "Content-Type":"text/html; charset=utf-8", "Cache-Control":"public, max-age=60, s-maxage=60, stale-while-revalidate=600", "Vary":"User-Agent" } });
 }
