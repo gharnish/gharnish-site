@@ -6074,7 +6074,7 @@ function downloadQuote(source){
 }
 
 /* ───────── DOWNLOAD CATALOGUE (live, branded PDF) ───────── */
-function buildCatalogDoc(items, titleOverride){
+function buildCatalogDoc(items, titleOverride, showQty){
   var order=['chair','stool','table-round','table-square','table-rect','table-base','booth','outdoor-chair','outdoor-table','restaurant-set'];
   var labels=Object.assign({}, CAT_LABEL, {'table-square':'Square Tables','table-base':'Table Bases','restaurant-set':'Restaurant Sets'});
   var prods=(items&&items.length)?items.slice():(PRODUCTS||[]).slice();
@@ -6088,8 +6088,9 @@ function buildCatalogDoc(items, titleOverride){
   var blrAddr='1st Floor, Sree Arcade, Andrahalli Main Rd, Karihobanahalli, Peenya, Bengaluru, Karnataka 560073';
   var cardHtml=function(p){
     var img=p.image?'<div class="ph"><img src="'+p.image+'" loading="eager" referrerpolicy="no-referrer"></div>':'<div class="ph noimg">'+(logo?'<img src="'+logo+'" alt="Gharnish" style="max-width:62%;max-height:42%;opacity:.45">':'GHARNISH')+'</div>';
+    var _q=(showQty && typeof INVENTORY_QTY!=='undefined' && typeof INVENTORY_QTY[p.id]==='number' && INVENTORY_QTY[p.id]>0)?INVENTORY_QTY[p.id]:0;
     return '<div class="card">'+img+'<div class="nm">'+p.name+'</div>'
-      +'<div class="meta"><span class="pr">'+inr(p.price)+'</span>'+(ghIsMTO(p)?'<span class="moq">Made to order</span>':'<span class="rdy">&#9679; Ready Stock</span>')+'</div></div>';
+      +'<div class="meta"><span class="pr">'+inr(p.price)+'</span>'+(ghIsMTO(p)?'<span class="moq">Made to order</span>':'<span class="rdy">&#9679; Ready Stock</span>')+'</div>'+(_q?'<div class="qty">'+_q+' Pc Available</div>':'')+'</div>';
   };
   var sections='', done={};
   order.forEach(function(cat){
@@ -6160,6 +6161,7 @@ function buildCatalogDoc(items, titleOverride){
     +'.nm{font-size:11px;font-weight:600;padding:7px 8px 2px;line-height:1.3}'
     +'.meta{display:flex;justify-content:space-between;align-items:center;padding:2px 8px 9px;gap:5px}'
     +'.pr{font-size:12px;font-weight:800;color:#C8860A}.rdy{font-size:8px;font-weight:700;color:#2E7D32}.moq{font-size:8px;color:#999}'
+    +'.qty{margin:-4px 8px 8px;font-size:9px;font-weight:700;color:#2E7D32;background:#E8F5EA;border-radius:5px;padding:2px 6px;display:inline-block}'
     +'@media print{.noprint{display:none}}'
     +'.projects{padding:34px;page-break-before:always}'
     +'.sizing{padding:34px;page-break-before:always}'
@@ -6225,7 +6227,7 @@ function downloadStocked(){
   var lbl=(cat==='all')?'':((typeof CAT_LABEL!=='undefined'&&CAT_LABEL[cat])||(typeof CATMETA!=='undefined'&&CATMETA[cat]&&CATMETA[cat].name)||String(cat).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}));
   var title='In Stock'+(lbl?(' — '+lbl):'')+' — Ready Stock';
   var w=window.open('','_blank'); if(!w){ ghNote('Please allow pop-ups to download the PDF.','#C62828'); return; }
-  w.document.write(buildCatalogDoc(items,title)); w.document.close(); w.focus();
+  w.document.write(buildCatalogDoc(items,title,true)); w.document.close(); w.focus();
 }
 
 function renderCart(){
