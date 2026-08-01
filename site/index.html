@@ -4123,7 +4123,7 @@ function renderStocked(){
   function chip(key,label,n,on){ return '<button onclick="stockFilter(\''+key+'\')" style="flex:none;white-space:nowrap;border-radius:999px;padding:8px 15px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'#fff')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+ghEsc(label)+' ('+n+')</button>'; }
   function gridOf(items){ if(!items.length) return ''; var g='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;padding:10px 16px 8px">'; items.forEach(function(p){ g+=phCard(p); }); return g+'</div>'; }
   var H=['<div class="home-wrap">'];
-  H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">In Stock Now</div><div style="font-size:13px;color:var(--ink3)">Ready-stock products — fast pan-India delivery</div></div>');
+  H.push('<div style="padding:18px 16px 4px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px"><div><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">In Stock Now</div><div style="font-size:13px;color:var(--ink3)">Ready-stock products — fast pan-India delivery</div></div>'+(all.length?'<button onclick="downloadStocked()" title="Download this list as PDF" style="flex:none;background:var(--gg,#F7EFE0);border:1px solid rgba(200,134,10,.3);color:var(--g,#C8860A);border-radius:999px;padding:8px 13px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px"><svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>PDF</button>':'')+'</div>');
   if(!all.length){ H.push('<div style="padding:44px 16px;text-align:center;color:var(--ink3)">No stocked items right now — please check back soon.</div>'); }
   else {
     var chips='<div style="display:flex;gap:8px;overflow-x:auto;padding:8px 16px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch">'+chip('all','All',all.length,S.stockedCat==='all');
@@ -6214,6 +6214,17 @@ function downloadCatalog(scope){
   if(!(PRODUCTS&&PRODUCTS.length)){ ghNote('Catalogue is still loading \u2014 please try again in a moment.','#C62828'); return; }
   var w=window.open('','_blank');
   if(!w){ ghNote('Please allow pop-ups to download the catalogue PDF.','#C62828'); return; }
+  w.document.write(buildCatalogDoc(items,title)); w.document.close(); w.focus();
+}
+function downloadStocked(){
+  if(!ghLoggedIn()){ requireLogin(function(){ downloadStocked(); }, 'Sign in to download the stock list'); return; }
+  var all=(PRODUCTS||[]).filter(function(p){ return typeof INVENTORY_QTY[p.id]==='number' && INVENTORY_QTY[p.id]>0 && p.stock!==false; }).sort(function(a,b){ return (INVENTORY_QTY[b.id]||0)-(INVENTORY_QTY[a.id]||0); });
+  var cat=S.stockedCat||'all';
+  var items=(cat==='all')?all:all.filter(function(p){ return (p.cat||'other')===cat; });
+  if(!items.length){ ghNote('Nothing in stock to download yet.','#C62828'); return; }
+  var lbl=(cat==='all')?'':((typeof CAT_LABEL!=='undefined'&&CAT_LABEL[cat])||(typeof CATMETA!=='undefined'&&CATMETA[cat]&&CATMETA[cat].name)||String(cat).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}));
+  var title='In Stock'+(lbl?(' — '+lbl):'')+' — Ready Stock';
+  var w=window.open('','_blank'); if(!w){ ghNote('Please allow pop-ups to download the PDF.','#C62828'); return; }
   w.document.write(buildCatalogDoc(items,title)); w.document.close(); w.focus();
 }
 
