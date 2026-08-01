@@ -2259,7 +2259,8 @@ function vendRenderDetail(){
   }
   var pick='<div class="cust-sec"><h4>Assign products to this vendor</h4><input class="cust-in" id="v-psearch" placeholder="Search products to assign\u2026" oninput="vendPickSearch(this.value)"><div id="v-presults" style="max-height:220px;overflow-y:auto"></div></div>';
   var assignedHtml='<div class="cust-sec"><h4>Assigned products ('+assigned.length+')</h4>'+(assigned.length?assigned.map(function(p){ return '<div class="cust-row">'+(p.image?'<img src="'+escA(p.image)+'" style="width:34px;height:34px;border-radius:6px;object-fit:contain;background:var(--c2);flex:none">':'<span style="width:34px;flex:none"></span>')+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;color:var(--ink)">'+escA(p.name)+'</div><div style="font-size:11.5px;color:var(--ink3)">'+custMoney(p.price||0)+'</div></div><button onclick="vendUnassign(\''+escA(String(p.id))+'\')" style="background:none;border:none;color:#C62828;cursor:pointer;font-size:16px">\u00d7</button></div>'; }).join(''):'<div style="color:var(--ink3);font-size:12.5px;padding:6px 0">No products assigned yet \u2014 search below to add.</div>')+'</div>';
-  mc.innerHTML='<div style="max-width:780px">'+head+'<div class="cust-cols">'+assignedHtml+pick+'</div><div id="vend-production" style="margin-top:14px"></div></div>'; vendLoadProduction();
+  var loginHtml='<div class="cust-sec"><h4>Vendor login (stock portal)</h4><div id="vend-login-info" style="font-size:12.5px;color:var(--ink3);padding:4px 0 8px">Checking…</div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="cust-add-btn" style="padding:7px 13px;font-size:12px" onclick="vendSetLogin()">Set / reset login</button><button class="cust-hbtn" style="background:rgba(198,40,40,.1);color:#C62828" onclick="vendRemoveLogin()">Remove login</button><a class="cust-hbtn" style="background:var(--c2);color:var(--ink)" href="/vendor" target="_blank">Open portal ↗</a></div><div style="font-size:11px;color:var(--ink3);margin-top:6px">Vendor signs in at <b>'+location.origin+'/vendor</b> to update stock — only their assigned products are visible.</div></div>';
+  mc.innerHTML='<div style="max-width:780px">'+head+'<div class="cust-cols">'+assignedHtml+pick+'</div>'+loginHtml+'<div id="vend-production" style="margin-top:14px"></div></div>'; vendLoadProduction(); vendLoadLogin();
 }
 function vendLoadProduction(){
   var el=document.getElementById('vend-production'); if(!el||!_curVend||!supa)return;
@@ -2275,6 +2276,49 @@ function vendLoadProduction(){
     var paid=vpays.reduce(function(a,p){return a+(+p.amount||0);},0); var bal=payable-paid;
     var payHtml='<div class="cust-sec"><h4>Payments to vendor <button onclick="vendPay()" class="cust-hbtn" style="margin-left:auto;background:var(--g);color:#fff;padding:5px 12px;font-size:11px">+ Record</button></h4><div style="display:flex;gap:16px;margin-bottom:10px;font-size:12.5px;flex-wrap:wrap"><span style="color:var(--ink3)">Payable <b style="color:var(--ink)">'+custMoney(payable)+'</b></span><span style="color:#1B7A4D">Paid <b>'+custMoney(paid)+'</b></span><span style="color:'+(bal>0?'#C62828':'#1B7A4D')+';font-weight:700">Balance '+custMoney(bal)+'</span></div>'+(vpays.length?vpays.map(function(p){return '<div class="cust-row"><div style="flex:1"><div style="font-weight:700;color:#1B7A4D">'+custMoney(p.amount)+'</div><div style="font-size:11px;color:var(--ink3)">'+escA(p.mode||'')+' \u00b7 '+custDate(p.created_at)+'</div></div><button onclick="vendDelPay('+p.id+')" style="background:none;border:none;color:#C62828;cursor:pointer;font-size:15px">\u00d7</button></div>';}).join(''):'<div style="color:var(--ink3);font-size:12px;padding:4px 0">No payments recorded yet.</div>')+'</div>';
     el.innerHTML='<div class="cust-sec"><h4>Confirmed &amp; processing for you</h4>'+(blocks.length?'<div class="pline-actions" style="margin:2px 0 12px"><button class="pload-btn" onclick="runLoadingList('+_curVend.id+')">\ud83d\udce6 Create loading list</button><button class="pjob-btn" onclick="runVendorSheet('+_curVend.id+')">\u2193 Job sheet</button></div>':'')+(blocks.length?blocks.join(''):'<div style="color:var(--ink3);font-size:12.5px;padding:6px 0">No confirmed / in-production orders with your products right now.</div>')+'</div>'+payHtml;
+  });
+}
+function vendCallAdmin(payload, cb){
+  if(!supa){ toast('Not connected','#C62828'); return; }
+  supa.auth.getSession().then(function(s){
+    var tok=s&&s.data&&s.data.session&&s.data.session.access_token;
+    if(!tok){ toast('Sign in again','#C62828'); return; }
+    fetch(SUPABASE_URL+'/functions/v1/vendor-admin',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok,'apikey':SUPABASE_KEY},body:JSON.stringify(payload)})
+      .then(function(r){ return r.json().catch(function(){ return {error:'bad-response'}; }); })
+      .then(function(j){ cb(j); }, function(){ cb({error:'network'}); });
+  },function(){ toast('Sign in again','#C62828'); });
+}
+function vendLoadLogin(){
+  var el=document.getElementById('vend-login-info'); if(!el||!_curVend||!supa) return;
+  supa.from('vendor_users').select('email').eq('vendor_id',_curVend.id).then(function(r){
+    var el2=document.getElementById('vend-login-info'); if(!el2) return;
+    if(r.error){ el2.textContent='(login status unavailable)'; return; }
+    var rows=r.data||[];
+    if(rows.length){ el2.innerHTML='Login set: <b style="color:var(--ink)">'+escA(rows[0].email||'—')+'</b>'; }
+    else { el2.textContent='No login set for this vendor yet.'; }
+  },function(){});
+}
+function vendSetLogin(){
+  if(!_curVend)return;
+  ghForm({title:'Vendor login — '+(_curVend.name||''), note:'Create or reset the email + password this vendor uses to sign in at /vendor. Share these with them securely.', fields:[{key:'email',label:'Login email',type:'text',placeholder:'vendor@example.com'},{key:'pass',label:'Password (min 6 characters)',type:'text',placeholder:'set a password'}], submitLabel:'Save login', onSubmit:function(v){
+    var email=(v.email||'').trim().toLowerCase(); var pass=(v.pass||'').trim();
+    if(!/^\S+@\S+\.\S+$/.test(email)){ toast('Enter a valid email','#C62828'); return false; }
+    if(pass.length<6){ toast('Password must be 6+ characters','#C62828'); return false; }
+    toast('Saving login…','#5B5BBC');
+    vendCallAdmin({action:'set_login',vendor_id:_curVend.id,email:email,password:pass}, function(j){
+      if(!j||j.error){ toast('Failed: '+((j&&j.error)||'error'),'#C62828'); return; }
+      toast('Login saved ✓','#1B7A4D'); vendLoadLogin();
+    });
+  }});
+}
+function vendRemoveLogin(){
+  if(!_curVend)return;
+  ghConfirm('Remove this vendor’s login? They will no longer be able to sign in to the stock portal.', function(){
+    toast('Removing…','#5B5BBC');
+    vendCallAdmin({action:'remove_login',vendor_id:_curVend.id}, function(j){
+      if(!j||j.error){ toast('Failed: '+((j&&j.error)||'error'),'#C62828'); return; }
+      toast('Login removed','#1B7A4D'); vendLoadLogin();
+    });
   });
 }
 function vendPay(){ if(!_curVend||!supa)return; ghForm({title:'Pay '+(_curVend.name||'vendor'), fields:[{key:'amount',label:'Amount \u20b9',type:'number'},{key:'mode',label:'Mode',type:'select',options:[['UPI','UPI'],['Bank','Bank'],['Cash','Cash']]}], submitLabel:'Record payment', onSubmit:function(v){ var amt=parseFloat(v.amount)||0; if(amt<=0){toast('Enter an amount','#C62828');return false;} supa.from('vendor_payments').insert({vendor_id:_curVend.id,amount:amt,mode:v.mode||'UPI',created_at:new Date().toISOString()}).then(function(r){ if(r&&r.error){toast('Failed: '+r.error.message,'#C62828');return;} toast('Payment recorded','#1B7A4D'); vendLoadProduction(); }); }}); }
