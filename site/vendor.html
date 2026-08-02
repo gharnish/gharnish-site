@@ -133,6 +133,61 @@
   .save2{flex:none;background:#17120b;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}
   .save2:disabled{opacity:.6}
   .row1 .stockin .cin{font-weight:800;font-size:16px}
+  /* ── app shell ── */
+  .appwrap{padding-bottom:96px;min-height:calc(100vh - 50px)}
+  .botnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;background:#fff;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 14px rgba(20,16,10,.05)}
+  .bn{flex:1;background:none;border:none;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;color:var(--ink3);font-size:10.5px;font-weight:700}
+  .bn svg{width:22px;height:22px}
+  .bn.on{color:var(--g)}
+  .bn.on svg{stroke:var(--g)}
+  /* ── dashboard ── */
+  .dashhd{display:flex;align-items:center;gap:12px;padding:18px 2px 8px}
+  .dh-txt{flex:1;min-width:0}
+  .dh-hi{font-family:Poppins,sans-serif;font-size:20px;font-weight:800;line-height:1.2}
+  .dh-sub{font-size:12.5px;color:var(--ink3);margin-top:2px}
+  .dh-av{flex:none;width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--gl),var(--g));color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:19px;font-family:Poppins,sans-serif}
+  .dh-av.lg{width:74px;height:74px;font-size:30px}
+  .statgrid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-top:6px}
+  .statcard{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:16px;padding:14px 15px;box-shadow:0 1px 2px rgba(20,16,10,.04);position:relative;overflow:hidden}
+  .statcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px}
+  .statcard.g:before{background:var(--g)}.statcard.grn:before{background:var(--grn)}.statcard.blu:before{background:#2f6fd6}.statcard.org:before{background:#d2691e}
+  .stat-n{font-family:Poppins,sans-serif;font-size:26px;font-weight:800;line-height:1}
+  .stat-l{font-size:11.5px;color:var(--ink3);font-weight:600;margin-top:4px}
+  .attn{padding:13px 14px}
+  .attn-t{font-weight:800;font-size:13px;margin-bottom:8px}
+  .attn-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0;font-size:12.5px;color:var(--ink2);border-top:1px dashed var(--line)}
+  .attn-row:first-of-type{border-top:none}
+  .attn-row b{color:var(--ink)}
+  .attn-row button{flex:none;background:var(--bg);border:1px solid var(--line);color:var(--g);border-radius:8px;padding:5px 12px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit}
+  .ch-t{font-weight:800;font-size:13px;margin-bottom:10px}
+  .chart{display:flex;flex-direction:column;gap:9px}
+  .ch-row{display:flex;align-items:center;gap:9px;font-size:12px}
+  .ch-lbl{width:96px;flex:none;color:var(--ink2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ch-bar{flex:1;height:9px;background:var(--bg);border-radius:6px;overflow:hidden}
+  .ch-bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--gl),var(--g))}
+  .ch-val{width:22px;flex:none;text-align:right;font-weight:800;color:var(--ink)}
+  .dash-cta{width:100%;margin-top:14px;background:#17120b;color:#fff;border:none;border-radius:13px;padding:14px;font-weight:800;font-size:14.5px;cursor:pointer;font-family:inherit}
+  /* ── loadings ── */
+  .soon{display:inline-block;background:#FFF3E0;color:#B26A00;font-weight:800;font-size:11px;padding:4px 11px;border-radius:999px;margin:0 2px 8px}
+  .load-card{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:15px;padding:14px;margin:10px 0;box-shadow:0 1px 2px rgba(20,16,10,.04)}
+  .load-card.mock{opacity:.72}
+  .lc-hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .lc-hd b{font-family:Poppins,sans-serif;font-size:14.5px}
+  .lc-st{font-size:10.5px;font-weight:800;padding:3px 9px;border-radius:999px}
+  .lc-st.done{background:#E8F5EA;color:var(--grn)}
+  .lc-st.prep{background:#FFF3E0;color:#B26A00}
+  .lc-meta{font-size:12px;color:var(--ink2);margin-top:6px;font-weight:600}
+  .lc-line{font-size:11.5px;color:var(--ink3);margin-top:3px}
+  /* ── account ── */
+  .acct-hero{text-align:center;padding:26px 0 10px}
+  .acct-hero .dh-av{margin:0 auto 12px}
+  .acct-nm{font-family:Poppins,sans-serif;font-size:19px;font-weight:800}
+  .acct-sub{font-size:12.5px;color:var(--ink3);margin-top:2px}
+  .acct-list{padding:4px 14px}
+  .acct-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;font-size:13px;color:var(--ink2);border-top:1px solid var(--line)}
+  .acct-row:first-child{border-top:none}
+  .acct-row b{color:var(--ink);font-weight:700}
+  .save.signout{background:#fff;color:var(--red);border:1.5px solid #F0D2D2}
 </style>
 </head>
 <body>
@@ -145,7 +200,7 @@ var SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
 var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all', VSUB='all', VQ='';
-var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false, LAND={};
+var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false, LAND={}, VTAB='dashboard';
 var PARTLBL={top:'Top',base:'Base',table:'Table',chairs:'Chairs'};
 var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
 function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
@@ -210,7 +265,7 @@ function boot(){
       LAND=parseVal(res[6])||{};
       SUBNAME={}; Object.keys(SUBCATS).forEach(function(pc){ (SUBCATS[pc]||[]).forEach(function(s){ if(s&&s.key) SUBNAME[s.key]=s.name; }); });
       if(!INV.items) INV.items={}; if(!INV.incoming) INV.incoming={};
-      renderPortal();
+      VTAB='dashboard'; renderApp();
     });
   },function(){ renderNoVendor(); });
 }
@@ -333,14 +388,27 @@ function circle(o){
     '<span class="ring">'+inner+(o.count!=null?'<span class="cnt">'+o.count+'</span>':'')+'</span>'+
     '<span class="lbl">'+esc(o.label)+'</span></button>';
 }
-function renderPortal(){
+var IC_HOME='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>';
+var IC_BOX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>';
+var IC_TRUCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4h13v11H1z"/><path d="M14 8h4l3 3v4h-7"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/></svg>';
+var IC_USER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
+function topbarHtml(){ return '<div class="topbar"><img class="logo" src="'+LOGO+'" alt="Gharnish" onerror="this.style.display=\'none\'"><div class="vn">'+esc((V&&V.name)||'Vendor')+'</div></div>'; }
+function bottomNav(){
+  function it(tab,label,svg){ return '<button class="bn'+(VTAB===tab?' on':'')+'" onclick="go(\''+tab+'\')">'+svg+'<span>'+label+'</span></button>'; }
+  return '<nav class="botnav">'+it('dashboard','Home',IC_HOME)+it('stock','Stock',IC_BOX)+it('loadings','Loadings',IC_TRUCK)+it('account','Account',IC_USER)+'</nav>';
+}
+function shell(inner){ return topbarHtml()+'<div class="wrap appwrap">'+inner+'</div>'+bottomNav(); }
+function go(t){ if(t==='stock'){ renderStock(); } else { VTAB=t; renderApp(); } try{ window.scrollTo({top:0}); }catch(e){} }
+function renderApp(){ var b; if(VTAB==='loadings') b=loadingsBody(); else if(VTAB==='account') b=accountBody(); else { VTAB='dashboard'; b=dashBody(); } screen(shell(b)); }
+function renderPortal(){ renderStock(); }
+function renderStock(){
+  VTAB='stock';
   var mine=myProducts();
   var catCounts={}; mine.forEach(function(p){ var c=p.cat||'other'; catCounts[c]=(catCounts[c]||0)+1; });
   var catKeys=Object.keys(catCounts).sort(function(a,b){ return catLabel(a).localeCompare(catLabel(b)); });
   if(VCAT!=='all' && VCAT!=='__clr__' && !catCounts[VCAT]){ VCAT='all'; VSUB='all'; }
-  var H='<div class="topbar"><img class="logo" src="'+LOGO+'" alt="Gharnish" onerror="this.style.display=\'none\'"><div class="vn">'+esc(V.name||'Vendor')+'</div><button onclick="logout()">Sign out</button></div>';
-  H+='<div class="wrap"><div class="hd"><h1>Your stock</h1><p>Set what you have ready and any upcoming stock. Updates show to customers instantly.</p></div>';
-  if(!mine.length){ H+='<div class="empty">No products are assigned to you yet.<br>Please contact Gharnish.</div></div>'; screen(H); return; }
+  var H='<div class="hd"><h1>Your stock</h1><p>Set what you have ready and any upcoming stock. Updates show to customers instantly.</p></div>';
+  if(!mine.length){ H+='<div class="empty">No products are assigned to you yet.<br>Please contact Gharnish.</div>'; screen(shell(H)); return; }
   H+='<input class="search" id="vq" type="search" enterkeyhint="search" placeholder="Search your products…" value="'+esc(VQ)+'" oninput="vsearch(this.value)">';
   var clrCount=mine.filter(function(p){ return onClr(p.id); }).length;
   H+='<div class="catrow">'+circle({onclick:"vfilter('all')",on:VCAT==='all',count:mine.length,label:'All',icon:GRID_SVG});
@@ -368,10 +436,60 @@ function renderPortal(){
       H+='</div>';
     } else { VSUB='all'; }
   }
-  H+='<div id="vlist"></div></div>';
-  screen(H);
+  H+='<div id="vlist"></div>';
+  screen(shell(H));
   renderList();
   try{ var onc=document.querySelector('.catrow .catc.on'); if(onc&&onc.scrollIntoView) onc.scrollIntoView({inline:'center',block:'nearest'}); }catch(e){}
+}
+function firstName(n){ n=(n||'Vendor').trim(); return n.split(/\s+/)[0]; }
+function avIni(n){ return ((n||'?').trim().charAt(0)||'?').toUpperCase(); }
+function greetWord(){ try{ var h=new Date().getHours(); return h<12?'Good morning':(h<17?'Good afternoon':'Good evening'); }catch(e){ return 'Hello'; } }
+function todayStr(){ try{ return new Date().toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short',year:'numeric'}); }catch(e){ return ''; } }
+function missingCost(p){ var parts=myParts(p.id); if(parts.length) return parts.some(function(pt){ return !curLand(p.id,pt); }); return !curLand(p.id,null); }
+function statCard(num,label,cls){ return '<div class="statcard '+cls+'"><div class="stat-n">'+num+'</div><div class="stat-l">'+label+'</div></div>'; }
+function dashBody(){
+  var mine=myProducts();
+  var inStock=mine.filter(function(p){ return INV.items && INV.items[p.id]>0; }).length;
+  var upcoming=mine.filter(function(p){ return INV.incoming && INV.incoming[p.id]; }).length;
+  var clr=mine.filter(function(p){ return onClr(p.id); }).length;
+  var noCost=mine.filter(missingCost).length;
+  var notStock=mine.length-inStock;
+  var H='<div class="dashhd"><div class="dh-txt"><div class="dh-hi">'+greetWord()+', '+esc(firstName(V&&V.name))+'</div><div class="dh-sub">'+todayStr()+'</div></div><div class="dh-av">'+esc(avIni(V&&V.name))+'</div></div>';
+  H+='<div class="statgrid">'+statCard(mine.length,'Products','g')+statCard(inStock,'In stock','grn')+statCard(upcoming,'Upcoming','blu')+statCard(clr,'On clearance','org')+'</div>';
+  if(notStock>0 || noCost>0){
+    H+='<div class="card attn"><div class="attn-t">Needs attention</div>';
+    if(notStock>0) H+='<div class="attn-row"><span><b>'+notStock+'</b> not marked in stock</span><button onclick="go(\'stock\')">Update</button></div>';
+    if(noCost>0) H+='<div class="attn-row"><span><b>'+noCost+'</b> missing your cost</span><button onclick="go(\'stock\')">Set price</button></div>';
+    H+='</div>';
+  }
+  var byCat={}; mine.forEach(function(p){ var c=p.cat||'other'; byCat[c]=(byCat[c]||0)+1; });
+  var cats=Object.keys(byCat).sort(function(a,b){ return byCat[b]-byCat[a]; }).slice(0,6);
+  if(cats.length){
+    var mx=Math.max.apply(null,cats.map(function(c){ return byCat[c]; }));
+    H+='<div class="card"><div class="ch-t">Your products by category</div><div class="chart">';
+    cats.forEach(function(c){ var pct=Math.round(byCat[c]/mx*100); H+='<div class="ch-row"><span class="ch-lbl">'+esc(catLabel(c))+'</span><span class="ch-bar"><i style="width:'+Math.max(pct,6)+'%"></i></span><span class="ch-val">'+byCat[c]+'</span></div>'; });
+    H+='</div></div>';
+  }
+  H+='<button class="dash-cta" onclick="go(\'stock\')">Update my stock</button>';
+  return H;
+}
+function loadingsBody(){
+  var H='<div class="hd"><h1>Loadings</h1><p>Track every consignment you forward to Gharnish — the items requested plus any extras — so nothing goes untracked.</p></div>';
+  H+='<div class="soon">Coming soon</div>';
+  H+='<div class="load-card mock"><div class="lc-hd"><b>Loading #1024</b><span class="lc-st done">Dispatched</span></div><div class="lc-meta">20 items · 18 requested + 2 extra</div><div class="lc-line">Ready chairs, table bases…</div></div>';
+  H+='<div class="load-card mock"><div class="lc-hd"><b>Loading #1025</b><span class="lc-st prep">Preparing</span></div><div class="lc-meta">12 items · 12 requested</div><div class="lc-line">Awaiting dispatch</div></div>';
+  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview of how your loadings will look. We’ll switch this on next.</div>';
+  return H;
+}
+function accountBody(){
+  var H='<div class="acct-hero"><div class="dh-av lg">'+esc(avIni(V&&V.name))+'</div><div class="acct-nm">'+esc((V&&V.name)||'Vendor')+'</div>'+((V&&V.city)?('<div class="acct-sub">'+esc(V.city)+'</div>'):'')+'</div>';
+  H+='<div class="card acct-list">';
+  if(V&&V.phone) H+='<div class="acct-row"><span>Phone</span><b>'+esc(V.phone)+'</b></div>';
+  H+='<div class="acct-row"><span>Products assigned</span><b>'+myProducts().length+'</b></div>';
+  H+='<div class="acct-row"><span>On clearance</span><b>'+myProducts().filter(function(p){ return onClr(p.id); }).length+'</b></div>';
+  H+='</div>';
+  H+='<button class="save signout" onclick="logout()">Sign out</button>';
+  return H;
 }
 
 function curLand(pid,part){ var l=LAND[pid]; if(l==null) return 0; if(part){ return (typeof l==='object'&&l[part]>0)?+l[part]:0; } return (typeof l==='object')?0:(+l||0); }
