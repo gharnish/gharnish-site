@@ -63,11 +63,15 @@
   .cin{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:9px;padding:9px 10px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink);outline:none}
   .cin:focus{border-color:var(--g)}
   .stockin .cin{text-align:right;padding:9px 8px}
-  .row2{display:flex;gap:8px;align-items:flex-end;margin-top:9px}
-  .row2 .f{flex:1;min-width:0}
-  .row2 label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
-  .save2{flex:none;background:#17120b;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}
+  .upbox{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+  .upbox .f{min-width:0}
+  .upbox label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+  .actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+  .uptoggle{background:none;border:none;color:var(--ink2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 0;display:inline-flex;align-items:center;gap:5px;text-align:left;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .uptoggle.set{color:var(--g)}
+  .save2{flex:none;background:#17120b;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}
   .save2:disabled{opacity:.6}
+  .row1 .stockin .cin{font-weight:800;font-size:16px}
 </style>
 </head>
 <body>
@@ -140,17 +144,22 @@ function boot(){
 function isMine(pid){ var v=PV[pid]; if(v==null) return false; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
 
 function vfilter(c){ VCAT=c; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
+function fmtDate(d){ if(!d) return ''; try{ var dt=new Date(d+'T00:00:00'); if(isNaN(dt.getTime())) return d; return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return d; } }
+function toggleUp(pid){ var el=document.getElementById('up-'+pid); if(!el) return; var show=(el.style.display==='none'||!el.style.display); el.style.display=show?'grid':'none'; if(show){ var f=document.getElementById('iq-'+pid); if(f) f.focus(); } }
 function stockCard(p){
   var q=(INV.items && typeof INV.items[p.id]==='number')?INV.items[p.id]:'';
   var inc=(INV.incoming && INV.incoming[p.id])||null;
   var iq=(inc && inc.qty)?inc.qty:''; var idt=(inc && inc.date)?inc.date:'';
   var img=p.image?('<img class="thumb" src="'+esc(p.image)+'" loading="lazy">'):'<div class="thumb ph">🪑</div>';
   var pid=esc(p.id); var pidJs=esc(String(p.id)).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  var hasUp=(iq!==''||!!idt);
+  var upLabel=hasUp ? ('🚚 '+(iq!==''?iq+' Pc':'Upcoming')+(idt?(' · '+esc(fmtDate(idt))):'')+' · edit') : '🚚 Add upcoming stock';
   return '<div class="pcard"><div class="row1">'+img
     +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div><div class="pmeta">'+pid+(p.cat?(' · '+esc(catLabel(p.cat))):'')+'</div></div>'
     +'<div class="stockin"><label>In stock</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="—"></div></div>'
-    +'<div class="row2"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
-    +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div>'
+    +'<div class="upbox" id="up-'+pid+'" style="display:'+(hasUp?'grid':'none')+'"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
+    +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div></div>'
+    +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
     +'<button class="save2" id="save-'+pid+'" onclick="saveProd(\''+pidJs+'\')">Save</button></div></div>';
 }
 function renderPortal(){
