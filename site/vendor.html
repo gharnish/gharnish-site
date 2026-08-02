@@ -230,12 +230,52 @@
   .co-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 14px 8px}
   .co-hd b{font-family:Poppins,sans-serif;font-size:14px}
   .co-meta{font-size:11px;color:var(--ink3);font-weight:600;flex:none}
-  .conf-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-top:1px solid var(--line)}
+  .co-meta.urgent{color:var(--red)}
+  .conf-row{display:flex;align-items:center;gap:11px;padding:10px 14px;border-top:1px solid var(--line)}
+  .conf-row .thumb.sm{width:44px;height:44px;border-radius:10px;font-size:17px}
+  .conf-row.urgent{background:#FFF6F5}
+  .conf-row.moved{opacity:.45}
   .cf-nm{flex:1;min-width:0}
   .cf-nm .pnm{font-weight:400;font-size:13px;color:var(--ink)}
-  .cf-nm .pmeta{font-size:10.5px;color:var(--ink3);margin-top:2px}
-  .cf-btn{flex:none;background:#17120b;color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit}
-  .cf-ready{flex:none;font-size:12px;font-weight:800;color:var(--grn);background:#E8F5EA;border-radius:9px;padding:7px 12px}
+  .cf-nm .urg{display:inline-block;font-size:8.5px;font-weight:800;color:#fff;background:var(--red);border-radius:999px;padding:1px 6px;margin-left:6px;vertical-align:middle;text-transform:uppercase}
+  .cf-nm .pmeta{font-size:10.5px;color:var(--ink3);margin:2px 0 6px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
+  .seg-b{background:#fff;border:none;padding:5px 11px;font-size:11px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:inherit}
+  .seg-b.on.proc{background:#FFF3E0;color:#B26A00}
+  .seg-b.on.rdy{background:#E8F5EA;color:var(--grn)}
+  .cf-move{flex:none;align-self:flex-start;background:none;border:1px solid var(--g);color:var(--g);border-radius:9px;padding:7px 11px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit;white-space:nowrap}
+  .cf-move:disabled{border-color:var(--grn);color:var(--grn);opacity:1}
+  .li-meta{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .li-q{font-family:Poppins,sans-serif;font-size:16px;font-weight:800;color:var(--ink)}
+  .li-price{display:flex;align-items:center;border:1px solid var(--line);border-radius:8px;background:#fff;padding-left:7px}
+  .li-price span{font-weight:800;color:var(--ink2);font-size:12px}
+  .li-price input{width:64px;border:none;background:none;padding:6px 7px 6px 3px;font-size:13px;font-weight:700;font-family:inherit;color:var(--ink);outline:none;text-align:right}
+  .li-price:focus-within{border-color:var(--g)}
+  .li-total{display:flex;align-items:center;justify-content:space-between;margin-top:10px;border-top:1px solid var(--line);padding-top:10px;font-size:12.5px;font-weight:700;color:var(--ink2)}
+  .li-total b{font-family:Poppins,sans-serif;font-size:17px;color:var(--ink)}
+  .samp{font-weight:600;color:var(--ink3);font-size:10.5px;background:#FFF3E0;color:#B26A00;border-radius:999px;padding:1px 8px;margin-left:6px}
+  .mini3{display:flex;gap:10px}
+  .mini{flex:1;text-align:center}
+  .mini-n{font-family:Poppins,sans-serif;font-size:20px;font-weight:800;color:var(--ink)}
+  .mini-l{font-size:10.5px;color:var(--ink3);margin-top:2px}
+  .sr{display:flex;align-items:center;gap:11px;padding:8px 0;border-top:1px solid var(--line)}
+  .sr:first-of-type{border-top:none}
+  .sr .thumb.sm{width:40px;height:40px;border-radius:9px;font-size:15px}
+  .sr-nm{flex:1;min-width:0}
+  .sr-nm .pnm{font-weight:400;font-size:12.5px;color:var(--ink)}
+  .sr-nm .pmeta{font-size:10.5px;color:var(--ink3);margin-top:1px}
+  .sr-stk{flex:none;font-size:10.5px;font-weight:800;border-radius:999px;padding:3px 9px}
+  .sr-stk.in{background:#E8F5EA;color:var(--grn)}
+  .sr-stk.out{background:#FDECEC;color:var(--red)}
+  .disc-tag{flex:none;font-size:10px;font-weight:800;color:#5B4B8A;background:#EFEBF7;border-radius:999px;padding:3px 9px}
+  .pay2{display:flex;gap:11px}
+  .pay{flex:1;border-radius:12px;padding:12px;text-align:center}
+  .pay.pos{background:#E8F5EA}
+  .pay.due{background:#FFF3E0}
+  .pay-n{font-family:Poppins,sans-serif;font-size:18px;font-weight:800}
+  .pay.pos .pay-n{color:var(--grn)}
+  .pay.due .pay-n{color:#B26A00}
+  .pay-l{font-size:10.5px;color:var(--ink3);margin-top:2px}
   /* ── account ── */
   .acct-hero{text-align:center;padding:26px 0 10px}
   .acct-hero .dh-av{margin:0 auto 12px}
@@ -541,48 +581,63 @@ function dashBody(){
     cats.forEach(function(c){ var pct=Math.round(byCat[c]/mx*100); H+='<div class="ch-row"><span class="ch-lbl">'+esc(catLabel(c))+'</span><span class="ch-bar"><i style="width:'+Math.max(pct,6)+'%"></i></span><span class="ch-val">'+byCat[c]+'</span></div>'; });
     H+='</div></div>';
   }
+  H+=dashExtra();
   H+='<button class="dash-cta" onclick="go(\'stock\')">Update my stock</button>';
   return H;
 }
 /* ── Confirmed (design preview) ── */
-function confRow(name,sub,qty,ready){
-  var right = ready ? '<span class="cf-ready">✓ Ready</span>' : '<button class="cf-btn" onclick="cfDemoReady(this)">Mark Ready</button>';
-  return '<div class="conf-row"><div class="cf-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+(sub?esc(sub)+' · ':'')+'Qty '+qty+'</div></div>'+right+'</div>';
+function cfStatusCtl(id,cur){ return '<div class="seg" id="seg-'+id+'"><button class="seg-b'+(cur==='processing'?' on proc':'')+'" onclick="cfSet(\''+id+'\',\'processing\')">Processing</button><button class="seg-b'+(cur!=='processing'?' on rdy':'')+'" onclick="cfSet(\''+id+'\',\'ready\')">Ready</button></div>'; }
+function cfSet(id,st){ var seg=document.getElementById('seg-'+id); if(!seg)return; var bs=seg.querySelectorAll('.seg-b'); bs[0].className='seg-b'+(st==='processing'?' on proc':''); bs[1].className='seg-b'+(st==='ready'?' on rdy':''); var mv=document.getElementById('mv-'+id); if(mv) mv.style.display=(st==='ready')?'inline-flex':'none'; }
+function cfMove(btn){ if(!btn)return; var row=btn.closest('.conf-row'); if(row) row.classList.add('moved'); btn.textContent='Moved ✓'; btn.disabled=true; toast('Moved to latest loading ✓'); }
+function confRow(id,name,sub,qty,status,urgent){
+  return '<div class="conf-row'+(urgent?' urgent':'')+'"><div class="thumb sm ph">🪑</div>'
+    +'<div class="cf-nm"><div class="pnm">'+esc(name)+(urgent?'<span class="urg">Urgent</span>':'')+'</div><div class="pmeta">'+(sub?esc(sub)+' · ':'')+'Qty '+qty+'</div>'+cfStatusCtl(id,status)+'</div>'
+    +'<button class="cf-move" id="mv-'+id+'" onclick="cfMove(this)" style="display:'+(status==='ready'?'inline-flex':'none')+'">→ Loading</button></div>';
 }
-function cfDemoReady(btn){ if(btn){ var s=document.createElement('span'); s.className='cf-ready'; s.textContent='✓ Ready'; btn.replaceWith(s); } }
 function confirmedBody(){
-  var H='<div class="hd"><h1>Confirmed</h1><p>Products from Gharnish’s running orders that are assigned to you. Mark each one <b>Ready</b> when it’s prepared — Gharnish sees it instantly.</p></div>';
+  var H='<div class="hd"><h1>Confirmed</h1><p>Items from Gharnish’s running orders assigned to you. Set each to <b>Processing</b> or <b>Ready</b> (Ready by default when it’s in stock), then move ready items to a loading.</p></div>';
   H+='<div class="soon">Preview</div>';
-  H+='<div class="conf-order"><div class="co-hd"><b>Order · Ravi Caterers</b><span class="co-meta">#GH-2041 · 2 items</span></div>'
-    +confRow('Diamond Restaurant Chair','Cushion Chairs',40,true)
-    +confRow('Round Restaurant Table','',10,false)+'</div>';
-  H+='<div class="conf-order"><div class="co-hd"><b>Order · Hotel Blue Orchid</b><span class="co-meta">#GH-2044 · 1 item</span></div>'
-    +confRow('Bar Stool Classic','',24,false)+'</div>';
-  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview — this will fill with your real running-order items next.</div>';
+  H+='<div class="conf-order"><div class="co-hd"><b>Order · Ravi Caterers</b><span class="co-meta urgent">Load by 5 Aug</span></div>'
+    +confRow('c1','Diamond Restaurant Chair','Cushion Chairs',40,'ready',true)
+    +confRow('c2','Round Restaurant Table','',10,'processing',true)+'</div>';
+  H+='<div class="conf-order"><div class="co-hd"><b>Order · Hotel Blue Orchid</b><span class="co-meta">Load by 12 Aug</span></div>'
+    +confRow('c3','Bar Stool Classic','',24,'ready',false)+'</div>';
+  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview — real running-order items next. “Load by” comes from Gharnish; items due soon show <b>Urgent</b>.</div>';
   return H;
 }
 /* ── Loadings (design preview) ── */
 function loadOpen(id){ var el=document.getElementById('lc-'+id); if(el) el.classList.toggle('open'); }
+function loadRecalc(id){ var card=document.getElementById('lc-'+id); if(!card)return; var rows=card.querySelectorAll('.li-row'); var tot=0; for(var i=0;i<rows.length;i++){ var q=+rows[i].getAttribute('data-q')||0; var pi=rows[i].querySelector('.li-price input'); var pr=pi?(+pi.value||0):0; tot+=q*pr; } var t=card.querySelector('.li-total b'); if(t) t.textContent=fmtINR(tot); }
 function loadCard(id,title,st,stCls,meta,items){
+  var total=items.reduce(function(a,it){ return a+(it.q*(+it.p||0)); },0);
   var rows=items.map(function(it){
     var img=it.img?('<img class="thumb sm" src="'+esc(it.img)+'" loading="lazy">'):'<div class="thumb sm ph">🪑</div>';
-    return '<div class="li-row">'+img
-      +'<div class="li-nm"><div class="pnm">'+esc(it.n)+(it.extra?'<span class="li-extra">extra</span>':'')+'</div>'
-      +'<input class="li-cmt2" placeholder="Add a comment…" value="'+esc(it.c||'')+'"></div>'
-      +'<div class="li-qty">×'+it.q+'</div></div>';
+    return '<div class="li-row" data-q="'+it.q+'">'+img
+      +'<div class="li-nm"><div class="pnm">'+esc(it.n)+(it.extra?'<span class="li-extra">extra</span>':'')+'</div><input class="li-cmt2" placeholder="Add a comment…" value="'+esc(it.c||'')+'"></div>'
+      +'<div class="li-meta"><span class="li-q">×'+it.q+'</span><div class="li-price"><span>₹</span><input type="number" inputmode="numeric" min="0" value="'+(it.p||'')+'" oninput="loadRecalc(\''+id+'\')"></div></div></div>';
   }).join('');
   return '<div class="load-card" id="lc-'+id+'"><div class="lc-hd" onclick="loadOpen(\''+id+'\')"><b>'+esc(title)+'</b><span class="lc-st '+stCls+'">'+esc(st)+'</span><span class="lc-chev">'+CHEV_SVG+'</span></div>'
     +'<div class="lc-meta">'+esc(meta)+'</div>'
-    +'<div class="lc-items">'+rows+'<div class="li-note"><label>Overall note</label><input class="li-cmt" placeholder="Note for this loading…"></div></div></div>';
+    +'<div class="lc-items">'+rows+'<div class="li-total">Total amount <b>'+fmtINR(total)+'</b></div><div class="li-note"><label>Overall note</label><input class="li-cmt" placeholder="Note for this loading…"></div></div></div>';
 }
 function loadingsBody(){
-  var H='<div class="hd"><h1>Loadings</h1><p>Every consignment forwarded to Gharnish — requested items plus any extras. Tap a loading to open it and add comments per product.</p></div>';
+  var H='<div class="hd"><h1>Loadings</h1><p>Every consignment forwarded to Gharnish — requested items plus any extras. Tap a loading to open it, set each product’s price and add comments.</p></div>';
   H+='<div class="soon">Preview</div>';
   H+=loadCard('a','Loading #1024','Dispatched','done','20 items · 18 requested + 2 extra · 20 Jul',[
-      {n:'Diamond Restaurant Chair',q:12,c:'Packed & sent'},{n:'Round Restaurant Table',q:6},{n:'Bar Stool Classic',q:2,extra:true,c:'Extra from stock'}]);
+      {n:'Diamond Restaurant Chair',q:12,p:5500,c:'Packed & sent'},{n:'Round Restaurant Table',q:6,p:9800},{n:'Bar Stool Classic',q:2,p:1500,extra:true,c:'Extra from stock'}]);
   H+=loadCard('b','Loading #1025','Preparing','prep','12 items · 12 requested',[
-      {n:'Cushion Chair Grey',q:12}]);
-  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview — tap a card to expand. Editable by you and Gharnish once switched on.</div>';
+      {n:'Cushion Chair Grey',q:12,p:3400}]);
+  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview — tap a card to expand. Prices, comments and the total are editable by you and Gharnish once switched on.</div>';
+  return H;
+}
+/* ── dashboard extra sections (design preview) ── */
+function sellRow(name,sold,stock){ var sc=stock>0?'<span class="sr-stk in">'+stock+' in stock</span>':'<span class="sr-stk out">Out</span>'; return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+sold+' sold</div></div>'+sc+'</div>'; }
+function discRow(name,meta){ return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+esc(meta)+'</div></div><span class="disc-tag">In quote</span></div>'; }
+function dashExtra(){
+  var H='<div class="card"><div class="ch-t">Analytics · this month <span class="samp">preview</span></div><div class="mini3"><div class="mini"><div class="mini-n">320</div><div class="mini-l">Pc dispatched</div></div><div class="mini"><div class="mini-n">12</div><div class="mini-l">Loadings</div></div><div class="mini"><div class="mini-n">₹4.2L</div><div class="mini-l">Billed</div></div></div></div>';
+  H+='<div class="card"><div class="ch-t">Most selling · stock <span class="samp">preview</span></div>'+sellRow('Diamond Restaurant Chair',210,100)+sellRow('HOLO Premium Dining Chair',180,100)+sellRow('Bar Stool Classic',120,0)+'</div>';
+  H+='<div class="card"><div class="ch-t">Payments & business <span class="samp">preview</span></div><div class="pay2"><div class="pay pos"><div class="pay-n">₹1,20,000</div><div class="pay-l">Received</div></div><div class="pay due"><div class="pay-n">₹38,500</div><div class="pay-l">Pending</div></div></div><div class="hint" style="margin-top:8px">Bank HDFC ••4821 · GST 36ABCDE1234F1Z5</div></div>';
+  H+='<div class="card"><div class="ch-t">In discussion <span class="samp">from Gharnish quotes</span></div>'+discRow('Marble Round Table','Ravi Caterers · qty 8')+discRow('Velvet Cushion Chair','Hotel Blue Orchid · qty 30')+'</div>';
   return H;
 }
 function accountBody(){
