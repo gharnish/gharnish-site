@@ -133,6 +133,29 @@
   .save2{flex:none;background:#17120b;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}
   .save2:disabled{opacity:.6}
   .row1 .stockin .cin{font-weight:800;font-size:16px}
+  /* ── collapsible stock rows ── */
+  .scard{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:14px;margin:10px 0;box-shadow:0 1px 2px rgba(20,16,10,.04);overflow:hidden}
+  .thumb.sm{width:52px;height:52px;border-radius:11px}
+  .sc-head{display:flex;align-items:center;gap:12px;padding:11px 13px;cursor:pointer}
+  .sc-nm{flex:1;min-width:0}
+  .sc-nm .pnm{font-weight:400;font-size:13px;line-height:1.3;color:var(--ink);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .sc-nm .pmeta{font-size:10.5px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sc-right{flex:none;text-align:right}
+  .sc-price{font-family:Poppins,sans-serif;font-size:20px;font-weight:800;color:var(--ink);line-height:1}
+  .sc-price.none{font-size:14px;font-weight:700;color:var(--ink3)}
+  .sc-stock{font-size:11px;color:var(--ink3);margin-top:4px;white-space:nowrap}
+  .sc-stock b{color:var(--grn);font-weight:800}
+  .sc-stock.out{color:var(--red);font-weight:700}
+  .sc-up{font-size:9.5px;font-weight:800;color:#B26A00;margin-top:3px;white-space:nowrap}
+  .sc-chev{flex:none;color:var(--ink3);display:flex;transition:transform .18s}
+  .sc-chev svg{width:20px;height:20px}
+  .scard.open .sc-chev{transform:rotate(180deg)}
+  .sc-edit{display:none;padding:12px 13px 13px;border-top:1px solid var(--line)}
+  .scard.open .sc-edit{display:block}
+  .sc-edit .ef label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
+  .sc-edit .ef .cin{width:130px;font-weight:800;font-size:16px}
+  .sc-edit .landrow{margin-top:12px}
+  .sc-edit .actions{margin-top:12px}
   /* ── app shell ── */
   .appwrap{padding-bottom:96px;min-height:calc(100vh - 50px)}
   .botnav{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;background:#fff;border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));box-shadow:0 -2px 14px rgba(20,16,10,.05)}
@@ -291,23 +314,37 @@ function subKeysOf(pid){ var a=PSUB[pid]; return (a&&a.length)?a:[]; }
 function subNamesOf(pid){ return subKeysOf(pid).map(function(k){ return SUBNAME[k]||''; }).filter(Boolean); }
 function fmtDate(d){ if(!d) return ''; try{ var dt=new Date(d+'T00:00:00'); if(isNaN(dt.getTime())) return d; return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return d; } }
 function toggleUp(pid){ var el=document.getElementById('up-'+pid); if(!el) return; var show=(el.style.display==='none'||!el.style.display); el.style.display=show?'grid':'none'; if(show){ var f=document.getElementById('iq-'+pid); if(f) f.focus(); } }
+function landTotal(pid){ var parts=myParts(pid); if(parts.length){ var t=0,any=false; parts.forEach(function(pt){ var v=curLand(pid,pt); if(v>0){ t+=v; any=true; } }); return any?t:0; } return curLand(pid,null); }
+function toggleCard(pid){ var el=document.getElementById('sc-'+pid); if(!el) return; el.classList.toggle('open'); }
+var CHEV_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
 function stockCard(p){
   var q=(INV.items && typeof INV.items[p.id]==='number')?INV.items[p.id]:'';
   var inc=(INV.incoming && INV.incoming[p.id])||null;
   var iq=(inc && inc.qty)?inc.qty:''; var idt=(inc && inc.date)?inc.date:'';
-  var img=p.image?('<img class="thumb" src="'+esc(p.image)+'" loading="lazy">'):'<div class="thumb ph">🪑</div>';
+  var img=p.image?('<img class="thumb sm" src="'+esc(p.image)+'" loading="lazy">'):'<div class="thumb sm ph">🪑</div>';
   var pid=esc(p.id); var pidJs=jsEsc(String(p.id));
   var hasUp=(iq!==''||!!idt);
   var upLabel=hasUp ? ('🚚 '+(iq!==''?iq+' Pc':'Upcoming')+(idt?(' · '+esc(fmtDate(idt))):'')+' · edit') : '🚚 Add upcoming stock';
   var subs=subNamesOf(p.id); var meta=subs.length?subs.join(', '):(p.cat?catLabel(p.cat):'');
-  return '<div class="pcard"><div class="row1">'+img
-    +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div>'+(meta?('<div class="pmeta">'+esc(meta)+'</div>'):'')+'</div>'
-    +'<div class="stockin"><label>In stock</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="—"></div></div>'
-    +landRow(p)
-    +'<div class="upbox" id="up-'+pid+'" style="display:'+(hasUp?'grid':'none')+'"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
-    +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div></div>'
-    +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
-    +'<button class="save2" id="save-'+pid+'" onclick="saveProd(\''+pidJs+'\')">Save</button></div></div>';
+  var price=(typeof p.price==='number'&&p.price>0)?p.price:0;
+  var priceHtml=price>0 ? '<div class="sc-price">'+fmtINR(price)+'</div>' : '<div class="sc-price none">—</div>';
+  var stockHtml = (q!=='' && q>0) ? '<div class="sc-stock"><b>'+q+'</b> in stock</div>'
+      : (q===0 ? '<div class="sc-stock out">Out of stock</div>' : '<div class="sc-stock none">No stock set</div>');
+  var upTag = hasUp ? '<div class="sc-up">🚚 '+(iq!==''?iq+' soon':'incoming')+'</div>' : '';
+  return '<div class="scard" id="sc-'+pid+'">'
+    +'<div class="sc-head" onclick="toggleCard(\''+pidJs+'\')">'+img
+      +'<div class="sc-nm"><div class="pnm">'+esc(p.name||'')+'</div>'+(meta?('<div class="pmeta">'+esc(meta)+'</div>'):'')+'</div>'
+      +'<div class="sc-right">'+priceHtml+stockHtml+upTag+'</div>'
+      +'<span class="sc-chev">'+CHEV_SVG+'</span>'
+    +'</div>'
+    +'<div class="sc-edit">'
+      +'<div class="ef"><label>In stock (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="0"></div>'
+      +landRow(p)
+      +'<div class="upbox" id="up-'+pid+'" style="display:'+(hasUp?'grid':'none')+'"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
+      +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div></div>'
+      +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
+      +'<button class="save2" id="save-'+pid+'" onclick="saveProd(\''+pidJs+'\')">Save</button></div>'
+    +'</div></div>';
 }
 function pcardHead(p){
   var subs=subNamesOf(p.id); var meta=subs.length?subs.join(', '):(p.cat?catLabel(p.cat):'');
