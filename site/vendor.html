@@ -50,6 +50,11 @@
   .chips::-webkit-scrollbar{display:none}
   .chip{flex:none;white-space:nowrap;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid rgba(20,16,10,.15);background:#fff;color:var(--ink2);font-family:inherit}
   .chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
+  .search{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink);outline:none;margin:8px 0 2px}
+  .search:focus{border-color:var(--g)}
+  .chips2{padding-top:4px}
+  .chips2 .chip{padding:6px 12px;font-size:11.5px}
+  .chips2 .chip.on{border-color:var(--g);background:var(--g);color:#fff}
   .cat-h{font-family:Poppins,sans-serif;font-size:15px;font-weight:800;color:var(--ink);margin:16px 2px 4px}
   .cat-h span{font-size:12px;font-weight:600;color:var(--ink3)}
   .pcard{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:14px;padding:11px 12px;margin:9px 0;box-shadow:0 1px 2px rgba(20,16,10,.04)}
@@ -83,7 +88,8 @@ var SUPABASE_URL='https://djedmaezxvuzmwjnooel.supabase.co';
 var SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
-var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all';
+var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all', VSUB='all', VQ='';
+var SUBCATS={}, PSUB={}, SUBNAME={};
 var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
 function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
 
@@ -132,9 +138,13 @@ function boot(){
     Promise.all([
       supa.from('gharnish_products').select('id,name,cat,image,price,hidden,internal').then(function(x){ return x.data||[]; }, function(){ return []; }),
       supa.from('app_settings').select('value').eq('key','product_vendors').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
-      supa.from('app_settings').select('value').eq('key','inventory').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; })
+      supa.from('app_settings').select('value').eq('key','inventory').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
+      supa.from('app_settings').select('value').eq('key','subcategories').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
+      supa.from('app_settings').select('value').eq('key','product_subcats').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; })
     ]).then(function(res){
       PRODS=res[0]||[]; PV=parseVal(res[1]); INV=parseVal(res[2])||{};
+      SUBCATS=parseVal(res[3])||{}; PSUB=parseVal(res[4])||{};
+      SUBNAME={}; Object.keys(SUBCATS).forEach(function(pc){ (SUBCATS[pc]||[]).forEach(function(s){ if(s&&s.key) SUBNAME[s.key]=s.name; }); });
       if(!INV.items) INV.items={}; if(!INV.incoming) INV.incoming={};
       renderPortal();
     });
@@ -143,7 +153,11 @@ function boot(){
 
 function isMine(pid){ var v=PV[pid]; if(v==null) return false; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
 
-function vfilter(c){ VCAT=c; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
+function vfilter(c){ VCAT=c; VSUB='all'; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
+function vsub(s){ VSUB=s; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
+function vsearch(q){ VQ=q||''; renderList(); }
+function subKeysOf(pid){ var a=PSUB[pid]; return (a&&a.length)?a:[]; }
+function subNamesOf(pid){ return subKeysOf(pid).map(function(k){ return SUBNAME[k]||''; }).filter(Boolean); }
 function fmtDate(d){ if(!d) return ''; try{ var dt=new Date(d+'T00:00:00'); if(isNaN(dt.getTime())) return d; return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return d; } }
 function toggleUp(pid){ var el=document.getElementById('up-'+pid); if(!el) return; var show=(el.style.display==='none'||!el.style.display); el.style.display=show?'grid':'none'; if(show){ var f=document.getElementById('iq-'+pid); if(f) f.focus(); } }
 function stockCard(p){
@@ -155,31 +169,67 @@ function stockCard(p){
   var hasUp=(iq!==''||!!idt);
   var upLabel=hasUp ? ('🚚 '+(iq!==''?iq+' Pc':'Upcoming')+(idt?(' · '+esc(fmtDate(idt))):'')+' · edit') : '🚚 Add upcoming stock';
   return '<div class="pcard"><div class="row1">'+img
-    +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div><div class="pmeta">'+pid+(p.cat?(' · '+esc(catLabel(p.cat))):'')+'</div></div>'
+    +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div><div class="pmeta">'+pid+(p.cat?(' · '+esc(catLabel(p.cat))):'')+((function(){ var s=subNamesOf(p.id); return s.length?(' · '+esc(s.join(', '))):''; })())+'</div></div>'
     +'<div class="stockin"><label>In stock</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="—"></div></div>'
     +'<div class="upbox" id="up-'+pid+'" style="display:'+(hasUp?'grid':'none')+'"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
     +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div></div>'
     +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
     +'<button class="save2" id="save-'+pid+'" onclick="saveProd(\''+pidJs+'\')">Save</button></div></div>';
 }
+function myProducts(){ return (PRODS||[]).filter(function(p){ return isMine(p.id) && !p.internal; }); }
+function renderList(){
+  var el=document.getElementById('vlist'); if(!el) return;
+  var q=(VQ||'').trim().toLowerCase();
+  var scope=myProducts();
+  if(VCAT!=='all') scope=scope.filter(function(p){ return (p.cat||'other')===VCAT; });
+  if(VCAT!=='all' && VSUB!=='all'){
+    if(VSUB==='__none__') scope=scope.filter(function(p){ return subKeysOf(p.id).length===0; });
+    else scope=scope.filter(function(p){ return subKeysOf(p.id).indexOf(VSUB)>-1; });
+  }
+  if(q) scope=scope.filter(function(p){ return (p.name||'').toLowerCase().indexOf(q)>-1 || String(p.id||'').toLowerCase().indexOf(q)>-1; });
+  scope.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+  if(!scope.length){ el.innerHTML='<div class="empty">No products match'+(q?' “'+esc(VQ)+'”':'')+'.</div>'; return; }
+  var H='';
+  if(VCAT==='all' && !q){
+    var byCat={}; scope.forEach(function(p){ var c=p.cat||'other'; (byCat[c]=byCat[c]||[]).push(p); });
+    Object.keys(byCat).sort(function(a,b){ return catLabel(a).localeCompare(catLabel(b)); }).forEach(function(c){
+      H+='<div class="cat-h">'+esc(catLabel(c))+' <span>('+byCat[c].length+')</span></div>';
+      byCat[c].forEach(function(p){ H+=stockCard(p); });
+    });
+  } else {
+    scope.forEach(function(p){ H+=stockCard(p); });
+  }
+  H+='<div style="height:72px"></div>';
+  el.innerHTML=H;
+}
 function renderPortal(){
-  var mine=(PRODS||[]).filter(function(p){ return isMine(p.id) && !p.internal; });
+  var mine=myProducts();
   var catCounts={}; mine.forEach(function(p){ var c=p.cat||'other'; catCounts[c]=(catCounts[c]||0)+1; });
   var catKeys=Object.keys(catCounts).sort(function(a,b){ return catLabel(a).localeCompare(catLabel(b)); });
-  if(VCAT!=='all' && !catCounts[VCAT]) VCAT='all';
+  if(VCAT!=='all' && !catCounts[VCAT]){ VCAT='all'; VSUB='all'; }
   var H='<div class="topbar"><img class="logo" src="'+LOGO+'" alt="Gharnish" onerror="this.style.display=\'none\'"><div class="vn">'+esc(V.name||'Vendor')+'</div><button onclick="logout()">Sign out</button></div>';
   H+='<div class="wrap"><div class="hd"><h1>Your stock</h1><p>Set what you have ready and any upcoming stock. Updates show to customers instantly.</p></div>';
   if(!mine.length){ H+='<div class="empty">No products are assigned to you yet.<br>Please contact Gharnish.</div></div>'; screen(H); return; }
+  H+='<input class="search" id="vq" type="search" enterkeyhint="search" placeholder="Search your products…" value="'+esc(VQ)+'" oninput="vsearch(this.value)">';
   H+='<div class="chips"><button class="chip'+(VCAT==='all'?' on':'')+'" onclick="vfilter(\'all\')">All ('+mine.length+')</button>';
   catKeys.forEach(function(c){ H+='<button class="chip'+(VCAT===c?' on':'')+'" onclick="vfilter(\''+esc(c)+'\')">'+esc(catLabel(c))+' ('+catCounts[c]+')</button>'; });
   H+='</div>';
-  function byName(a,b){ return (a.name||'').localeCompare(b.name||''); }
-  function group(c){ var list=mine.filter(function(p){ return (p.cat||'other')===c; }).sort(byName);
-    H+='<div class="cat-h">'+esc(catLabel(c))+' <span>('+list.length+')</span></div>';
-    list.forEach(function(p){ H+=stockCard(p); }); }
-  if(VCAT!=='all'){ group(VCAT); } else { catKeys.forEach(group); }
-  H+='<div style="height:72px"></div></div>';
+  if(VCAT!=='all'){
+    var inCat=mine.filter(function(p){ return (p.cat||'other')===VCAT; });
+    var subCount={}, noneCount=0;
+    inCat.forEach(function(p){ var ks=subKeysOf(p.id); if(!ks.length) noneCount++; ks.forEach(function(k){ subCount[k]=(subCount[k]||0)+1; }); });
+    var catSubs=(SUBCATS[VCAT]||[]).filter(function(s){ return s&&subCount[s.key]; });
+    if(catSubs.length){
+      if(VSUB!=='all' && VSUB!=='__none__' && !subCount[VSUB]) VSUB='all';
+      H+='<div class="chips chips2"><button class="chip'+(VSUB==='all'?' on':'')+'" onclick="vsub(\'all\')">All types</button>';
+      catSubs.forEach(function(s){ H+='<button class="chip'+(VSUB===s.key?' on':'')+'" onclick="vsub(\''+esc(s.key)+'\')">'+esc(s.name)+' ('+subCount[s.key]+')</button>'; });
+      if(noneCount) H+='<button class="chip'+(VSUB==='__none__'?' on':'')+'" onclick="vsub(\'__none__\')">Unlabelled ('+noneCount+')</button>';
+      H+='</div>';
+    } else { VSUB='all'; }
+  }
+  H+='<div id="vlist"></div></div>';
   screen(H);
+  renderList();
 }
 
 function saveProd(pid){
