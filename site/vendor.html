@@ -253,6 +253,10 @@
   .li-price:focus-within{border-color:var(--g)}
   .li-total{display:flex;align-items:center;justify-content:space-between;margin-top:10px;border-top:1px solid var(--line);padding-top:10px;font-size:12.5px;font-weight:700;color:var(--ink2)}
   .li-total b{font-family:Poppins,sans-serif;font-size:17px;color:var(--ink)}
+  .ld-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px}
+  .ld-add{background:none;border:1px solid var(--line);color:var(--ink2);border-radius:9px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+  .ld-disp{background:#17120b;color:#fff;border:none;border-radius:9px;padding:9px 18px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit}
+  .ld-done{font-size:12px;font-weight:800;color:var(--grn)}
   .samp{font-weight:600;color:var(--ink3);font-size:10.5px;background:#FFF3E0;color:#B26A00;border-radius:999px;padding:1px 8px;margin-left:6px}
   .mini3{display:flex;gap:10px}
   .mini{flex:1;text-align:center}
@@ -586,7 +590,15 @@ function dashBody(){
   return H;
 }
 /* ── Confirmed (live) ── */
-function cfMove(btn){ if(!btn)return; var row=btn.closest('.conf-row'); if(row) row.classList.add('moved'); btn.textContent='Moved ✓'; btn.disabled=true; toast('Loadings go live in the next update'); }
+function cfMoveReal(oid,pid,seg){
+  if(!supa) return;
+  var btn=document.getElementById('mv-'+seg); if(btn){ btn.disabled=true; btn.textContent='Moving…'; }
+  supa.rpc('vendor_move_to_loading',{p_order_id:String(oid),p_pid:String(pid)}).then(function(r){
+    if(r&&r.error){ if(btn){ btn.disabled=false; btn.textContent='→ Loading'; } toast('Failed: '+(r.error.message||'error'),true); return; }
+    CONF=CONF.filter(function(x){ return !(String(x.order_id)===String(oid) && String(x.pid)===String(pid)); });
+    renderConfList(); toast('Moved to loading ✓');
+  },function(){ if(btn){ btn.disabled=false; btn.textContent='→ Loading'; } toast('Failed',true); });
+}
 function daysUntil(d){ if(!d) return null; try{ var t=new Date(d+'T00:00:00'); var now=new Date(); now.setHours(0,0,0,0); return Math.round((t-now)/86400000); }catch(e){ return null; } }
 function confirmedBody(){ setTimeout(confLoad,0); return '<div class="hd"><h1>Confirmed</h1><p>Items from Gharnish’s running orders assigned to you. Set each to <b>Processing</b> or <b>Ready</b> — Gharnish sees it instantly.</p></div><div id="conflist"><div class="loading">Loading your items…</div></div>'; }
 function confLoad(){
@@ -618,7 +630,7 @@ function confRowReal(it,urgent){
   return '<div class="conf-row'+(urgent?' urgent':'')+'">'+img
     +'<div class="cf-nm"><div class="pnm">'+esc(it.name||it.pid)+(urgent?'<span class="urg">Urgent</span>':'')+'</div><div class="pmeta">Qty '+(it.qty||0)+'</div>'
     +'<div class="seg" id="seg-'+seg+'"><button class="seg-b'+(ready?'':' on proc')+'" onclick="cfSetReal(\''+oidJs+'\',\''+pidJs+'\',\'processing\',\''+seg+'\')">Processing</button><button class="seg-b'+(ready?' on rdy':'')+'" onclick="cfSetReal(\''+oidJs+'\',\''+pidJs+'\',\'ready\',\''+seg+'\')">Ready</button></div></div>'
-    +'<button class="cf-move" id="mv-'+seg+'" onclick="cfMove(this)" style="display:'+(ready?'inline-flex':'none')+'">→ Loading</button></div>';
+    +'<button class="cf-move" id="mv-'+seg+'" onclick="cfMoveReal(\''+oidJs+'\',\''+pidJs+'\',\''+seg+'\')" style="display:'+(ready?'inline-flex':'none')+'">→ Loading</button></div>';
 }
 function cfSetReal(oid,pid,st,seg){
   var el=document.getElementById('seg-'+seg); if(el){ var bs=el.querySelectorAll('.seg-b'); bs[0].className='seg-b'+(st==='processing'?' on proc':''); bs[1].className='seg-b'+(st==='ready'?' on rdy':''); }
@@ -626,31 +638,50 @@ function cfSetReal(oid,pid,st,seg){
   if(!supa) return;
   supa.rpc('vendor_set_stage',{p_order_id:String(oid),p_pid:String(pid),p_stage:(st==='ready'?'Ready':'Processing')}).then(function(r){ if(r&&r.error){ toast('Failed: '+(r.error.message||'error'),true); } else { toast(st==='ready'?'Marked Ready ✓':'Set to Processing'); } },function(){ toast('Save failed',true); });
 }
-/* ── Loadings (design preview) ── */
+/* ── Loadings (live) ── */
+var LOADS=[];
 function loadOpen(id){ var el=document.getElementById('lc-'+id); if(el) el.classList.toggle('open'); }
-function loadRecalc(id){ var card=document.getElementById('lc-'+id); if(!card)return; var rows=card.querySelectorAll('.li-row'); var tot=0; for(var i=0;i<rows.length;i++){ var q=+rows[i].getAttribute('data-q')||0; var pi=rows[i].querySelector('.li-price input'); var pr=pi?(+pi.value||0):0; tot+=q*pr; } var t=card.querySelector('.li-total b'); if(t) t.textContent=fmtINR(tot); }
-function loadCard(id,title,st,stCls,meta,items){
-  var total=items.reduce(function(a,it){ return a+(it.q*(+it.p||0)); },0);
-  var rows=items.map(function(it){
-    var img=it.img?('<img class="thumb sm" src="'+esc(it.img)+'" loading="lazy">'):'<div class="thumb sm ph">🪑</div>';
-    return '<div class="li-row" data-q="'+it.q+'">'+img
-      +'<div class="li-nm"><div class="pnm">'+esc(it.n)+(it.extra?'<span class="li-extra">extra</span>':'')+'</div><input class="li-cmt2" placeholder="Add a comment…" value="'+esc(it.c||'')+'"></div>'
-      +'<div class="li-meta"><span class="li-q">×'+it.q+'</span><div class="li-price"><span>₹</span><input type="number" inputmode="numeric" min="0" value="'+(it.p||'')+'" oninput="loadRecalc(\''+id+'\')"></div></div></div>';
-  }).join('');
-  return '<div class="load-card" id="lc-'+id+'"><div class="lc-hd" onclick="loadOpen(\''+id+'\')"><b>'+esc(title)+'</b><span class="lc-st '+stCls+'">'+esc(st)+'</span><span class="lc-chev">'+CHEV_SVG+'</span></div>'
-    +'<div class="lc-meta">'+esc(meta)+'</div>'
-    +'<div class="lc-items">'+rows+'<div class="li-total">Total amount <b>'+fmtINR(total)+'</b></div><div class="li-note"><label>Overall note</label><input class="li-cmt" placeholder="Note for this loading…"></div></div></div>';
+function loadTotal(ld){ return (ld.loading_items||[]).reduce(function(a,it){ return a+((+it.qty||0)*(+it.price||0)); },0); }
+function ldRecalc(id){ var card=document.getElementById('lc-'+id); if(!card)return; var rows=card.querySelectorAll('.li-row'); var tot=0; for(var i=0;i<rows.length;i++){ var q=+rows[i].getAttribute('data-q')||0; var pi=rows[i].querySelector('.li-price input'); var pr=pi?(+pi.value||0):0; tot+=q*pr; } var t=document.getElementById('ldtot-'+id); if(t) t.textContent=fmtINR(tot); }
+function loadingsBody(){ setTimeout(loadLoadings,0); return '<div class="hd"><h1>Loadings</h1><p>Consignments forwarded to Gharnish. Open one to set each product’s price, add comments, then dispatch.</p></div><div id="loadlist"><div class="loading">Loading…</div></div>'; }
+function loadLoadings(){
+  var el=document.getElementById('loadlist'); if(!el) return;
+  if(!supa){ el.innerHTML='<div class="empty">Connection unavailable.</div>'; return; }
+  supa.from('loadings').select('*, loading_items(*)').order('created_at',{ascending:false}).then(function(r){
+    if(r.error){ el.innerHTML='<div class="empty">Could not load loadings.</div>'; return; }
+    LOADS=r.data||[]; renderLoadList();
+  },function(){ el.innerHTML='<div class="empty">Could not load loadings.</div>'; });
 }
-function loadingsBody(){
-  var H='<div class="hd"><h1>Loadings</h1><p>Every consignment forwarded to Gharnish — requested items plus any extras. Tap a loading to open it, set each product’s price and add comments.</p></div>';
-  H+='<div class="soon">Preview</div>';
-  H+=loadCard('a','Loading #1024','Dispatched','done','20 items · 18 requested + 2 extra · 20 Jul',[
-      {n:'Diamond Restaurant Chair',q:12,p:5500,c:'Packed & sent'},{n:'Round Restaurant Table',q:6,p:9800},{n:'Bar Stool Classic',q:2,p:1500,extra:true,c:'Extra from stock'}]);
-  H+=loadCard('b','Loading #1025','Preparing','prep','12 items · 12 requested',[
-      {n:'Cushion Chair Grey',q:12,p:3400}]);
-  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview — tap a card to expand. Prices, comments and the total are editable by you and Gharnish once switched on.</div>';
-  return H;
+function loadRowHtml(it){
+  var img=it.image?('<img class="thumb sm" src="'+esc(it.image)+'" loading="lazy">'):'<div class="thumb sm ph">🪑</div>';
+  return '<div class="li-row" data-q="'+(it.qty||0)+'">'+img
+    +'<div class="li-nm"><div class="pnm">'+esc(it.name||it.product_id||'Item')+(it.is_extra?'<span class="li-extra">extra</span>':'')+'</div>'
+    +'<input class="li-cmt2" placeholder="Add a comment…" value="'+esc(it.comment||'')+'" onchange="liSave('+it.id+',\'comment\',this.value)"></div>'
+    +'<div class="li-meta"><span class="li-q">×'+(it.qty||0)+'</span><div class="li-price"><span>₹</span><input type="number" inputmode="numeric" min="0" value="'+((+it.price>0)?it.price:'')+'" oninput="ldRecalc('+it.loading_id+')" onchange="liSave('+it.id+',\'price\',this.value)"></div></div></div>';
 }
+function renderLoadList(){
+  var el=document.getElementById('loadlist'); if(!el) return;
+  if(!LOADS.length){ el.innerHTML='<div class="empty">No loadings yet.<br>Move a <b>Ready</b> item from Confirmed to start one.</div>'; return; }
+  var H='';
+  LOADS.forEach(function(ld){
+    var items=(ld.loading_items||[]).slice().sort(function(a,b){ return (a.id||0)-(b.id||0); });
+    var disp=(ld.status==='dispatched');
+    var rows=items.length?items.map(loadRowHtml).join(''):'<div class="hint" style="padding:6px 0">No items yet.</div>';
+    H+='<div class="load-card" id="lc-'+ld.id+'"><div class="lc-hd" onclick="loadOpen(\''+ld.id+'\')"><b>'+esc(ld.number||('Loading #'+ld.id))+'</b><span class="lc-st '+(disp?'done':'prep')+'">'+(disp?'Dispatched':'Open')+'</span><span class="lc-chev">'+CHEV_SVG+'</span></div>'
+      +'<div class="lc-meta">'+items.length+' item'+(items.length===1?'':'s')+'</div>'
+      +'<div class="lc-items">'+rows
+      +'<div class="li-total">Total amount <b id="ldtot-'+ld.id+'">'+fmtINR(loadTotal(ld))+'</b></div>'
+      +'<div class="li-note"><label>Overall note</label><input class="li-cmt" placeholder="Note for this loading…" value="'+esc(ld.note||'')+'" onchange="ldSaveNote('+ld.id+',this.value)"></div>'
+      +'<div class="ld-actions"><button class="ld-add" onclick="ldAddExtra('+ld.id+')">＋ Add extra item</button>'
+      +(disp?'<span class="ld-done">✓ Dispatched</span>':'<button class="ld-disp" onclick="ldDispatch('+ld.id+')">Dispatch</button>')
+      +'</div></div></div>';
+  });
+  el.innerHTML=H;
+}
+function liSave(itemId,field,val){ if(!supa)return; var p={}; p[field]=(field==='price')?Math.max(0,parseInt(val,10)||0):val; supa.from('loading_items').update(p).eq('id',itemId).then(function(r){ if(r&&r.error) toast('Save failed',true); },function(){ toast('Save failed',true); }); }
+function ldSaveNote(id,val){ if(!supa)return; supa.from('loadings').update({note:val}).eq('id',id).then(function(){},function(){}); }
+function ldDispatch(id){ if(!supa)return; supa.from('loadings').update({status:'dispatched',dispatched_at:new Date().toISOString()}).eq('id',id).then(function(r){ if(r&&r.error){ toast('Failed',true); return; } toast('Dispatched ✓'); loadLoadings(); },function(){ toast('Failed',true); }); }
+function ldAddExtra(id){ var name=(prompt('Extra item name')||'').trim(); if(!name)return; var qty=Math.max(1,parseInt(prompt('Quantity','1'),10)||1); if(!supa)return; supa.from('loading_items').insert({loading_id:id,vendor_id:(V&&V.id),name:name,qty:qty,price:0,is_extra:true}).then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,true); return; } toast('Extra item added'); loadLoadings(); },function(){ toast('Failed',true); }); }
 /* ── dashboard extra sections (design preview) ── */
 function sellRow(name,sold,stock){ var sc=stock>0?'<span class="sr-stk in">'+stock+' in stock</span>':'<span class="sr-stk out">Out</span>'; return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+sold+' sold</div></div>'+sc+'</div>'; }
 function discRow(name,meta){ return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+esc(meta)+'</div></div><span class="disc-tag">In quote</span></div>'; }
