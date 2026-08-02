@@ -211,13 +211,19 @@
   .load-card.open .lc-chev{transform:rotate(180deg)}
   .lc-items{display:none;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
   .load-card.open .lc-items{display:block}
-  .li-row{display:flex;align-items:center;gap:9px;padding:6px 0}
-  .li-nm{flex:none;width:44%;font-size:12px;color:var(--ink);font-weight:600}
-  .li-q{color:var(--ink3);font-weight:700;margin-left:5px}
-  .li-extra{display:inline-block;font-size:9px;font-weight:800;color:#B26A00;background:#FFF3E0;border-radius:999px;padding:1px 6px;margin-left:5px}
+  .li-row{display:flex;align-items:center;gap:11px;padding:8px 0;border-top:1px solid var(--line)}
+  .li-row:first-child{border-top:none}
+  .li-row .thumb.sm{width:46px;height:46px;border-radius:10px;font-size:18px}
+  .li-nm{flex:1;min-width:0}
+  .li-nm .pnm{font-weight:400;font-size:13px;color:var(--ink);line-height:1.3}
+  .li-extra{display:inline-block;font-size:9px;font-weight:800;color:#B26A00;background:#FFF3E0;border-radius:999px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+  .li-cmt2{display:block;width:100%;border:none;background:none;padding:2px 0 0;font-size:11px;color:var(--ink3);font-family:inherit;outline:none}
+  .li-cmt2:focus{color:var(--ink)}
+  .li-cmt2::placeholder{color:var(--ink3);opacity:.75}
+  .li-qty{flex:none;font-family:Poppins,sans-serif;font-size:19px;font-weight:800;color:var(--ink)}
   .li-cmt{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px;font-family:inherit;background:#fff;color:var(--ink);outline:none}
   .li-cmt:focus{border-color:var(--g)}
-  .li-note{margin-top:8px}
+  .li-note{margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
   .li-note label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
   /* ── confirmed ── */
   .conf-order{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:15px;margin:10px 0;box-shadow:0 1px 2px rgba(20,16,10,.04);overflow:hidden}
@@ -557,7 +563,13 @@ function confirmedBody(){
 /* ── Loadings (design preview) ── */
 function loadOpen(id){ var el=document.getElementById('lc-'+id); if(el) el.classList.toggle('open'); }
 function loadCard(id,title,st,stCls,meta,items){
-  var rows=items.map(function(it){ return '<div class="li-row"><div class="li-nm">'+esc(it.n)+'<span class="li-q">×'+it.q+'</span>'+(it.extra?'<span class="li-extra">extra</span>':'')+'</div><input class="li-cmt" placeholder="Add a comment…" value="'+esc(it.c||'')+'"></div>'; }).join('');
+  var rows=items.map(function(it){
+    var img=it.img?('<img class="thumb sm" src="'+esc(it.img)+'" loading="lazy">'):'<div class="thumb sm ph">🪑</div>';
+    return '<div class="li-row">'+img
+      +'<div class="li-nm"><div class="pnm">'+esc(it.n)+(it.extra?'<span class="li-extra">extra</span>':'')+'</div>'
+      +'<input class="li-cmt2" placeholder="Add a comment…" value="'+esc(it.c||'')+'"></div>'
+      +'<div class="li-qty">×'+it.q+'</div></div>';
+  }).join('');
   return '<div class="load-card" id="lc-'+id+'"><div class="lc-hd" onclick="loadOpen(\''+id+'\')"><b>'+esc(title)+'</b><span class="lc-st '+stCls+'">'+esc(st)+'</span><span class="lc-chev">'+CHEV_SVG+'</span></div>'
     +'<div class="lc-meta">'+esc(meta)+'</div>'
     +'<div class="lc-items">'+rows+'<div class="li-note"><label>Overall note</label><input class="li-cmt" placeholder="Note for this loading…"></div></div></div>';
