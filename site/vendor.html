@@ -85,9 +85,16 @@
   .upbox{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
   .upbox .f{min-width:0}
   .upbox label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+  .clrbox{margin-top:10px;background:#fff7f2;border:1px solid #f3d9c9;border-radius:11px;padding:10px}
+  .clrbox .f{min-width:0;max-width:180px}
+  .clrbox label{display:block;font-size:9px;font-weight:800;color:#b1541f;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+  .clrbox .clrnote{font-size:10.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
+  .clrbox .clrnote b{color:#b1541f}
   .actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
-  .uptoggle{background:none;border:none;color:var(--ink2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 0;display:inline-flex;align-items:center;gap:5px;text-align:left;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .toggles{display:flex;flex-direction:column;gap:4px;align-items:flex-start;min-width:0}
+  .uptoggle,.clrtoggle{background:none;border:none;color:var(--ink2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 0;display:inline-flex;align-items:center;gap:5px;text-align:left;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .uptoggle.set{color:var(--g)}
+  .clrtoggle.set{color:#d2691e}
   .save2{flex:none;background:#17120b;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}
   .save2:disabled{opacity:.6}
   .row1 .stockin .cin{font-weight:800;font-size:16px}
@@ -103,7 +110,7 @@ var SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
 var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all', VSUB='all', VQ='';
-var SUBCATS={}, PSUB={}, SUBNAME={};
+var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={};
 var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
 function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
 
@@ -111,6 +118,8 @@ function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,
 function val(id){ var e=document.getElementById(id); return e?e.value:''; }
 function screen(h){ document.getElementById('app').innerHTML=h; }
 function parseVal(v){ if(v==null) return {}; if(typeof v==='string'){ try{ return JSON.parse(v); }catch(e){ return {}; } } return v; }
+function parseClearance(v){ v=parseVal(v); var m={}; var it=(v&&v.items)?v.items:null; if(it){ Object.keys(it).forEach(function(id){ var x=it[id]; var q=(x&&typeof x.qty==='number')?x.qty:0; if(q>0) m[id]=q; }); } return m; }
+function clrQty(pid){ return (CLR && CLR[pid]>0)?CLR[pid]:''; }
 var _tt=null;
 function toast(msg,bad){ var t=document.getElementById('toast'); if(!t)return; t.textContent=msg; t.className='on'+(bad?' bad':''); clearTimeout(_tt); _tt=setTimeout(function(){ t.className=''; },2200); }
 
@@ -154,10 +163,12 @@ function boot(){
       supa.from('app_settings').select('value').eq('key','product_vendors').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
       supa.from('app_settings').select('value').eq('key','inventory').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
       supa.from('app_settings').select('value').eq('key','subcategories').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
-      supa.from('app_settings').select('value').eq('key','product_subcats').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; })
+      supa.from('app_settings').select('value').eq('key','product_subcats').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
+      supa.from('app_settings').select('value').eq('key','clearance').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; })
     ]).then(function(res){
       PRODS=res[0]||[]; PV=parseVal(res[1]); INV=parseVal(res[2])||{};
       SUBCATS=parseVal(res[3])||{}; PSUB=parseVal(res[4])||{};
+      CLR=parseClearance(res[5]);
       SUBNAME={}; Object.keys(SUBCATS).forEach(function(pc){ (SUBCATS[pc]||[]).forEach(function(s){ if(s&&s.key) SUBNAME[s.key]=s.name; }); });
       if(!INV.items) INV.items={}; if(!INV.incoming) INV.incoming={};
       renderPortal();
@@ -174,20 +185,27 @@ function subKeysOf(pid){ var a=PSUB[pid]; return (a&&a.length)?a:[]; }
 function subNamesOf(pid){ return subKeysOf(pid).map(function(k){ return SUBNAME[k]||''; }).filter(Boolean); }
 function fmtDate(d){ if(!d) return ''; try{ var dt=new Date(d+'T00:00:00'); if(isNaN(dt.getTime())) return d; return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return d; } }
 function toggleUp(pid){ var el=document.getElementById('up-'+pid); if(!el) return; var show=(el.style.display==='none'||!el.style.display); el.style.display=show?'grid':'none'; if(show){ var f=document.getElementById('iq-'+pid); if(f) f.focus(); } }
+function toggleClr(pid){ var el=document.getElementById('clr-'+pid); if(!el) return; var show=(el.style.display==='none'||!el.style.display); el.style.display=show?'block':'none'; if(show){ var f=document.getElementById('cq-'+pid); if(f) f.focus(); } }
 function stockCard(p){
   var q=(INV.items && typeof INV.items[p.id]==='number')?INV.items[p.id]:'';
   var inc=(INV.incoming && INV.incoming[p.id])||null;
   var iq=(inc && inc.qty)?inc.qty:''; var idt=(inc && inc.date)?inc.date:'';
   var img=p.image?('<img class="thumb" src="'+esc(p.image)+'" loading="lazy">'):'<div class="thumb ph">🪑</div>';
+  var cq=clrQty(p.id);
   var pid=esc(p.id); var pidJs=esc(String(p.id)).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
   var hasUp=(iq!==''||!!idt);
+  var hasClr=(cq!=='');
   var upLabel=hasUp ? ('🚚 '+(iq!==''?iq+' Pc':'Upcoming')+(idt?(' · '+esc(fmtDate(idt))):'')+' · edit') : '🚚 Add upcoming stock';
+  var clrLabel=hasClr ? ('🏷️ '+cq+' Pc on clearance · edit') : '🏷️ Add clearance stock';
   return '<div class="pcard"><div class="row1">'+img
     +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div><div class="pmeta">'+pid+(p.cat?(' · '+esc(catLabel(p.cat))):'')+((function(){ var s=subNamesOf(p.id); return s.length?(' · '+esc(s.join(', '))):''; })())+'</div></div>'
     +'<div class="stockin"><label>In stock</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="—"></div></div>'
     +'<div class="upbox" id="up-'+pid+'" style="display:'+(hasUp?'grid':'none')+'"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
     +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div></div>'
-    +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
+    +'<div class="clrbox" id="clr-'+pid+'" style="display:'+(hasClr?'block':'none')+'"><div class="f"><label>Clearance qty (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="cq-'+pid+'" value="'+cq+'" placeholder="e.g. 10"></div>'
+    +'<div class="clrnote">Appears in the app’s <b>Offers</b> tab. Gharnish sets the sale price.</div></div>'
+    +'<div class="actions"><div class="toggles"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
+    +'<button class="clrtoggle'+(hasClr?' set':'')+'" onclick="toggleClr(\''+pidJs+'\')">'+clrLabel+'</button></div>'
     +'<button class="save2" id="save-'+pid+'" onclick="saveProd(\''+pidJs+'\')">Save</button></div></div>';
 }
 function myProducts(){ return (PRODS||[]).filter(function(p){ return isMine(p.id) && !p.internal; }); }
@@ -266,12 +284,20 @@ function saveProd(pid){
   var qty=(qtyRaw===''?null:Math.max(0,parseInt(qtyRaw,10)||0));
   var iqty=(iqtyRaw===''?null:Math.max(0,parseInt(iqtyRaw,10)||0));
   var d=idate||null;
+  var cqRaw=val('cq-'+pid);
+  var cq=(cqRaw===''?0:Math.max(0,parseInt(cqRaw,10)||0));
+  var prevCq=(CLR&&CLR[pid]>0)?CLR[pid]:0;
+  var clrChanged=(cq!==prevCq);
   var b=document.getElementById('save-'+pid); if(b){ b.disabled=true; b.textContent='Saving\u2026'; }
-  supa.rpc('vendor_update_stock',{p_product_id:pid,p_qty:qty,p_incoming_qty:iqty,p_incoming_date:d}).then(function(r){
+  var tasks=[ supa.rpc('vendor_update_stock',{p_product_id:pid,p_qty:qty,p_incoming_qty:iqty,p_incoming_date:d}) ];
+  if(clrChanged) tasks.push(supa.rpc('vendor_set_clearance',{p_product_id:pid,p_qty:cq}));
+  Promise.all(tasks).then(function(rs){
     if(b){ b.disabled=false; b.textContent='Save'; }
-    if(r.error){ toast('Failed: '+(r.error.message||'error'),true); return; }
+    var err=null; rs.forEach(function(r){ if(r&&r.error&&!err) err=r.error; });
+    if(err){ toast('Failed: '+(err.message||'error'),true); return; }
     if(qty===null) delete INV.items[pid]; else INV.items[pid]=qty;
     if((iqty===null||iqty<=0)&&!d) delete INV.incoming[pid]; else INV.incoming[pid]={qty:iqty||0,date:d||''};
+    if(clrChanged){ if(cq>0) CLR[pid]=cq; else delete CLR[pid]; }
     toast('Saved \u2713');
   },function(){ if(b){ b.disabled=false; b.textContent='Save'; } toast('Save failed',true); });
 }
