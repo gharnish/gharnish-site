@@ -82,19 +82,37 @@
   .subrow .cimg.ini{font-size:17px}
   .subrow .cimg.gridic svg{width:22px;height:22px}
   .subrow .lbl{font-size:10px;max-width:58px}
-  .clrhead{font-size:12px;color:var(--ink2);background:#fff7f2;border:1px solid #f3d9c9;border-radius:11px;padding:10px 12px;margin:10px 0 2px;line-height:1.5}
+  .clrbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 2px 0}
+  .clrbar-t{font-family:Poppins,sans-serif;font-size:15px;font-weight:800;color:var(--ink)}
+  .clrbtn{border:none;border-radius:999px;padding:9px 15px;font-family:inherit;font-weight:700;font-size:12.5px;cursor:pointer}
+  .clrbtn.add{background:#c85a17;color:#fff}
+  .clrbtn.done{background:#17120b;color:#fff}
+  .clrhead{font-size:12px;color:var(--ink2);background:#fff7f2;border:1px solid #f3d9c9;border-radius:11px;padding:10px 12px;margin:8px 0 2px;line-height:1.5}
   .clrhead b{color:#b1541f}
   .clrhint{font-size:12px;font-weight:700;color:var(--ink3)}
   .pcard.clron{border-color:#eab88f;background:#fffaf6}
   .pcard.clron .clrhint{color:#c85a17}
+  .clrx{flex:none;width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink3);font-size:14px;cursor:pointer;line-height:1}
+  .clrx:hover{border-color:#c85a17;color:#c85a17}
+  .clradd{flex:none;background:#c85a17;color:#fff;border:none;border-radius:10px;padding:9px 16px;font-family:inherit;font-weight:800;font-size:13px;cursor:pointer}
+  .clradd:disabled{opacity:.6}
+  .clrprice{margin-top:10px;display:flex;align-items:flex-end;gap:12px}
+  .clrprice .f{min-width:0;max-width:170px}
+  .clrprice label{display:block;font-size:9px;font-weight:800;color:#b1541f;text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+  .clrprice .inr{display:flex;align-items:center;border:1.5px solid var(--line);border-radius:9px;background:#fff;padding-left:10px}
+  .clrprice .inr:focus-within{border-color:#c85a17}
+  .clrprice .inr span{font-weight:800;color:var(--ink2);font-size:15px}
+  .clrprice .inr .cin{border:none;background:none;padding-left:4px}
+  .clrprice .inr .cin:focus{border:none}
+  .clrbase{font-size:11px;color:var(--ink3);padding-bottom:11px;text-decoration:line-through}
   .cat-h{font-family:Poppins,sans-serif;font-size:15px;font-weight:800;color:var(--ink);margin:16px 2px 4px}
   .cat-h span{font-size:12px;font-weight:600;color:var(--ink3)}
   .pcard{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:14px;padding:11px 12px;margin:9px 0;box-shadow:0 1px 2px rgba(20,16,10,.04)}
   .row1{display:flex;gap:10px;align-items:center}
-  .row1 .thumb{width:42px;height:42px;border-radius:10px}
+  .row1 .thumb{width:56px;height:56px;border-radius:12px}
   .nmwrap{flex:1;min-width:0}
-  .row1 .pnm{font-weight:700;font-size:13.5px;line-height:1.25}
-  .row1 .pmeta{font-size:10.5px;color:var(--ink3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row1 .pnm{font-weight:400;font-size:12.5px;line-height:1.3;color:var(--ink)}
+  .row1 .pmeta{font-size:10.5px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .stockin{flex:none;width:92px}
   .stockin label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px;text-align:right}
   .cin{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:9px;padding:9px 10px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink);outline:none}
@@ -121,7 +139,7 @@ var SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
 var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all', VSUB='all', VQ='';
-var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={};
+var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false;
 var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
 function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
 
@@ -129,8 +147,9 @@ function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,
 function val(id){ var e=document.getElementById(id); return e?e.value:''; }
 function screen(h){ document.getElementById('app').innerHTML=h; }
 function parseVal(v){ if(v==null) return {}; if(typeof v==='string'){ try{ return JSON.parse(v); }catch(e){ return {}; } } return v; }
-function parseClearance(v){ v=parseVal(v); var m={}; var it=(v&&v.items)?v.items:null; if(it){ Object.keys(it).forEach(function(id){ var x=it[id]; var q=(x&&typeof x.qty==='number')?x.qty:0; if(q>0) m[id]=q; }); } return m; }
-function clrQty(pid){ return (CLR && CLR[pid]>0)?CLR[pid]:''; }
+function parseClearance(v){ v=parseVal(v); var m={}; var it=(v&&v.items)?v.items:null; if(it){ Object.keys(it).forEach(function(id){ var x=it[id]||{}; m[id]={price:(x.offer||0),qty:(x.qty||0)}; }); } return m; }
+function onClr(pid){ return !!(CLR && CLR[pid]); }
+function clrPrice(pid){ return (CLR && CLR[pid] && CLR[pid].price>0)?CLR[pid].price:''; }
 var _tt=null;
 function toast(msg,bad){ var t=document.getElementById('toast'); if(!t)return; t.textContent=msg; t.className='on'+(bad?' bad':''); clearTimeout(_tt); _tt=setTimeout(function(){ t.className=''; },2200); }
 
@@ -189,7 +208,7 @@ function boot(){
 
 function isMine(pid){ var v=PV[pid]; if(v==null) return false; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
 
-function vfilter(c){ VCAT=c; VSUB='all'; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
+function vfilter(c){ VCAT=c; VSUB='all'; VCLRADD=false; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
 function vsub(s){ VSUB=s; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
 function vsearch(q){ VQ=q||''; renderList(); }
 function subKeysOf(pid){ var a=PSUB[pid]; return (a&&a.length)?a:[]; }
@@ -213,16 +232,27 @@ function stockCard(p){
     +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
     +'<button class="save2" id="save-'+pid+'" onclick="saveProd(\''+pidJs+'\')">Save</button></div></div>';
 }
-function clrCard(p){
-  var cq=clrQty(p.id);
-  var pid=esc(p.id); var pidJs=jsEsc(String(p.id));
+function pcardHead(p){
   var subs=subNamesOf(p.id); var meta=subs.length?subs.join(', '):(p.cat?catLabel(p.cat):'');
   var img=p.image?('<img class="thumb" src="'+esc(p.image)+'" loading="lazy">'):'<div class="thumb ph">🪑</div>';
-  return '<div class="pcard'+(cq!==''?' clron':'')+'"><div class="row1">'+img
-    +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div>'+(meta?('<div class="pmeta">'+esc(meta)+'</div>'):'')+'</div>'
-    +'<div class="stockin"><label>Clearance</label><input class="cin" type="number" inputmode="numeric" min="0" id="cq-'+pid+'" value="'+cq+'" placeholder="—"></div></div>'
-    +'<div class="actions"><span class="clrhint">'+(cq!==''?'🏷️ Live in Offers':'Set a quantity to feature')+'</span>'
-    +'<button class="save2" id="save-'+pid+'" onclick="saveClr(\''+pidJs+'\')">Save</button></div></div>';
+  return img+'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div>'+(meta?('<div class="pmeta">'+esc(meta)+'</div>'):'')+'</div>';
+}
+function fmtINR(n){ try{ return '₹'+Number(n).toLocaleString('en-IN'); }catch(e){ return '₹'+n; } }
+function clrCard(p){
+  var pr=clrPrice(p.id);
+  var pid=esc(p.id); var pidJs=jsEsc(String(p.id));
+  var base=(typeof p.price==='number'&&p.price>0)?p.price:0;
+  return '<div class="pcard clron" id="pc-'+pid+'"><div class="row1">'+pcardHead(p)
+    +'<button class="clrx" id="rm-'+pid+'" onclick="removeClr(\''+pidJs+'\')" title="Remove from clearance" aria-label="Remove">✕</button></div>'
+    +'<div class="clrprice"><div class="f"><label>Special price</label><div class="inr"><span>₹</span><input class="cin" type="number" inputmode="numeric" min="0" id="cp-'+pid+'" value="'+pr+'" placeholder="'+(base?base:'e.g. 1499')+'"></div></div>'
+    +(base?'<div class="clrbase">Usual '+fmtINR(base)+'</div>':'')+'</div>'
+    +'<div class="actions"><span class="clrhint">🏷️ In the Offers tab</span>'
+    +'<button class="save2" id="save-'+pid+'" onclick="saveClrPrice(\''+pidJs+'\')">Save price</button></div></div>';
+}
+function addPickCard(p){
+  var pid=esc(p.id); var pidJs=jsEsc(String(p.id));
+  return '<div class="pcard" id="pc-'+pid+'"><div class="row1">'+pcardHead(p)
+    +'<button class="clradd" id="add-'+pid+'" onclick="addClr(\''+pidJs+'\')">＋ Add</button></div></div>';
 }
 function myProducts(){ return (PRODS||[]).filter(function(p){ return isMine(p.id) && !p.internal; }); }
 function renderList(){
@@ -230,18 +260,22 @@ function renderList(){
   var q=(VQ||'').trim().toLowerCase();
   var isClr=(VCAT==='__clr__');
   var scope=myProducts();
+  if(isClr){ scope=scope.filter(function(p){ return VCLRADD ? !onClr(p.id) : onClr(p.id); }); }
   if(!isClr && VCAT!=='all') scope=scope.filter(function(p){ return (p.cat||'other')===VCAT; });
   if(!isClr && VCAT!=='all' && VSUB!=='all'){
     if(VSUB==='__none__') scope=scope.filter(function(p){ return subKeysOf(p.id).length===0; });
     else scope=scope.filter(function(p){ return subKeysOf(p.id).indexOf(VSUB)>-1; });
   }
   if(q) scope=scope.filter(function(p){ return (p.name||'').toLowerCase().indexOf(q)>-1 || String(p.id||'').toLowerCase().indexOf(q)>-1; });
-  var card=isClr?clrCard:stockCard;
-  if(isClr){ scope.sort(function(a,b){ var ca=(CLR[a.id]>0?0:1), cb=(CLR[b.id]>0?0:1); if(ca!==cb) return ca-cb; return (a.name||'').localeCompare(b.name||''); }); }
-  else { scope.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }); }
-  if(!scope.length){ el.innerHTML='<div class="empty">No products match'+(q?' “'+esc(VQ)+'”':'')+'.</div>'; return; }
+  var card=isClr?(VCLRADD?addPickCard:clrCard):stockCard;
+  scope.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+  if(!scope.length){
+    if(isClr && !VCLRADD && !q){ el.innerHTML='<div class="empty">No products on clearance yet.<br>Tap <b>＋ Add products</b> to put items on sale.</div>'; return; }
+    if(isClr && VCLRADD && !q){ el.innerHTML='<div class="empty">All your products are already on clearance.</div>'; return; }
+    el.innerHTML='<div class="empty">No products match'+(q?' “'+esc(VQ)+'”':'')+'.</div>'; return;
+  }
   var H='';
-  if((VCAT==='all'||isClr) && !q){
+  if((VCAT==='all'||(isClr&&VCLRADD)) && !q){
     var byCat={}; scope.forEach(function(p){ var c=p.cat||'other'; (byCat[c]=byCat[c]||[]).push(p); });
     Object.keys(byCat).sort(function(a,b){ return catLabel(a).localeCompare(catLabel(b)); }).forEach(function(c){
       H+='<div class="cat-h">'+esc(catLabel(c))+' <span>('+byCat[c].length+')</span></div>';
@@ -286,13 +320,19 @@ function renderPortal(){
   H+='<div class="wrap"><div class="hd"><h1>Your stock</h1><p>Set what you have ready and any upcoming stock. Updates show to customers instantly.</p></div>';
   if(!mine.length){ H+='<div class="empty">No products are assigned to you yet.<br>Please contact Gharnish.</div></div>'; screen(H); return; }
   H+='<input class="search" id="vq" type="search" enterkeyhint="search" placeholder="Search your products…" value="'+esc(VQ)+'" oninput="vsearch(this.value)">';
-  var clrCount=Object.keys(CLR||{}).length;
+  var clrCount=mine.filter(function(p){ return onClr(p.id); }).length;
   H+='<div class="catrow">'+circle({onclick:"vfilter('all')",on:VCAT==='all',count:mine.length,label:'All',icon:GRID_SVG});
   catKeys.forEach(function(c){ H+=circle({onclick:"vfilter('"+jsEsc(c)+"')",on:VCAT===c,count:catCounts[c],label:catLabel(c),img:catImg(c)}); });
   H+='<span class="catsep"></span>'+circle({onclick:"vfilter('__clr__')",on:VCAT==='__clr__',count:clrCount||null,label:'Clearance',icon:TAG_SVG,cls:'clr'});
   H+='</div>';
   if(VCAT==='__clr__'){
-    H+='<div class="clrhead">Set a clearance quantity to feature a product in the app’s <b>Offers</b> tab. Gharnish sets the sale price.</div>';
+    H+='<div class="clrbar"><div class="clrbar-t">'+(VCLRADD?'Add products to clearance':'Clearance sale ('+clrCount+')')+'</div>'
+      +(VCLRADD
+         ? '<button class="clrbtn done" onclick="clrAddMode(false)">Done</button>'
+         : '<button class="clrbtn add" onclick="clrAddMode(true)">＋ Add products</button>')+'</div>';
+    H+='<div class="clrhead">'+(VCLRADD
+        ? 'Tap <b>Add</b> to put a product on clearance, then set the special price.'
+        : 'These products show in the app’s <b>Offers</b> tab at your special price.')+'</div>';
   } else if(VCAT!=='all'){
     var inCat=mine.filter(function(p){ return (p.cat||'other')===VCAT; });
     var subCount={}, noneCount=0;
@@ -326,18 +366,35 @@ function saveProd(pid){
     toast('Saved \u2713');
   },function(){ if(b){ b.disabled=false; b.textContent='Save'; } toast('Save failed',true); });
 }
-function saveClr(pid){
-  var cqRaw=val('cq-'+pid);
-  var cq=(cqRaw===''?0:Math.max(0,parseInt(cqRaw,10)||0));
+function clrAddMode(on){ VCLRADD=!!on; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
+function addClr(pid){
+  var b=document.getElementById('add-'+pid); if(b){ b.disabled=true; b.textContent='Adding\u2026'; }
+  supa.rpc('vendor_set_clearance',{p_product_id:pid,p_active:true,p_price:0,p_qty:null}).then(function(r){
+    if(r.error){ if(b){ b.disabled=false; b.textContent='\uff0b Add'; } toast('Failed: '+(r.error.message||'error'),true); return; }
+    CLR[pid]={price:0,qty:(CLR[pid]&&CLR[pid].qty)||0};
+    var card=document.getElementById('pc-'+esc(pid)); if(card){ card.style.transition='opacity .15s'; card.style.opacity='0'; setTimeout(renderList,150); } else renderList();
+    toast('Added to clearance \u2713');
+  },function(){ if(b){ b.disabled=false; b.textContent='\uff0b Add'; } toast('Add failed',true); });
+}
+function removeClr(pid){
+  var b=document.getElementById('rm-'+pid); if(b) b.disabled=true;
+  supa.rpc('vendor_set_clearance',{p_product_id:pid,p_active:false,p_price:null,p_qty:null}).then(function(r){
+    if(r.error){ if(b) b.disabled=false; toast('Failed: '+(r.error.message||'error'),true); return; }
+    delete CLR[pid];
+    var card=document.getElementById('pc-'+esc(pid)); if(card){ card.style.transition='opacity .15s'; card.style.opacity='0'; setTimeout(function(){ renderPortal(); },150); } else renderPortal();
+    toast('Removed from clearance');
+  },function(){ if(b) b.disabled=false; toast('Remove failed',true); });
+}
+function saveClrPrice(pid){
+  var prRaw=val('cp-'+pid);
+  var pr=(prRaw===''?0:Math.max(0,parseInt(prRaw,10)||0));
   var b=document.getElementById('save-'+pid); if(b){ b.disabled=true; b.textContent='Saving\u2026'; }
-  supa.rpc('vendor_set_clearance',{p_product_id:pid,p_qty:cq}).then(function(r){
-    if(b){ b.disabled=false; b.textContent='Save'; }
+  supa.rpc('vendor_set_clearance',{p_product_id:pid,p_active:true,p_price:pr,p_qty:null}).then(function(r){
+    if(b){ b.disabled=false; b.textContent='Save price'; }
     if(r.error){ toast('Failed: '+(r.error.message||'error'),true); return; }
-    if(cq>0) CLR[pid]=cq; else delete CLR[pid];
-    var card=b?b.closest('.pcard'):null;
-    if(card){ if(cq>0) card.classList.add('clron'); else card.classList.remove('clron'); var hint=card.querySelector('.clrhint'); if(hint) hint.innerHTML=(cq>0?'\ud83c\udff7\ufe0f Live in Offers':'Set a quantity to feature'); }
-    toast(cq>0?'On clearance \u2713':'Removed from clearance');
-  },function(){ if(b){ b.disabled=false; b.textContent='Save'; } toast('Save failed',true); });
+    if(!CLR[pid]) CLR[pid]={qty:0}; CLR[pid].price=pr;
+    toast(pr>0?'Special price saved \u2713':'Saved');
+  },function(){ if(b){ b.disabled=false; b.textContent='Save price'; } toast('Save failed',true); });
 }
 
 /* init: resume session or show login */

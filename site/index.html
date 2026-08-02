@@ -4202,7 +4202,18 @@ var RES_CAT_CARDS=[
 var GH_ALL=[];
 function ghSecOf(p){ var s=p&&p.section; return (s==='residential'||s==='office'||s==='banquet')?s:'restaurant'; }
 function ghCurSec(){ return (S.section==='residential'||S.section==='office'||S.section==='banquet')?S.section:'restaurant'; }
-function ghApplySection(){ if(!GH_ALL.length && PRODUCTS.length){ GH_ALL=PRODUCTS.slice(); } var sec=ghCurSec(); var list=GH_ALL.filter(function(p){ return ghSecOf(p)===sec; }); PRODUCTS.length=0; list.forEach(function(p){ PRODUCTS.push(p); }); }
+function applyClearanceOffers(){
+  var list=(typeof GH_ALL!=='undefined'&&GH_ALL.length)?GH_ALL:PRODUCTS;
+  (list||[]).forEach(function(p){
+    var o=CLEARANCE_OFFER[p.id];
+    if(o>0){
+      var orig=(CLR_ORIG[p.id]!=null?CLR_ORIG[p.id]:p.price); CLR_ORIG[p.id]=orig;
+      if(o<orig){ CLEARANCE_MRP[p.id]=Math.max(CLEARANCE_MRP[p.id]||0, orig); p.price=o; }
+      else if(CLR_ORIG[p.id]!=null){ p.price=CLR_ORIG[p.id]; }
+    } else if(CLR_ORIG[p.id]!=null){ p.price=CLR_ORIG[p.id]; delete CLR_ORIG[p.id]; }
+  });
+}
+function ghApplySection(){ if(!GH_ALL.length && PRODUCTS.length){ GH_ALL=PRODUCTS.slice(); } applyClearanceOffers(); var sec=ghCurSec(); var list=GH_ALL.filter(function(p){ return ghSecOf(p)===sec; }); PRODUCTS.length=0; list.forEach(function(p){ PRODUCTS.push(p); }); }
 function ghGoResidential(){ ghSetSection('residential'); try{ trackEvent('go_residential',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
 function ghGoOffice(){ ghSetSection('office'); try{ trackEvent('go_office',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
 function ghGoBanquet(){ ghSetSection('banquet'); try{ trackEvent('go_banquet',{}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
@@ -4268,6 +4279,8 @@ function clearTagFilters(){ S.filters.tags=[]; renderCatalog(); }
 var HERO_IMAGE_URL='';
 var CLEARANCE_IDS={};
 var CLEARANCE_MRP={};
+var CLEARANCE_OFFER={}; /* pid -> vendor special price */
+var CLR_ORIG={};        /* pid -> original price before clearance override */
 var INVENTORY_QTY={};
 var INVENTORY_INCOMING={};
 var HIGHLIGHTS=null;
@@ -7938,11 +7951,13 @@ ghLoadMapsKey();
     var res=await supa.from('app_settings').select('value').eq('key','clearance').maybeSingle();
     if(!res.error && res.data && res.data.value){
       var v=(typeof res.data.value==='string'?JSON.parse(res.data.value):res.data.value);
-      var ids={}, mrp={};
+      var ids={}, mrp={}, offer={};
       if(Array.isArray(v)){ v.forEach(function(id){ ids[id]=true; }); }
-      else if(v && v.items){ Object.keys(v.items).forEach(function(id){ ids[id]=true; var m=v.items[id]; mrp[id]=(m&&m.mrp)||0; }); }
+      else if(v && v.items){ Object.keys(v.items).forEach(function(id){ ids[id]=true; var m=v.items[id]||{}; mrp[id]=(m&&m.mrp)||0; if(m.offer>0) offer[id]=m.offer; }); }
       else if(v && v.ids){ v.ids.forEach(function(id){ ids[id]=true; }); }
-      CLEARANCE_IDS=ids; CLEARANCE_MRP=mrp; render();
+      CLEARANCE_IDS=ids; CLEARANCE_MRP=mrp; CLEARANCE_OFFER=offer;
+      applyClearanceOffers();
+      render();
     }
   }catch(e){}
 })();
