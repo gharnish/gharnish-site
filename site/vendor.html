@@ -69,6 +69,24 @@
   .catc.on .cnt{background:var(--g)}
   .catc .lbl{font-size:10.5px;font-weight:600;color:var(--ink2);text-align:center;line-height:1.15;max-width:66px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .catc.on .lbl{color:var(--ink);font-weight:700}
+  .catsep{flex:none;width:1px;align-self:center;height:44px;background:#e6e1d8;margin:0 2px}
+  .catc.clr .ring{border-color:#eab88f}
+  .catc.clr .cimg{background:linear-gradient(135deg,#e8873f,#c85a17)}
+  .catc.clr .cnt{background:#c85a17}
+  .catc.clr.on .ring{border-color:#c85a17}
+  .catc.clr.on .cnt{background:#c85a17}
+  .catc.clr.on .lbl{color:#c85a17}
+  .subrow{padding:4px 0 4px}
+  .subrow .catc{width:58px;gap:5px}
+  .subrow .ring{width:50px;height:50px;border-width:2px}
+  .subrow .cimg.ini{font-size:17px}
+  .subrow .cimg.gridic svg{width:22px;height:22px}
+  .subrow .lbl{font-size:10px;max-width:58px}
+  .clrhead{font-size:12px;color:var(--ink2);background:#fff7f2;border:1px solid #f3d9c9;border-radius:11px;padding:10px 12px;margin:10px 0 2px;line-height:1.5}
+  .clrhead b{color:#b1541f}
+  .clrhint{font-size:12px;font-weight:700;color:var(--ink3)}
+  .pcard.clron{border-color:#eab88f;background:#fffaf6}
+  .pcard.clron .clrhint{color:#c85a17}
   .cat-h{font-family:Poppins,sans-serif;font-size:15px;font-weight:800;color:var(--ink);margin:16px 2px 4px}
   .cat-h span{font-size:12px;font-weight:600;color:var(--ink3)}
   .pcard{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:14px;padding:11px 12px;margin:9px 0;box-shadow:0 1px 2px rgba(20,16,10,.04)}
@@ -85,16 +103,9 @@
   .upbox{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
   .upbox .f{min-width:0}
   .upbox label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
-  .clrbox{margin-top:10px;background:#fff7f2;border:1px solid #f3d9c9;border-radius:11px;padding:10px}
-  .clrbox .f{min-width:0;max-width:180px}
-  .clrbox label{display:block;font-size:9px;font-weight:800;color:#b1541f;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
-  .clrbox .clrnote{font-size:10.5px;color:var(--ink3);margin-top:7px;line-height:1.4}
-  .clrbox .clrnote b{color:#b1541f}
   .actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
-  .toggles{display:flex;flex-direction:column;gap:4px;align-items:flex-start;min-width:0}
-  .uptoggle,.clrtoggle{background:none;border:none;color:var(--ink2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 0;display:inline-flex;align-items:center;gap:5px;text-align:left;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .uptoggle{background:none;border:none;color:var(--ink2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 0;display:inline-flex;align-items:center;gap:5px;text-align:left;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .uptoggle.set{color:var(--g)}
-  .clrtoggle.set{color:#d2691e}
   .save2{flex:none;background:#17120b;color:#fff;border:none;border-radius:10px;padding:10px 20px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}
   .save2:disabled{opacity:.6}
   .row1 .stockin .cin{font-weight:800;font-size:16px}
@@ -185,98 +196,120 @@ function subKeysOf(pid){ var a=PSUB[pid]; return (a&&a.length)?a:[]; }
 function subNamesOf(pid){ return subKeysOf(pid).map(function(k){ return SUBNAME[k]||''; }).filter(Boolean); }
 function fmtDate(d){ if(!d) return ''; try{ var dt=new Date(d+'T00:00:00'); if(isNaN(dt.getTime())) return d; return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }catch(e){ return d; } }
 function toggleUp(pid){ var el=document.getElementById('up-'+pid); if(!el) return; var show=(el.style.display==='none'||!el.style.display); el.style.display=show?'grid':'none'; if(show){ var f=document.getElementById('iq-'+pid); if(f) f.focus(); } }
-function toggleClr(pid){ var el=document.getElementById('clr-'+pid); if(!el) return; var show=(el.style.display==='none'||!el.style.display); el.style.display=show?'block':'none'; if(show){ var f=document.getElementById('cq-'+pid); if(f) f.focus(); } }
 function stockCard(p){
   var q=(INV.items && typeof INV.items[p.id]==='number')?INV.items[p.id]:'';
   var inc=(INV.incoming && INV.incoming[p.id])||null;
   var iq=(inc && inc.qty)?inc.qty:''; var idt=(inc && inc.date)?inc.date:'';
   var img=p.image?('<img class="thumb" src="'+esc(p.image)+'" loading="lazy">'):'<div class="thumb ph">🪑</div>';
-  var cq=clrQty(p.id);
-  var pid=esc(p.id); var pidJs=esc(String(p.id)).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  var pid=esc(p.id); var pidJs=jsEsc(String(p.id));
   var hasUp=(iq!==''||!!idt);
-  var hasClr=(cq!=='');
   var upLabel=hasUp ? ('🚚 '+(iq!==''?iq+' Pc':'Upcoming')+(idt?(' · '+esc(fmtDate(idt))):'')+' · edit') : '🚚 Add upcoming stock';
-  var clrLabel=hasClr ? ('🏷️ '+cq+' Pc on clearance · edit') : '🏷️ Add clearance stock';
+  var subs=subNamesOf(p.id); var meta=subs.length?subs.join(', '):(p.cat?catLabel(p.cat):'');
   return '<div class="pcard"><div class="row1">'+img
-    +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div><div class="pmeta">'+pid+(p.cat?(' · '+esc(catLabel(p.cat))):'')+((function(){ var s=subNamesOf(p.id); return s.length?(' · '+esc(s.join(', '))):''; })())+'</div></div>'
+    +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div>'+(meta?('<div class="pmeta">'+esc(meta)+'</div>'):'')+'</div>'
     +'<div class="stockin"><label>In stock</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="—"></div></div>'
     +'<div class="upbox" id="up-'+pid+'" style="display:'+(hasUp?'grid':'none')+'"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
     +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div></div>'
-    +'<div class="clrbox" id="clr-'+pid+'" style="display:'+(hasClr?'block':'none')+'"><div class="f"><label>Clearance qty (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="cq-'+pid+'" value="'+cq+'" placeholder="e.g. 10"></div>'
-    +'<div class="clrnote">Appears in the app’s <b>Offers</b> tab. Gharnish sets the sale price.</div></div>'
-    +'<div class="actions"><div class="toggles"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
-    +'<button class="clrtoggle'+(hasClr?' set':'')+'" onclick="toggleClr(\''+pidJs+'\')">'+clrLabel+'</button></div>'
+    +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
     +'<button class="save2" id="save-'+pid+'" onclick="saveProd(\''+pidJs+'\')">Save</button></div></div>';
+}
+function clrCard(p){
+  var cq=clrQty(p.id);
+  var pid=esc(p.id); var pidJs=jsEsc(String(p.id));
+  var subs=subNamesOf(p.id); var meta=subs.length?subs.join(', '):(p.cat?catLabel(p.cat):'');
+  var img=p.image?('<img class="thumb" src="'+esc(p.image)+'" loading="lazy">'):'<div class="thumb ph">🪑</div>';
+  return '<div class="pcard'+(cq!==''?' clron':'')+'"><div class="row1">'+img
+    +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div>'+(meta?('<div class="pmeta">'+esc(meta)+'</div>'):'')+'</div>'
+    +'<div class="stockin"><label>Clearance</label><input class="cin" type="number" inputmode="numeric" min="0" id="cq-'+pid+'" value="'+cq+'" placeholder="—"></div></div>'
+    +'<div class="actions"><span class="clrhint">'+(cq!==''?'🏷️ Live in Offers':'Set a quantity to feature')+'</span>'
+    +'<button class="save2" id="save-'+pid+'" onclick="saveClr(\''+pidJs+'\')">Save</button></div></div>';
 }
 function myProducts(){ return (PRODS||[]).filter(function(p){ return isMine(p.id) && !p.internal; }); }
 function renderList(){
   var el=document.getElementById('vlist'); if(!el) return;
   var q=(VQ||'').trim().toLowerCase();
+  var isClr=(VCAT==='__clr__');
   var scope=myProducts();
-  if(VCAT!=='all') scope=scope.filter(function(p){ return (p.cat||'other')===VCAT; });
-  if(VCAT!=='all' && VSUB!=='all'){
+  if(!isClr && VCAT!=='all') scope=scope.filter(function(p){ return (p.cat||'other')===VCAT; });
+  if(!isClr && VCAT!=='all' && VSUB!=='all'){
     if(VSUB==='__none__') scope=scope.filter(function(p){ return subKeysOf(p.id).length===0; });
     else scope=scope.filter(function(p){ return subKeysOf(p.id).indexOf(VSUB)>-1; });
   }
   if(q) scope=scope.filter(function(p){ return (p.name||'').toLowerCase().indexOf(q)>-1 || String(p.id||'').toLowerCase().indexOf(q)>-1; });
-  scope.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+  var card=isClr?clrCard:stockCard;
+  if(isClr){ scope.sort(function(a,b){ var ca=(CLR[a.id]>0?0:1), cb=(CLR[b.id]>0?0:1); if(ca!==cb) return ca-cb; return (a.name||'').localeCompare(b.name||''); }); }
+  else { scope.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); }); }
   if(!scope.length){ el.innerHTML='<div class="empty">No products match'+(q?' “'+esc(VQ)+'”':'')+'.</div>'; return; }
   var H='';
-  if(VCAT==='all' && !q){
+  if((VCAT==='all'||isClr) && !q){
     var byCat={}; scope.forEach(function(p){ var c=p.cat||'other'; (byCat[c]=byCat[c]||[]).push(p); });
     Object.keys(byCat).sort(function(a,b){ return catLabel(a).localeCompare(catLabel(b)); }).forEach(function(c){
       H+='<div class="cat-h">'+esc(catLabel(c))+' <span>('+byCat[c].length+')</span></div>';
-      byCat[c].forEach(function(p){ H+=stockCard(p); });
+      byCat[c].forEach(function(p){ H+=card(p); });
     });
   } else {
-    scope.forEach(function(p){ H+=stockCard(p); });
+    scope.forEach(function(p){ H+=card(p); });
   }
   H+='<div style="height:72px"></div>';
   el.innerHTML=H;
 }
+function jsEsc(s){ return String(s==null?'':s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
 function catImg(c){
   var m=myProducts();
   for(var i=0;i<m.length;i++){ if((m[i].cat||'other')===c && m[i].image) return m[i].image; }
   return '';
 }
+function subImg(subKey){
+  var m=myProducts();
+  for(var i=0;i<m.length;i++){ var p=m[i]; if((p.cat||'other')===VCAT && p.image && subKeysOf(p.id).indexOf(subKey)>-1) return p.image; }
+  return '';
+}
 var GRID_SVG='<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" fill="#fff"/><rect x="14" y="3" width="7" height="7" rx="1.6" fill="#fff"/><rect x="3" y="14" width="7" height="7" rx="1.6" fill="#fff"/><rect x="14" y="14" width="7" height="7" rx="1.6" fill="#fff"/></svg>';
-function catCircle(key,label,count,on,img){
+var LAYERS_SVG='<svg viewBox="0 0 24 24" fill="none"><path d="M12 3l9 4.9-9 4.9-9-4.9 9-4.9Z" fill="#fff"/><path d="M3.2 12.5 12 17.3l8.8-4.8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var TAG_SVG='<svg viewBox="0 0 24 24" fill="none"><path d="M4 4h7.2c.5 0 1 .2 1.35.56l7.9 7.9a1.9 1.9 0 0 1 0 2.7l-5.94 5.94a1.9 1.9 0 0 1-2.7 0l-7.9-7.9A1.9 1.9 0 0 1 4 12.4V4Z" fill="#fff"/><circle cx="8.4" cy="8.4" r="1.7" fill="#c85a17"/></svg>';
+var DASH_SVG='<svg viewBox="0 0 24 24" fill="none"><path d="M6 12h12" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>';
+function circle(o){
   var inner;
-  if(key==='all'){ inner='<span class="cimg gridic">'+GRID_SVG+'</span>'; }
-  else if(img){ inner='<img class="cimg" src="'+esc(img)+'" loading="lazy" alt="" onerror="this.outerHTML=\'<span class=&quot;cimg ini&quot;>'+esc((label||'?').charAt(0).toUpperCase())+'</span>\'">'; }
-  else { inner='<span class="cimg ini">'+esc((label||'?').charAt(0).toUpperCase())+'</span>'; }
-  return '<button class="catc'+(on?' on':'')+'" onclick="vfilter(\''+esc(key)+'\')" title="'+esc(label)+'">'+
-    '<span class="ring">'+inner+'<span class="cnt">'+count+'</span></span>'+
-    '<span class="lbl">'+esc(label)+'</span></button>';
+  if(o.icon){ inner='<span class="cimg gridic">'+o.icon+'</span>'; }
+  else if(o.img){ inner='<img class="cimg" src="'+esc(o.img)+'" loading="lazy" alt="" onerror="this.outerHTML=\'<span class=&quot;cimg ini&quot;>'+esc((o.label||'?').charAt(0).toUpperCase())+'</span>\'">'; }
+  else { inner='<span class="cimg ini">'+esc((o.label||'?').charAt(0).toUpperCase())+'</span>'; }
+  return '<button class="catc'+(o.cls?' '+o.cls:'')+(o.on?' on':'')+'" onclick="'+o.onclick+'" title="'+esc(o.label)+'">'+
+    '<span class="ring">'+inner+(o.count!=null?'<span class="cnt">'+o.count+'</span>':'')+'</span>'+
+    '<span class="lbl">'+esc(o.label)+'</span></button>';
 }
 function renderPortal(){
   var mine=myProducts();
   var catCounts={}; mine.forEach(function(p){ var c=p.cat||'other'; catCounts[c]=(catCounts[c]||0)+1; });
   var catKeys=Object.keys(catCounts).sort(function(a,b){ return catLabel(a).localeCompare(catLabel(b)); });
-  if(VCAT!=='all' && !catCounts[VCAT]){ VCAT='all'; VSUB='all'; }
+  if(VCAT!=='all' && VCAT!=='__clr__' && !catCounts[VCAT]){ VCAT='all'; VSUB='all'; }
   var H='<div class="topbar"><img class="logo" src="'+LOGO+'" alt="Gharnish" onerror="this.style.display=\'none\'"><div class="vn">'+esc(V.name||'Vendor')+'</div><button onclick="logout()">Sign out</button></div>';
   H+='<div class="wrap"><div class="hd"><h1>Your stock</h1><p>Set what you have ready and any upcoming stock. Updates show to customers instantly.</p></div>';
   if(!mine.length){ H+='<div class="empty">No products are assigned to you yet.<br>Please contact Gharnish.</div></div>'; screen(H); return; }
   H+='<input class="search" id="vq" type="search" enterkeyhint="search" placeholder="Search your products…" value="'+esc(VQ)+'" oninput="vsearch(this.value)">';
-  H+='<div class="catrow">'+catCircle('all','All',mine.length,VCAT==='all','');
-  catKeys.forEach(function(c){ H+=catCircle(c,catLabel(c),catCounts[c],VCAT===c,catImg(c)); });
+  var clrCount=Object.keys(CLR||{}).length;
+  H+='<div class="catrow">'+circle({onclick:"vfilter('all')",on:VCAT==='all',count:mine.length,label:'All',icon:GRID_SVG});
+  catKeys.forEach(function(c){ H+=circle({onclick:"vfilter('"+jsEsc(c)+"')",on:VCAT===c,count:catCounts[c],label:catLabel(c),img:catImg(c)}); });
+  H+='<span class="catsep"></span>'+circle({onclick:"vfilter('__clr__')",on:VCAT==='__clr__',count:clrCount||null,label:'Clearance',icon:TAG_SVG,cls:'clr'});
   H+='</div>';
-  if(VCAT!=='all'){
+  if(VCAT==='__clr__'){
+    H+='<div class="clrhead">Set a clearance quantity to feature a product in the app’s <b>Offers</b> tab. Gharnish sets the sale price.</div>';
+  } else if(VCAT!=='all'){
     var inCat=mine.filter(function(p){ return (p.cat||'other')===VCAT; });
     var subCount={}, noneCount=0;
     inCat.forEach(function(p){ var ks=subKeysOf(p.id); if(!ks.length) noneCount++; ks.forEach(function(k){ subCount[k]=(subCount[k]||0)+1; }); });
     var catSubs=(SUBCATS[VCAT]||[]).filter(function(s){ return s&&subCount[s.key]; });
     if(catSubs.length){
       if(VSUB!=='all' && VSUB!=='__none__' && !subCount[VSUB]) VSUB='all';
-      H+='<div class="chips chips2"><button class="chip'+(VSUB==='all'?' on':'')+'" onclick="vsub(\'all\')">All types</button>';
-      catSubs.forEach(function(s){ H+='<button class="chip'+(VSUB===s.key?' on':'')+'" onclick="vsub(\''+esc(s.key)+'\')">'+esc(s.name)+' ('+subCount[s.key]+')</button>'; });
-      if(noneCount) H+='<button class="chip'+(VSUB==='__none__'?' on':'')+'" onclick="vsub(\'__none__\')">Unlabelled ('+noneCount+')</button>';
+      H+='<div class="catrow subrow">'+circle({onclick:"vsub('all')",on:VSUB==='all',label:'All',icon:LAYERS_SVG});
+      catSubs.forEach(function(s){ H+=circle({onclick:"vsub('"+jsEsc(s.key)+"')",on:VSUB===s.key,count:subCount[s.key],label:s.name,img:subImg(s.key)}); });
+      if(noneCount) H+=circle({onclick:"vsub('__none__')",on:VSUB==='__none__',count:noneCount,label:'Other',icon:DASH_SVG});
       H+='</div>';
     } else { VSUB='all'; }
   }
   H+='<div id="vlist"></div></div>';
   screen(H);
   renderList();
+  try{ var onc=document.querySelector('.catrow .catc.on'); if(onc&&onc.scrollIntoView) onc.scrollIntoView({inline:'center',block:'nearest'}); }catch(e){}
 }
 
 function saveProd(pid){
@@ -284,21 +317,26 @@ function saveProd(pid){
   var qty=(qtyRaw===''?null:Math.max(0,parseInt(qtyRaw,10)||0));
   var iqty=(iqtyRaw===''?null:Math.max(0,parseInt(iqtyRaw,10)||0));
   var d=idate||null;
-  var cqRaw=val('cq-'+pid);
-  var cq=(cqRaw===''?0:Math.max(0,parseInt(cqRaw,10)||0));
-  var prevCq=(CLR&&CLR[pid]>0)?CLR[pid]:0;
-  var clrChanged=(cq!==prevCq);
   var b=document.getElementById('save-'+pid); if(b){ b.disabled=true; b.textContent='Saving\u2026'; }
-  var tasks=[ supa.rpc('vendor_update_stock',{p_product_id:pid,p_qty:qty,p_incoming_qty:iqty,p_incoming_date:d}) ];
-  if(clrChanged) tasks.push(supa.rpc('vendor_set_clearance',{p_product_id:pid,p_qty:cq}));
-  Promise.all(tasks).then(function(rs){
+  supa.rpc('vendor_update_stock',{p_product_id:pid,p_qty:qty,p_incoming_qty:iqty,p_incoming_date:d}).then(function(r){
     if(b){ b.disabled=false; b.textContent='Save'; }
-    var err=null; rs.forEach(function(r){ if(r&&r.error&&!err) err=r.error; });
-    if(err){ toast('Failed: '+(err.message||'error'),true); return; }
+    if(r.error){ toast('Failed: '+(r.error.message||'error'),true); return; }
     if(qty===null) delete INV.items[pid]; else INV.items[pid]=qty;
     if((iqty===null||iqty<=0)&&!d) delete INV.incoming[pid]; else INV.incoming[pid]={qty:iqty||0,date:d||''};
-    if(clrChanged){ if(cq>0) CLR[pid]=cq; else delete CLR[pid]; }
     toast('Saved \u2713');
+  },function(){ if(b){ b.disabled=false; b.textContent='Save'; } toast('Save failed',true); });
+}
+function saveClr(pid){
+  var cqRaw=val('cq-'+pid);
+  var cq=(cqRaw===''?0:Math.max(0,parseInt(cqRaw,10)||0));
+  var b=document.getElementById('save-'+pid); if(b){ b.disabled=true; b.textContent='Saving\u2026'; }
+  supa.rpc('vendor_set_clearance',{p_product_id:pid,p_qty:cq}).then(function(r){
+    if(b){ b.disabled=false; b.textContent='Save'; }
+    if(r.error){ toast('Failed: '+(r.error.message||'error'),true); return; }
+    if(cq>0) CLR[pid]=cq; else delete CLR[pid];
+    var card=b?b.closest('.pcard'):null;
+    if(card){ if(cq>0) card.classList.add('clron'); else card.classList.remove('clron'); var hint=card.querySelector('.clrhint'); if(hint) hint.innerHTML=(cq>0?'\ud83c\udff7\ufe0f Live in Offers':'Set a quantity to feature'); }
+    toast(cq>0?'On clearance \u2713':'Removed from clearance');
   },function(){ if(b){ b.disabled=false; b.textContent='Save'; } toast('Save failed',true); });
 }
 
