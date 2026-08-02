@@ -205,6 +205,31 @@
   .lc-st.prep{background:#FFF3E0;color:#B26A00}
   .lc-meta{font-size:12px;color:var(--ink2);margin-top:6px;font-weight:600}
   .lc-line{font-size:11.5px;color:var(--ink3);margin-top:3px}
+  .lc-hd{cursor:pointer}
+  .lc-chev{color:var(--ink3);display:flex;transition:transform .18s;flex:none}
+  .lc-chev svg{width:18px;height:18px}
+  .load-card.open .lc-chev{transform:rotate(180deg)}
+  .lc-items{display:none;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+  .load-card.open .lc-items{display:block}
+  .li-row{display:flex;align-items:center;gap:9px;padding:6px 0}
+  .li-nm{flex:none;width:44%;font-size:12px;color:var(--ink);font-weight:600}
+  .li-q{color:var(--ink3);font-weight:700;margin-left:5px}
+  .li-extra{display:inline-block;font-size:9px;font-weight:800;color:#B26A00;background:#FFF3E0;border-radius:999px;padding:1px 6px;margin-left:5px}
+  .li-cmt{flex:1;min-width:0;border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px;font-family:inherit;background:#fff;color:var(--ink);outline:none}
+  .li-cmt:focus{border-color:var(--g)}
+  .li-note{margin-top:8px}
+  .li-note label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+  /* ── confirmed ── */
+  .conf-order{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:15px;margin:10px 0;box-shadow:0 1px 2px rgba(20,16,10,.04);overflow:hidden}
+  .co-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 14px 8px}
+  .co-hd b{font-family:Poppins,sans-serif;font-size:14px}
+  .co-meta{font-size:11px;color:var(--ink3);font-weight:600;flex:none}
+  .conf-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-top:1px solid var(--line)}
+  .cf-nm{flex:1;min-width:0}
+  .cf-nm .pnm{font-weight:400;font-size:13px;color:var(--ink)}
+  .cf-nm .pmeta{font-size:10.5px;color:var(--ink3);margin-top:2px}
+  .cf-btn{flex:none;background:#17120b;color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit}
+  .cf-ready{flex:none;font-size:12px;font-weight:800;color:var(--grn);background:#E8F5EA;border-radius:9px;padding:7px 12px}
   /* ── account ── */
   .acct-hero{text-align:center;padding:26px 0 10px}
   .acct-hero .dh-av{margin:0 auto 12px}
@@ -430,14 +455,15 @@ var IC_HOME='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-w
 var IC_BOX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>';
 var IC_TRUCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4h13v11H1z"/><path d="M14 8h4l3 3v4h-7"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/></svg>';
 var IC_USER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
+var IC_CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1Z"/><path d="M9 13l2 2 4-4"/></svg>';
 function topbarHtml(){ return '<div class="topbar"><img class="logo" src="'+LOGO+'" alt="Gharnish" onerror="this.style.display=\'none\'"><div class="vn">'+esc((V&&V.name)||'Vendor')+'</div></div>'; }
 function bottomNav(){
   function it(tab,label,svg){ return '<button class="bn'+(VTAB===tab?' on':'')+'" onclick="go(\''+tab+'\')">'+svg+'<span>'+label+'</span></button>'; }
-  return '<nav class="botnav">'+it('dashboard','Home',IC_HOME)+it('stock','Stock',IC_BOX)+it('loadings','Loadings',IC_TRUCK)+it('account','Account',IC_USER)+'</nav>';
+  return '<nav class="botnav">'+it('dashboard','Home',IC_HOME)+it('stock','Stock',IC_BOX)+it('confirmed','Confirmed',IC_CHECK)+it('loadings','Loadings',IC_TRUCK)+it('account','Account',IC_USER)+'</nav>';
 }
 function shell(inner){ return topbarHtml()+'<div class="wrap appwrap">'+inner+'</div>'+bottomNav(); }
 function go(t){ if(t==='stock'){ renderStock(); } else { VTAB=t; renderApp(); } try{ window.scrollTo({top:0}); }catch(e){} }
-function renderApp(){ var b; if(VTAB==='loadings') b=loadingsBody(); else if(VTAB==='account') b=accountBody(); else { VTAB='dashboard'; b=dashBody(); } screen(shell(b)); }
+function renderApp(){ var b; if(VTAB==='confirmed') b=confirmedBody(); else if(VTAB==='loadings') b=loadingsBody(); else if(VTAB==='account') b=accountBody(); else { VTAB='dashboard'; b=dashBody(); } screen(shell(b)); }
 function renderPortal(){ renderStock(); }
 function renderStock(){
   VTAB='stock';
@@ -511,12 +537,39 @@ function dashBody(){
   H+='<button class="dash-cta" onclick="go(\'stock\')">Update my stock</button>';
   return H;
 }
+/* ── Confirmed (design preview) ── */
+function confRow(name,sub,qty,ready){
+  var right = ready ? '<span class="cf-ready">✓ Ready</span>' : '<button class="cf-btn" onclick="cfDemoReady(this)">Mark Ready</button>';
+  return '<div class="conf-row"><div class="cf-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+(sub?esc(sub)+' · ':'')+'Qty '+qty+'</div></div>'+right+'</div>';
+}
+function cfDemoReady(btn){ if(btn){ var s=document.createElement('span'); s.className='cf-ready'; s.textContent='✓ Ready'; btn.replaceWith(s); } }
+function confirmedBody(){
+  var H='<div class="hd"><h1>Confirmed</h1><p>Products from Gharnish’s running orders that are assigned to you. Mark each one <b>Ready</b> when it’s prepared — Gharnish sees it instantly.</p></div>';
+  H+='<div class="soon">Preview</div>';
+  H+='<div class="conf-order"><div class="co-hd"><b>Order · Ravi Caterers</b><span class="co-meta">#GH-2041 · 2 items</span></div>'
+    +confRow('Diamond Restaurant Chair','Cushion Chairs',40,true)
+    +confRow('Round Restaurant Table','',10,false)+'</div>';
+  H+='<div class="conf-order"><div class="co-hd"><b>Order · Hotel Blue Orchid</b><span class="co-meta">#GH-2044 · 1 item</span></div>'
+    +confRow('Bar Stool Classic','',24,false)+'</div>';
+  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview — this will fill with your real running-order items next.</div>';
+  return H;
+}
+/* ── Loadings (design preview) ── */
+function loadOpen(id){ var el=document.getElementById('lc-'+id); if(el) el.classList.toggle('open'); }
+function loadCard(id,title,st,stCls,meta,items){
+  var rows=items.map(function(it){ return '<div class="li-row"><div class="li-nm">'+esc(it.n)+'<span class="li-q">×'+it.q+'</span>'+(it.extra?'<span class="li-extra">extra</span>':'')+'</div><input class="li-cmt" placeholder="Add a comment…" value="'+esc(it.c||'')+'"></div>'; }).join('');
+  return '<div class="load-card" id="lc-'+id+'"><div class="lc-hd" onclick="loadOpen(\''+id+'\')"><b>'+esc(title)+'</b><span class="lc-st '+stCls+'">'+esc(st)+'</span><span class="lc-chev">'+CHEV_SVG+'</span></div>'
+    +'<div class="lc-meta">'+esc(meta)+'</div>'
+    +'<div class="lc-items">'+rows+'<div class="li-note"><label>Overall note</label><input class="li-cmt" placeholder="Note for this loading…"></div></div></div>';
+}
 function loadingsBody(){
-  var H='<div class="hd"><h1>Loadings</h1><p>Track every consignment you forward to Gharnish — the items requested plus any extras — so nothing goes untracked.</p></div>';
-  H+='<div class="soon">Coming soon</div>';
-  H+='<div class="load-card mock"><div class="lc-hd"><b>Loading #1024</b><span class="lc-st done">Dispatched</span></div><div class="lc-meta">20 items · 18 requested + 2 extra</div><div class="lc-line">Ready chairs, table bases…</div></div>';
-  H+='<div class="load-card mock"><div class="lc-hd"><b>Loading #1025</b><span class="lc-st prep">Preparing</span></div><div class="lc-meta">12 items · 12 requested</div><div class="lc-line">Awaiting dispatch</div></div>';
-  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview of how your loadings will look. We’ll switch this on next.</div>';
+  var H='<div class="hd"><h1>Loadings</h1><p>Every consignment forwarded to Gharnish — requested items plus any extras. Tap a loading to open it and add comments per product.</p></div>';
+  H+='<div class="soon">Preview</div>';
+  H+=loadCard('a','Loading #1024','Dispatched','done','20 items · 18 requested + 2 extra · 20 Jul',[
+      {n:'Diamond Restaurant Chair',q:12,c:'Packed & sent'},{n:'Round Restaurant Table',q:6},{n:'Bar Stool Classic',q:2,extra:true,c:'Extra from stock'}]);
+  H+=loadCard('b','Loading #1025','Preparing','prep','12 items · 12 requested',[
+      {n:'Cushion Chair Grey',q:12}]);
+  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview — tap a card to expand. Editable by you and Gharnish once switched on.</div>';
   return H;
 }
 function accountBody(){
