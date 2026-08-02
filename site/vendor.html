@@ -258,7 +258,7 @@ var SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
 var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all', VSUB='all', VQ='';
-var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false, LAND={}, VTAB='dashboard';
+var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false, LAND={}, VTAB='dashboard', IS_DEFAULT=false;
 var PARTLBL={top:'Top',base:'Base',table:'Table',chairs:'Chairs'};
 var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
 function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
@@ -308,6 +308,7 @@ function boot(){
   supa.rpc('my_vendor').then(function(r){
     if(r.error || !r.data || !r.data.length){ renderNoVendor(); return; }
     V=r.data[0];
+    IS_DEFAULT=/^tfl$/i.test(String((V&&V.name)||'').trim());
     Promise.all([
       supa.from('gharnish_products').select('id,name,cat,image,price,hidden,internal').then(function(x){ return x.data||[]; }, function(){ return []; }),
       supa.from('app_settings').select('value').eq('key','product_vendors').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
@@ -328,7 +329,7 @@ function boot(){
   },function(){ renderNoVendor(); });
 }
 
-function isMine(pid){ var v=PV[pid]; if(v==null) return false; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
+function isMine(pid){ var v=PV[pid]; if(v==null) return IS_DEFAULT; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
 function myParts(pid){ var v=PV[pid]; var out=[]; if(v&&typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) out.push(k); } } return out; }
 function landVal(pid,part){ var l=LAND[pid]; if(l==null) return ''; if(part){ if(typeof l==='object' && l[part]>0) return l[part]; return ''; } if(typeof l==='object') return ''; return (l>0)?l:''; }
 function costFields(p){
