@@ -298,7 +298,7 @@ var SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
 var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all', VSUB='all', VQ='';
-var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false, LAND={}, VTAB='dashboard', IS_DEFAULT=false;
+var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false, LAND={}, VTAB='dashboard', IS_DEFAULT=false, CONF=[];
 var PARTLBL={top:'Top',base:'Base',table:'Table',chairs:'Chairs'};
 var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
 function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
@@ -585,25 +585,46 @@ function dashBody(){
   H+='<button class="dash-cta" onclick="go(\'stock\')">Update my stock</button>';
   return H;
 }
-/* ── Confirmed (design preview) ── */
-function cfStatusCtl(id,cur){ return '<div class="seg" id="seg-'+id+'"><button class="seg-b'+(cur==='processing'?' on proc':'')+'" onclick="cfSet(\''+id+'\',\'processing\')">Processing</button><button class="seg-b'+(cur!=='processing'?' on rdy':'')+'" onclick="cfSet(\''+id+'\',\'ready\')">Ready</button></div>'; }
-function cfSet(id,st){ var seg=document.getElementById('seg-'+id); if(!seg)return; var bs=seg.querySelectorAll('.seg-b'); bs[0].className='seg-b'+(st==='processing'?' on proc':''); bs[1].className='seg-b'+(st==='ready'?' on rdy':''); var mv=document.getElementById('mv-'+id); if(mv) mv.style.display=(st==='ready')?'inline-flex':'none'; }
-function cfMove(btn){ if(!btn)return; var row=btn.closest('.conf-row'); if(row) row.classList.add('moved'); btn.textContent='Moved ✓'; btn.disabled=true; toast('Moved to latest loading ✓'); }
-function confRow(id,name,sub,qty,status,urgent){
-  return '<div class="conf-row'+(urgent?' urgent':'')+'"><div class="thumb sm ph">🪑</div>'
-    +'<div class="cf-nm"><div class="pnm">'+esc(name)+(urgent?'<span class="urg">Urgent</span>':'')+'</div><div class="pmeta">'+(sub?esc(sub)+' · ':'')+'Qty '+qty+'</div>'+cfStatusCtl(id,status)+'</div>'
-    +'<button class="cf-move" id="mv-'+id+'" onclick="cfMove(this)" style="display:'+(status==='ready'?'inline-flex':'none')+'">→ Loading</button></div>';
+/* ── Confirmed (live) ── */
+function cfMove(btn){ if(!btn)return; var row=btn.closest('.conf-row'); if(row) row.classList.add('moved'); btn.textContent='Moved ✓'; btn.disabled=true; toast('Loadings go live in the next update'); }
+function daysUntil(d){ if(!d) return null; try{ var t=new Date(d+'T00:00:00'); var now=new Date(); now.setHours(0,0,0,0); return Math.round((t-now)/86400000); }catch(e){ return null; } }
+function confirmedBody(){ setTimeout(confLoad,0); return '<div class="hd"><h1>Confirmed</h1><p>Items from Gharnish’s running orders assigned to you. Set each to <b>Processing</b> or <b>Ready</b> — Gharnish sees it instantly.</p></div><div id="conflist"><div class="loading">Loading your items…</div></div>'; }
+function confLoad(){
+  var el=document.getElementById('conflist'); if(!el) return;
+  if(!supa){ el.innerHTML='<div class="empty">Connection unavailable.</div>'; return; }
+  supa.rpc('vendor_confirmed').then(function(r){ if(r&&r.error){ el.innerHTML='<div class="empty">Could not load items.</div>'; return; } CONF=(r&&r.data)||[]; renderConfList(); }, function(){ el.innerHTML='<div class="empty">Could not load items.</div>'; });
 }
-function confirmedBody(){
-  var H='<div class="hd"><h1>Confirmed</h1><p>Items from Gharnish’s running orders assigned to you. Set each to <b>Processing</b> or <b>Ready</b> (Ready by default when it’s in stock), then move ready items to a loading.</p></div>';
-  H+='<div class="soon">Preview</div>';
-  H+='<div class="conf-order"><div class="co-hd"><b>Order · Ravi Caterers</b><span class="co-meta urgent">Load by 5 Aug</span></div>'
-    +confRow('c1','Diamond Restaurant Chair','Cushion Chairs',40,'ready',true)
-    +confRow('c2','Round Restaurant Table','',10,'processing',true)+'</div>';
-  H+='<div class="conf-order"><div class="co-hd"><b>Order · Hotel Blue Orchid</b><span class="co-meta">Load by 12 Aug</span></div>'
-    +confRow('c3','Bar Stool Classic','',24,'ready',false)+'</div>';
-  H+='<div class="hint" style="text-align:center;margin-top:12px">Preview — real running-order items next. “Load by” comes from Gharnish; items due soon show <b>Urgent</b>.</div>';
-  return H;
+function renderConfList(){
+  var el=document.getElementById('conflist'); if(!el) return;
+  if(!CONF.length){ el.innerHTML='<div class="empty">No confirmed items right now.<br>Items from Gharnish’s running orders will show here.</div>'; return; }
+  var groups={}, order=[];
+  CONF.forEach(function(it){ var k=String(it.order_id); if(!groups[k]){ groups[k]=[]; order.push(k); } groups[k].push(it); });
+  order.sort(function(a,b){ var da=daysUntil((groups[a][0]||{}).load_by), db=daysUntil((groups[b][0]||{}).load_by); if(da==null)da=9999; if(db==null)db=9999; return da-db; });
+  var H='';
+  order.forEach(function(k){
+    var items=groups[k]; var lb=items[0].load_by; var du=daysUntil(lb); var urgent=(du!=null && du<=3);
+    var lbTxt=lb?('Load by '+fmtDate(lb)+((du!=null&&du>=0)?(' · '+(du===0?'today':(du+'d'))):'')):'No load date set';
+    H+='<div class="conf-order"><div class="co-hd"><b>'+esc(items[0].title||('Order #'+k))+'</b><span class="co-meta'+(urgent?' urgent':'')+'">'+esc(lbTxt)+'</span></div>';
+    items.forEach(function(it){ H+=confRowReal(it,urgent); });
+    H+='</div>';
+  });
+  H+='<div class="hint" style="text-align:center;margin-top:12px">“Load by” is set by Gharnish; items due within 3 days show <b>Urgent</b>.</div>';
+  el.innerHTML=H;
+}
+function confRowReal(it,urgent){
+  var oidJs=jsEsc(String(it.order_id)), pidJs=jsEsc(String(it.pid)); var seg=esc(String(it.order_id)+'_'+String(it.pid)).replace(/[^A-Za-z0-9_]/g,'_');
+  var ready=(it.stage==='Ready');
+  var img=it.image?('<img class="thumb sm" src="'+esc(it.image)+'" loading="lazy">'):'<div class="thumb sm ph">🪑</div>';
+  return '<div class="conf-row'+(urgent?' urgent':'')+'">'+img
+    +'<div class="cf-nm"><div class="pnm">'+esc(it.name||it.pid)+(urgent?'<span class="urg">Urgent</span>':'')+'</div><div class="pmeta">Qty '+(it.qty||0)+'</div>'
+    +'<div class="seg" id="seg-'+seg+'"><button class="seg-b'+(ready?'':' on proc')+'" onclick="cfSetReal(\''+oidJs+'\',\''+pidJs+'\',\'processing\',\''+seg+'\')">Processing</button><button class="seg-b'+(ready?' on rdy':'')+'" onclick="cfSetReal(\''+oidJs+'\',\''+pidJs+'\',\'ready\',\''+seg+'\')">Ready</button></div></div>'
+    +'<button class="cf-move" id="mv-'+seg+'" onclick="cfMove(this)" style="display:'+(ready?'inline-flex':'none')+'">→ Loading</button></div>';
+}
+function cfSetReal(oid,pid,st,seg){
+  var el=document.getElementById('seg-'+seg); if(el){ var bs=el.querySelectorAll('.seg-b'); bs[0].className='seg-b'+(st==='processing'?' on proc':''); bs[1].className='seg-b'+(st==='ready'?' on rdy':''); }
+  var mv=document.getElementById('mv-'+seg); if(mv) mv.style.display=(st==='ready')?'inline-flex':'none';
+  if(!supa) return;
+  supa.rpc('vendor_set_stage',{p_order_id:String(oid),p_pid:String(pid),p_stage:(st==='ready'?'Ready':'Processing')}).then(function(r){ if(r&&r.error){ toast('Failed: '+(r.error.message||'error'),true); } else { toast(st==='ready'?'Marked Ready ✓':'Set to Processing'); } },function(){ toast('Save failed',true); });
 }
 /* ── Loadings (design preview) ── */
 function loadOpen(id){ var el=document.getElementById('lc-'+id); if(el) el.classList.toggle('open'); }
