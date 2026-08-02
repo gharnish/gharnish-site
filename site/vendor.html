@@ -153,8 +153,12 @@
   .sc-edit{display:none;padding:12px 13px 13px;border-top:1px solid var(--line)}
   .scard.open .sc-edit{display:block}
   .sc-edit .ef label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:5px}
-  .sc-edit .ef .cin{width:130px;font-weight:800;font-size:16px}
-  .sc-edit .landrow{margin-top:12px}
+  .sc-edit .ef .cin{width:100%;font-weight:800;font-size:16px}
+  .ed-top{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start}
+  .ed-top .ef{flex:1;min-width:120px}
+  .ef.cost label{color:#2f7a4f}
+  .ef.cost .cin:focus{border-color:#2f7a4f}
+  .landnote2{font-size:10.5px;color:var(--ink3);margin-top:6px}
   .sc-edit .actions{margin-top:12px}
   /* ── app shell ── */
   .appwrap{padding-bottom:96px;min-height:calc(100vh - 50px)}
@@ -296,15 +300,12 @@ function boot(){
 function isMine(pid){ var v=PV[pid]; if(v==null) return false; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
 function myParts(pid){ var v=PV[pid]; var out=[]; if(v&&typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) out.push(k); } } return out; }
 function landVal(pid,part){ var l=LAND[pid]; if(l==null) return ''; if(part){ if(typeof l==='object' && l[part]>0) return l[part]; return ''; } if(typeof l==='object') return ''; return (l>0)?l:''; }
-function landRow(p){
+function costFields(p){
   var pid=esc(p.id); var parts=myParts(p.id);
-  var fields;
   if(parts.length){
-    fields=parts.map(function(pt){ return '<div class="lf"><label>'+esc(PARTLBL[pt]||pt)+' cost ₹</label><input class="cin" type="number" inputmode="numeric" min="0" id="lc-'+pid+'-'+esc(pt)+'" value="'+landVal(p.id,pt)+'" placeholder="0"></div>'; }).join('');
-  } else {
-    fields='<div class="lf"><label>Your cost ₹</label><input class="cin" type="number" inputmode="numeric" min="0" id="lc-'+pid+'" value="'+landVal(p.id)+'" placeholder="0"></div>';
+    return parts.map(function(pt){ return '<div class="ef cost"><label>'+esc(PARTLBL[pt]||pt)+' cost ₹</label><input class="cin" type="number" inputmode="numeric" min="0" id="lc-'+pid+'-'+esc(pt)+'" value="'+landVal(p.id,pt)+'" placeholder="0"></div>'; }).join('');
   }
-  return '<div class="landrow">'+fields+'<span class="landnote">Your landing price to Gharnish</span></div>';
+  return '<div class="ef cost"><label>Your cost ₹</label><input class="cin" type="number" inputmode="numeric" min="0" id="lc-'+pid+'" value="'+landVal(p.id)+'" placeholder="0"></div>';
 }
 
 function vfilter(c){ VCAT=c; VSUB='all'; VCLRADD=false; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
@@ -338,8 +339,8 @@ function stockCard(p){
       +'<span class="sc-chev">'+CHEV_SVG+'</span>'
     +'</div>'
     +'<div class="sc-edit">'
-      +'<div class="ef"><label>In stock (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="0"></div>'
-      +landRow(p)
+      +'<div class="ed-top"><div class="ef"><label>In stock (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="0"></div>'+costFields(p)+'</div>'
+      +'<div class="landnote2">Your landing price to Gharnish</div>'
       +'<div class="upbox" id="up-'+pid+'" style="display:'+(hasUp?'grid':'none')+'"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
       +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div></div>'
       +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
