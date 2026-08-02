@@ -56,6 +56,19 @@
   .chips2{padding-top:4px}
   .chips2 .chip{padding:6px 12px;font-size:11.5px}
   .chips2 .chip.on{border-color:var(--g);background:var(--g);color:#fff}
+  .catrow{display:flex;gap:14px;overflow-x:auto;padding:12px 0 6px;margin:0 -2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .catrow::-webkit-scrollbar{display:none}
+  .catc{flex:none;background:none;border:none;padding:0;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;width:66px}
+  .catc .ring{position:relative;width:60px;height:60px;border-radius:50%;padding:2.5px;border:2.5px solid #e6e1d8;box-sizing:border-box;transition:border-color .15s}
+  .catc.on .ring{border-color:var(--g)}
+  .catc .cimg{width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;background:linear-gradient(135deg,#3a2c14,#6b4f22)}
+  .catc .cimg.ini{display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;font-family:'Poppins',sans-serif}
+  .catc .cimg.gridic{display:flex;align-items:center;justify-content:center}
+  .catc .cimg.gridic svg{width:26px;height:26px}
+  .catc .cnt{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:var(--ink);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);font-family:'Poppins',sans-serif}
+  .catc.on .cnt{background:var(--g)}
+  .catc .lbl{font-size:10.5px;font-weight:600;color:var(--ink2);text-align:center;line-height:1.15;max-width:66px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .catc.on .lbl{color:var(--ink);font-weight:700}
   .cat-h{font-family:Poppins,sans-serif;font-size:15px;font-weight:800;color:var(--ink);margin:16px 2px 4px}
   .cat-h span{font-size:12px;font-weight:600;color:var(--ink3)}
   .pcard{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:14px;padding:11px 12px;margin:9px 0;box-shadow:0 1px 2px rgba(20,16,10,.04)}
@@ -203,6 +216,21 @@ function renderList(){
   H+='<div style="height:72px"></div>';
   el.innerHTML=H;
 }
+function catImg(c){
+  var m=myProducts();
+  for(var i=0;i<m.length;i++){ if((m[i].cat||'other')===c && m[i].image) return m[i].image; }
+  return '';
+}
+var GRID_SVG='<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.6" fill="#fff"/><rect x="14" y="3" width="7" height="7" rx="1.6" fill="#fff"/><rect x="3" y="14" width="7" height="7" rx="1.6" fill="#fff"/><rect x="14" y="14" width="7" height="7" rx="1.6" fill="#fff"/></svg>';
+function catCircle(key,label,count,on,img){
+  var inner;
+  if(key==='all'){ inner='<span class="cimg gridic">'+GRID_SVG+'</span>'; }
+  else if(img){ inner='<img class="cimg" src="'+esc(img)+'" loading="lazy" alt="" onerror="this.outerHTML=\'<span class=&quot;cimg ini&quot;>'+esc((label||'?').charAt(0).toUpperCase())+'</span>\'">'; }
+  else { inner='<span class="cimg ini">'+esc((label||'?').charAt(0).toUpperCase())+'</span>'; }
+  return '<button class="catc'+(on?' on':'')+'" onclick="vfilter(\''+esc(key)+'\')" title="'+esc(label)+'">'+
+    '<span class="ring">'+inner+'<span class="cnt">'+count+'</span></span>'+
+    '<span class="lbl">'+esc(label)+'</span></button>';
+}
 function renderPortal(){
   var mine=myProducts();
   var catCounts={}; mine.forEach(function(p){ var c=p.cat||'other'; catCounts[c]=(catCounts[c]||0)+1; });
@@ -212,8 +240,8 @@ function renderPortal(){
   H+='<div class="wrap"><div class="hd"><h1>Your stock</h1><p>Set what you have ready and any upcoming stock. Updates show to customers instantly.</p></div>';
   if(!mine.length){ H+='<div class="empty">No products are assigned to you yet.<br>Please contact Gharnish.</div></div>'; screen(H); return; }
   H+='<input class="search" id="vq" type="search" enterkeyhint="search" placeholder="Search your products…" value="'+esc(VQ)+'" oninput="vsearch(this.value)">';
-  H+='<div class="chips"><button class="chip'+(VCAT==='all'?' on':'')+'" onclick="vfilter(\'all\')">All ('+mine.length+')</button>';
-  catKeys.forEach(function(c){ H+='<button class="chip'+(VCAT===c?' on':'')+'" onclick="vfilter(\''+esc(c)+'\')">'+esc(catLabel(c))+' ('+catCounts[c]+')</button>'; });
+  H+='<div class="catrow">'+catCircle('all','All',mine.length,VCAT==='all','');
+  catKeys.forEach(function(c){ H+=catCircle(c,catLabel(c),catCounts[c],VCAT===c,catImg(c)); });
   H+='</div>';
   if(VCAT!=='all'){
     var inCat=mine.filter(function(p){ return (p.cat||'other')===VCAT; });
