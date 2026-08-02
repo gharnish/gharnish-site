@@ -585,7 +585,8 @@ function dashBody(){
     cats.forEach(function(c){ var pct=Math.round(byCat[c]/mx*100); H+='<div class="ch-row"><span class="ch-lbl">'+esc(catLabel(c))+'</span><span class="ch-bar"><i style="width:'+Math.max(pct,6)+'%"></i></span><span class="ch-val">'+byCat[c]+'</span></div>'; });
     H+='</div></div>';
   }
-  H+=dashExtra();
+  H+='<div id="dashx"></div>';
+  setTimeout(dashLoadExtra,0);
   H+='<button class="dash-cta" onclick="go(\'stock\')">Update my stock</button>';
   return H;
 }
@@ -682,15 +683,28 @@ function liSave(itemId,field,val){ if(!supa)return; var p={}; p[field]=(field===
 function ldSaveNote(id,val){ if(!supa)return; supa.from('loadings').update({note:val}).eq('id',id).then(function(){},function(){}); }
 function ldDispatch(id){ if(!supa)return; supa.from('loadings').update({status:'dispatched',dispatched_at:new Date().toISOString()}).eq('id',id).then(function(r){ if(r&&r.error){ toast('Failed',true); return; } toast('Dispatched ✓'); loadLoadings(); },function(){ toast('Failed',true); }); }
 function ldAddExtra(id){ var name=(prompt('Extra item name')||'').trim(); if(!name)return; var qty=Math.max(1,parseInt(prompt('Quantity','1'),10)||1); if(!supa)return; supa.from('loading_items').insert({loading_id:id,vendor_id:(V&&V.id),name:name,qty:qty,price:0,is_extra:true}).then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,true); return; } toast('Extra item added'); loadLoadings(); },function(){ toast('Failed',true); }); }
-/* ── dashboard extra sections (design preview) ── */
-function sellRow(name,sold,stock){ var sc=stock>0?'<span class="sr-stk in">'+stock+' in stock</span>':'<span class="sr-stk out">Out</span>'; return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+sold+' sold</div></div>'+sc+'</div>'; }
+/* ── dashboard extra sections (live) ── */
+var DASH={};
+function sellRow(name,sold,stock){ var sc=stock>0?'<span class="sr-stk in">'+stock+' in stock</span>':'<span class="sr-stk out">No stock</span>'; return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+sold+' ordered</div></div>'+sc+'</div>'; }
 function discRow(name,meta){ return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+esc(meta)+'</div></div><span class="disc-tag">In quote</span></div>'; }
-function dashExtra(){
-  var H='<div class="card"><div class="ch-t">Analytics · this month <span class="samp">preview</span></div><div class="mini3"><div class="mini"><div class="mini-n">320</div><div class="mini-l">Pc dispatched</div></div><div class="mini"><div class="mini-n">12</div><div class="mini-l">Loadings</div></div><div class="mini"><div class="mini-n">₹4.2L</div><div class="mini-l">Billed</div></div></div></div>';
-  H+='<div class="card"><div class="ch-t">Most selling · stock <span class="samp">preview</span></div>'+sellRow('Diamond Restaurant Chair',210,100)+sellRow('HOLO Premium Dining Chair',180,100)+sellRow('Bar Stool Classic',120,0)+'</div>';
-  H+='<div class="card"><div class="ch-t">Payments & business <span class="samp">preview</span></div><div class="pay2"><div class="pay pos"><div class="pay-n">₹1,20,000</div><div class="pay-l">Received</div></div><div class="pay due"><div class="pay-n">₹38,500</div><div class="pay-l">Pending</div></div></div><div class="hint" style="margin-top:8px">Bank HDFC ••4821 · GST 36ABCDE1234F1Z5</div></div>';
-  H+='<div class="card"><div class="ch-t">In discussion <span class="samp">from Gharnish quotes</span></div>'+discRow('Marble Round Table','Ravi Caterers · qty 8')+discRow('Velvet Cushion Chair','Hotel Blue Orchid · qty 30')+'</div>';
-  return H;
+function fmtShort(n){ n=+n||0; if(n>=100000) return '₹'+(n/100000).toFixed(n>=1000000?0:1)+'L'; if(n>=1000) return '₹'+(n/1000).toFixed(0)+'k'; return fmtINR(n); }
+function dashLoadExtra(){
+  var el=document.getElementById('dashx'); if(!el) return;
+  if(!supa){ el.innerHTML=''; return; }
+  supa.rpc('vendor_dashboard').then(function(r){ if(r&&r.error){ el.innerHTML=''; return; } DASH=(r&&r.data)||{}; renderDashX(); }, function(){ el.innerHTML=''; });
+}
+function renderDashX(){
+  var el=document.getElementById('dashx'); if(!el) return; var d=DASH||{};
+  var H='<div class="card"><div class="ch-t">Analytics</div><div class="mini3">'
+    +'<div class="mini"><div class="mini-n">'+(d.loadings_total||0)+'</div><div class="mini-l">Loadings</div></div>'
+    +'<div class="mini"><div class="mini-n">'+(d.pcs||0)+'</div><div class="mini-l">Pc dispatched</div></div>'
+    +'<div class="mini"><div class="mini-n">'+fmtShort(d.billed)+'</div><div class="mini-l">Billed</div></div></div></div>';
+  var top=d.top||[];
+  H+='<div class="card"><div class="ch-t">Most ordered · stock</div>'+(top.length?top.map(function(t){ return sellRow(t.name,t.sold,t.stock); }).join(''):'<div class="hint">No orders yet.</div>')+'</div>';
+  H+='<div class="card"><div class="ch-t">Payments & business</div><div class="pay2"><div class="pay pos"><div class="pay-n">'+fmtINR(d.received||0)+'</div><div class="pay-l">Received</div></div><div class="pay due"><div class="pay-n">'+fmtINR(d.pending||0)+'</div><div class="pay-l">Outstanding</div></div></div><div class="hint" style="margin-top:8px">Outstanding = dispatched value not yet paid.</div></div>';
+  var disc=d.in_discussion||[];
+  H+='<div class="card"><div class="ch-t">In discussion <span style="font-weight:600;color:var(--ink3);font-size:11px">· from Gharnish quotes</span></div>'+(disc.length?disc.map(function(x){ return discRow(x.name,'Qty '+x.qty+' · '+x.quotes+' quote'+(x.quotes===1?'':'s')); }).join(''):'<div class="hint">Nothing in quotes right now.</div>')+'</div>';
+  el.innerHTML=H;
 }
 function accountBody(){
   var H='<div class="acct-hero"><div class="dh-av lg">'+esc(avIni(V&&V.name))+'</div><div class="acct-nm">'+esc((V&&V.name)||'Vendor')+'</div>'+((V&&V.city)?('<div class="acct-sub">'+esc(V.city)+'</div>'):'')+'</div>';
