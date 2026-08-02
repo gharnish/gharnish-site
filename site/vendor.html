@@ -121,6 +121,12 @@
   .upbox{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
   .upbox .f{min-width:0}
   .upbox label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+  .landrow{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-top:10px;padding:9px 10px;background:#f4f7f3;border:1px solid #dbe7dd;border-radius:11px}
+  .landrow .lf{min-width:0}
+  .landrow .lf label{display:block;font-size:9px;font-weight:800;color:#2f7a4f;text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+  .landrow .lf .cin{width:96px;text-align:right}
+  .landrow .lf .cin:focus{border-color:#2f7a4f}
+  .landrow .landnote{font-size:10px;color:var(--ink3);flex:1;min-width:80px;padding-bottom:3px}
   .actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
   .uptoggle{background:none;border:none;color:var(--ink2);font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;padding:4px 0;display:inline-flex;align-items:center;gap:5px;text-align:left;min-width:0;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .uptoggle.set{color:var(--g)}
@@ -139,7 +145,8 @@ var SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
 var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all', VSUB='all', VQ='';
-var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false;
+var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false, LAND={};
+var PARTLBL={top:'Top',base:'Base',table:'Table',chairs:'Chairs'};
 var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
 function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
 
@@ -194,11 +201,13 @@ function boot(){
       supa.from('app_settings').select('value').eq('key','inventory').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
       supa.from('app_settings').select('value').eq('key','subcategories').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
       supa.from('app_settings').select('value').eq('key','product_subcats').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
-      supa.from('app_settings').select('value').eq('key','clearance').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; })
+      supa.from('app_settings').select('value').eq('key','clearance').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
+      supa.rpc('vendor_get_landing').then(function(x){ return (x&&x.data)||{}; }, function(){ return {}; })
     ]).then(function(res){
       PRODS=res[0]||[]; PV=parseVal(res[1]); INV=parseVal(res[2])||{};
       SUBCATS=parseVal(res[3])||{}; PSUB=parseVal(res[4])||{};
       CLR=parseClearance(res[5]);
+      LAND=parseVal(res[6])||{};
       SUBNAME={}; Object.keys(SUBCATS).forEach(function(pc){ (SUBCATS[pc]||[]).forEach(function(s){ if(s&&s.key) SUBNAME[s.key]=s.name; }); });
       if(!INV.items) INV.items={}; if(!INV.incoming) INV.incoming={};
       renderPortal();
@@ -207,6 +216,18 @@ function boot(){
 }
 
 function isMine(pid){ var v=PV[pid]; if(v==null) return false; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
+function myParts(pid){ var v=PV[pid]; var out=[]; if(v&&typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) out.push(k); } } return out; }
+function landVal(pid,part){ var l=LAND[pid]; if(l==null) return ''; if(part){ if(typeof l==='object' && l[part]>0) return l[part]; return ''; } if(typeof l==='object') return ''; return (l>0)?l:''; }
+function landRow(p){
+  var pid=esc(p.id); var parts=myParts(p.id);
+  var fields;
+  if(parts.length){
+    fields=parts.map(function(pt){ return '<div class="lf"><label>'+esc(PARTLBL[pt]||pt)+' cost ₹</label><input class="cin" type="number" inputmode="numeric" min="0" id="lc-'+pid+'-'+esc(pt)+'" value="'+landVal(p.id,pt)+'" placeholder="0"></div>'; }).join('');
+  } else {
+    fields='<div class="lf"><label>Your cost ₹</label><input class="cin" type="number" inputmode="numeric" min="0" id="lc-'+pid+'" value="'+landVal(p.id)+'" placeholder="0"></div>';
+  }
+  return '<div class="landrow">'+fields+'<span class="landnote">Your landing price to Gharnish</span></div>';
+}
 
 function vfilter(c){ VCAT=c; VSUB='all'; VCLRADD=false; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
 function vsub(s){ VSUB=s; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
@@ -227,6 +248,7 @@ function stockCard(p){
   return '<div class="pcard"><div class="row1">'+img
     +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div>'+(meta?('<div class="pmeta">'+esc(meta)+'</div>'):'')+'</div>'
     +'<div class="stockin"><label>In stock</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="—"></div></div>'
+    +landRow(p)
     +'<div class="upbox" id="up-'+pid+'" style="display:'+(hasUp?'grid':'none')+'"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
     +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div></div>'
     +'<div class="actions"><button class="uptoggle'+(hasUp?' set':'')+'" onclick="toggleUp(\''+pidJs+'\')">'+upLabel+'</button>'
@@ -352,18 +374,29 @@ function renderPortal(){
   try{ var onc=document.querySelector('.catrow .catc.on'); if(onc&&onc.scrollIntoView) onc.scrollIntoView({inline:'center',block:'nearest'}); }catch(e){}
 }
 
+function curLand(pid,part){ var l=LAND[pid]; if(l==null) return 0; if(part){ return (typeof l==='object'&&l[part]>0)?+l[part]:0; } return (typeof l==='object')?0:(+l||0); }
 function saveProd(pid){
   var qtyRaw=val('q-'+pid); var iqtyRaw=val('iq-'+pid); var idate=(val('id-'+pid)||'').trim();
   var qty=(qtyRaw===''?null:Math.max(0,parseInt(qtyRaw,10)||0));
   var iqty=(iqtyRaw===''?null:Math.max(0,parseInt(iqtyRaw,10)||0));
   var d=idate||null;
+  var parts=myParts(pid); var landCalls=[];
+  if(parts.length){
+    parts.forEach(function(pt){ var raw=val('lc-'+pid+'-'+pt); var nc=(raw===''?0:Math.max(0,parseInt(raw,10)||0)); if(nc!==curLand(pid,pt)) landCalls.push({part:pt,cost:nc}); });
+  } else {
+    var raw=val('lc-'+pid); var nc=(raw===''?0:Math.max(0,parseInt(raw,10)||0)); if(nc!==curLand(pid,null)) landCalls.push({part:null,cost:nc});
+  }
   var b=document.getElementById('save-'+pid); if(b){ b.disabled=true; b.textContent='Saving\u2026'; }
-  supa.rpc('vendor_update_stock',{p_product_id:pid,p_qty:qty,p_incoming_qty:iqty,p_incoming_date:d}).then(function(r){
+  var tasks=[ supa.rpc('vendor_update_stock',{p_product_id:pid,p_qty:qty,p_incoming_qty:iqty,p_incoming_date:d}) ];
+  landCalls.forEach(function(lc){ tasks.push(supa.rpc('vendor_set_landing',{p_product_id:pid,p_cost:lc.cost,p_part:lc.part})); });
+  Promise.all(tasks).then(function(rs){
     if(b){ b.disabled=false; b.textContent='Save'; }
-    if(r.error){ toast('Failed: '+(r.error.message||'error'),true); return; }
+    var err=null; rs.forEach(function(r){ if(r&&r.error&&!err) err=r.error; });
+    if(err){ toast('Failed: '+(err.message||'error'),true); return; }
     if(qty===null) delete INV.items[pid]; else INV.items[pid]=qty;
     if((iqty===null||iqty<=0)&&!d) delete INV.incoming[pid]; else INV.incoming[pid]={qty:iqty||0,date:d||''};
-    toast('Saved \u2713');
+    landCalls.forEach(function(lc){ if(lc.part){ if(!LAND[pid]||typeof LAND[pid]!=='object') LAND[pid]={}; LAND[pid][lc.part]=lc.cost; } else { LAND[pid]=lc.cost; } });
+    toast(landCalls.length?'Saved \u2713 (price updated)':'Saved \u2713');
   },function(){ if(b){ b.disabled=false; b.textContent='Save'; } toast('Save failed',true); });
 }
 function clrAddMode(on){ VCLRADD=!!on; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
