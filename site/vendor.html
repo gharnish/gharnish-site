@@ -46,6 +46,28 @@
   #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
   #toast.bad{background:var(--red)}
   .hint{font-size:11px;color:var(--ink3);margin-top:4px}
+  .chips{display:flex;gap:8px;overflow-x:auto;padding:8px 0 2px;margin:0 -2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{flex:none;white-space:nowrap;border-radius:999px;padding:7px 14px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid rgba(20,16,10,.15);background:#fff;color:var(--ink2);font-family:inherit}
+  .chip.on{border-color:var(--ink);background:var(--ink);color:#fff}
+  .cat-h{font-family:Poppins,sans-serif;font-size:15px;font-weight:800;color:var(--ink);margin:16px 2px 4px}
+  .cat-h span{font-size:12px;font-weight:600;color:var(--ink3)}
+  .pcard{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:14px;padding:11px 12px;margin:9px 0;box-shadow:0 1px 2px rgba(20,16,10,.04)}
+  .row1{display:flex;gap:10px;align-items:center}
+  .row1 .thumb{width:42px;height:42px;border-radius:10px}
+  .nmwrap{flex:1;min-width:0}
+  .row1 .pnm{font-weight:700;font-size:13.5px;line-height:1.25}
+  .row1 .pmeta{font-size:10.5px;color:var(--ink3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .stockin{flex:none;width:92px}
+  .stockin label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px;text-align:right}
+  .cin{width:100%;box-sizing:border-box;border:1.5px solid var(--line);border-radius:9px;padding:9px 10px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink);outline:none}
+  .cin:focus{border-color:var(--g)}
+  .stockin .cin{text-align:right;padding:9px 8px}
+  .row2{display:flex;gap:8px;align-items:flex-end;margin-top:9px}
+  .row2 .f{flex:1;min-width:0}
+  .row2 label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:3px}
+  .save2{flex:none;background:#17120b;color:#fff;border:none;border-radius:9px;padding:9px 16px;font-weight:800;font-size:13.5px;cursor:pointer;font-family:inherit}
+  .save2:disabled{opacity:.6}
 </style>
 </head>
 <body>
@@ -57,7 +79,9 @@ var SUPABASE_URL='https://djedmaezxvuzmwjnooel.supabase.co';
 var SUPABASE_KEY='sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
-var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}};
+var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all';
+var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
+function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
 
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
 function val(id){ var e=document.getElementById(id); return e?e.value:''; }
@@ -115,28 +139,37 @@ function boot(){
 
 function isMine(pid){ var v=PV[pid]; if(v==null) return false; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
 
+function vfilter(c){ VCAT=c; renderPortal(); try{ window.scrollTo({top:0}); }catch(e){} }
+function stockCard(p){
+  var q=(INV.items && typeof INV.items[p.id]==='number')?INV.items[p.id]:'';
+  var inc=(INV.incoming && INV.incoming[p.id])||null;
+  var iq=(inc && inc.qty)?inc.qty:''; var idt=(inc && inc.date)?inc.date:'';
+  var img=p.image?('<img class="thumb" src="'+esc(p.image)+'" loading="lazy">'):'<div class="thumb ph">🪑</div>';
+  var pid=esc(p.id); var pidJs=esc(String(p.id)).replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+  return '<div class="pcard"><div class="row1">'+img
+    +'<div class="nmwrap"><div class="pnm">'+esc(p.name||'')+'</div><div class="pmeta">'+pid+(p.cat?(' · '+esc(catLabel(p.cat))):'')+'</div></div>'
+    +'<div class="stockin"><label>In stock</label><input class="cin" type="number" inputmode="numeric" min="0" id="q-'+pid+'" value="'+q+'" placeholder="—"></div></div>'
+    +'<div class="row2"><div class="f"><label>Upcoming (Pc)</label><input class="cin" type="number" inputmode="numeric" min="0" id="iq-'+pid+'" value="'+iq+'" placeholder="e.g. 50"></div>'
+    +'<div class="f"><label>Arriving on</label><input class="cin" type="date" id="id-'+pid+'" value="'+esc(idt)+'"></div>'
+    +'<button class="save2" id="save-'+pid+'" onclick="saveProd(\''+pidJs+'\')">Save</button></div></div>';
+}
 function renderPortal(){
   var mine=(PRODS||[]).filter(function(p){ return isMine(p.id) && !p.internal; });
-  mine.sort(function(a,b){ return (a.name||'').localeCompare(b.name||''); });
+  var catCounts={}; mine.forEach(function(p){ var c=p.cat||'other'; catCounts[c]=(catCounts[c]||0)+1; });
+  var catKeys=Object.keys(catCounts).sort(function(a,b){ return catLabel(a).localeCompare(catLabel(b)); });
+  if(VCAT!=='all' && !catCounts[VCAT]) VCAT='all';
   var H='<div class="topbar"><img class="logo" src="'+LOGO+'" alt="Gharnish" onerror="this.style.display=\'none\'"><div class="vn">'+esc(V.name||'Vendor')+'</div><button onclick="logout()">Sign out</button></div>';
-  H+='<div class="wrap"><div class="hd"><h1>Your stock</h1><p>Update the quantity you have ready, and add upcoming stock with an arriving date. Changes show to customers on the store.</p></div>';
+  H+='<div class="wrap"><div class="hd"><h1>Your stock</h1><p>Set what you have ready and any upcoming stock. Updates show to customers instantly.</p></div>';
   if(!mine.length){ H+='<div class="empty">No products are assigned to you yet.<br>Please contact Gharnish.</div></div>'; screen(H); return; }
-  mine.forEach(function(p){
-    var q=(INV.items && typeof INV.items[p.id]==='number')?INV.items[p.id]:'';
-    var inc=(INV.incoming && INV.incoming[p.id])||null;
-    var iq=(inc && inc.qty)?inc.qty:''; var idt=(inc && inc.date)?inc.date:'';
-    var img=p.image?('<img class="thumb" src="'+esc(p.image)+'" loading="lazy" onerror="this.className=\'thumb ph\';this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'thumb ph\',textContent:\'\uD83E\uDE91\'}))">'):'<div class="thumb ph">\uD83E\uDE91</div>';
-    H+='<div class="card"><div class="prow">'+img+'<div style="flex:1;min-width:0"><div class="pnm">'+esc(p.name||'')+'</div><div class="pmeta">'+esc(p.id)+(p.cat?(' \u00b7 '+esc(p.cat)):'')+'</div>'
-      +(q!==''?('<span class="badge">'+q+' Pc in stock</span>'):'')
-      +(iq!==''||idt?(' <span class="badge up">\uD83D\uDE9A '+(iq!==''?iq+' Pc':'')+(idt?(' \u00b7 '+esc(idt)):'')+'</span>'):'')
-      +'</div></div>'
-      +'<div class="fields"><div><label class="fl">Stock available (Pc)</label><input class="in" type="number" inputmode="numeric" min="0" id="q-'+esc(p.id)+'" value="'+q+'" placeholder="e.g. 30"><div class="hint">Blank = shown as \u201cIn Stock\u201d. 0 = out of stock.</div></div>'
-      +'<div class="row2"><div><label class="fl">Upcoming stock (Pc)</label><input class="in" type="number" inputmode="numeric" min="0" id="iq-'+esc(p.id)+'" value="'+iq+'" placeholder="e.g. 50"></div>'
-      +'<div><label class="fl">Arriving on</label><input class="in" type="date" id="id-'+esc(p.id)+'" value="'+esc(idt)+'"></div></div></div>'
-      +'<button class="save" id="save-'+esc(p.id)+'" onclick="saveProd(\''+esc(String(p.id)).replace(/\\/g,"\\\\").replace(/'/g,"\\'")+'\')">Save</button>'
-      +'</div>';
-  });
+  H+='<div class="chips"><button class="chip'+(VCAT==='all'?' on':'')+'" onclick="vfilter(\'all\')">All ('+mine.length+')</button>';
+  catKeys.forEach(function(c){ H+='<button class="chip'+(VCAT===c?' on':'')+'" onclick="vfilter(\''+esc(c)+'\')">'+esc(catLabel(c))+' ('+catCounts[c]+')</button>'; });
   H+='</div>';
+  function byName(a,b){ return (a.name||'').localeCompare(b.name||''); }
+  function group(c){ var list=mine.filter(function(p){ return (p.cat||'other')===c; }).sort(byName);
+    H+='<div class="cat-h">'+esc(catLabel(c))+' <span>('+list.length+')</span></div>';
+    list.forEach(function(p){ H+=stockCard(p); }); }
+  if(VCAT!=='all'){ group(VCAT); } else { catKeys.forEach(group); }
+  H+='<div style="height:72px"></div></div>';
   screen(H);
 }
 
@@ -151,7 +184,6 @@ function saveProd(pid){
     if(r.error){ toast('Failed: '+(r.error.message||'error'),true); return; }
     if(qty===null) delete INV.items[pid]; else INV.items[pid]=qty;
     if((iqty===null||iqty<=0)&&!d) delete INV.incoming[pid]; else INV.incoming[pid]={qty:iqty||0,date:d||''};
-    renderPortal();
     toast('Saved \u2713');
   },function(){ if(b){ b.disabled=false; b.textContent='Save'; } toast('Save failed',true); });
 }
