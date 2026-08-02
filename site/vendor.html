@@ -326,8 +326,8 @@ function stockCard(p){
   var hasUp=(iq!==''||!!idt);
   var upLabel=hasUp ? ('🚚 '+(iq!==''?iq+' Pc':'Upcoming')+(idt?(' · '+esc(fmtDate(idt))):'')+' · edit') : '🚚 Add upcoming stock';
   var subs=subNamesOf(p.id); var meta=subs.length?subs.join(', '):(p.cat?catLabel(p.cat):'');
-  var price=(typeof p.price==='number'&&p.price>0)?p.price:0;
-  var priceHtml=price>0 ? '<div class="sc-price">'+fmtINR(price)+'</div>' : '<div class="sc-price none">—</div>';
+  var lt=landTotal(p.id);
+  var priceHtml=lt>0 ? '<div class="sc-price">'+fmtINR(lt)+'</div>' : '<div class="sc-price none">Set price</div>';
   var stockHtml = (q!=='' && q>0) ? '<div class="sc-stock"><b>'+q+'</b> in stock</div>'
       : (q===0 ? '<div class="sc-stock out">Out of stock</div>' : '<div class="sc-stock none">No stock set</div>');
   var upTag = hasUp ? '<div class="sc-up">🚚 '+(iq!==''?iq+' soon':'incoming')+'</div>' : '';
