@@ -1007,7 +1007,7 @@ function loadProds(){ return lsGet(); }
 function saveProds(arr){
   if(!currentUser){ toast('Please sign in again.','#C62828'); return; }
   lsSave(arr);
-  if(supa){ var _pl=arr.map((p,i)=>({id:p.id,name:p.name,cat:p.cat,icon:p.icon||'chair',tier:p.tier,price:p.price,stock:p.stock,material:p.material||'',description:p.description||'',themes:p.themes||[],image:p.image||null,seats:p.seats||null,shape:p.shape||null,price_range:p.priceRange||null,sort:(typeof p.sort==='number'?p.sort:i),bestseller:p.bestseller||false,section:p.section||null,internal:p.internal===true,hidden:p.hidden===true})); supa.from('gharnish_products').upsert(_pl).then(({error})=>{ if(!error) return; if(/section|internal|hidden/i.test(error.message||'')){ var _p2=_pl.map(function(x){ var y=Object.assign({},x); delete y.section; delete y.internal; delete y.hidden; return y; }); supa.from('gharnish_products').upsert(_p2).then(({error:e2})=>{ if(e2) toast('Cloud save failed: '+e2.message,'#C62828'); else toast('Saved \u2014 run the section/internal/hidden SQL in Supabase to sync those fields','#C8860A'); }); } else { toast('Cloud save failed: '+error.message,'#C62828'); } }); }
+  if(supa){ var _pl=arr.map((p,i)=>({id:p.id,name:p.name,cat:p.cat,icon:p.icon||'chair',tier:p.tier,price:p.price,stock:p.stock,material:p.material||'',description:p.description||'',themes:p.themes||[],image:p.image||null,seats:p.seats||null,shape:p.shape||null,price_range:p.priceRange||null,sort:(typeof p.sort==='number'?p.sort:i),bestseller:p.bestseller||false,is_new:p.isNew||false,section:p.section||null,internal:p.internal===true,hidden:p.hidden===true})); supa.from('gharnish_products').upsert(_pl).then(({error})=>{ if(!error) return; if(/section|internal|hidden/i.test(error.message||'')){ var _p2=_pl.map(function(x){ var y=Object.assign({},x); delete y.section; delete y.internal; delete y.hidden; return y; }); supa.from('gharnish_products').upsert(_p2).then(({error:e2})=>{ if(e2) toast('Cloud save failed: '+e2.message,'#C62828'); else toast('Saved \u2014 run the section/internal/hidden SQL in Supabase to sync those fields','#C8860A'); }); } else { toast('Cloud save failed: '+error.message,'#C62828'); } }); }
 }
 
 function deleteProductsFromSupabase(ids){
@@ -1020,7 +1020,7 @@ async function loadAllFromSupabase(){
   try{
     const {data,error} = await supa.from('gharnish_products').select('*').order('sort',{ascending:true,nullsFirst:false}).order('name');
     if(data&&data.length){
-      const mapped = data.map(r=>({id:r.id,name:r.name,cat:r.cat,icon:r.icon||'chair',tier:r.tier,price:r.price,stock:r.stock,material:r.material||'',description:r.description||'',themes:r.themes||[],image:r.image||null,seats:r.seats||null,shape:r.shape||null,priceRange:r.price_range||null,sort:(typeof r.sort==='number'?r.sort:null),bestseller:r.bestseller===true,section:r.section||null,internal:r.internal===true,hidden:r.hidden===true,_shopify:true}));
+      const mapped = data.map(r=>({id:r.id,name:r.name,cat:r.cat,icon:r.icon||'chair',tier:r.tier,price:r.price,stock:r.stock,material:r.material||'',description:r.description||'',themes:r.themes||[],image:r.image||null,seats:r.seats||null,shape:r.shape||null,priceRange:r.price_range||null,sort:(typeof r.sort==='number'?r.sort:null),bestseller:r.bestseller===true,isNew:r.is_new===true,section:r.section||null,internal:r.internal===true,hidden:r.hidden===true,_shopify:true}));
       lsSave(mapped);
     }
   }catch(e){ console.warn('Supabase load fail:',e); }
@@ -2346,9 +2346,33 @@ function collectClose(){ var o=document.getElementById('collect-ov'); if(o)o.rem
 function collectSend(id,mob){ var ta=document.getElementById('cdraft-'+id); var msg=ta?ta.value:''; if(!mob){ toast('No mobile number on file','#C62828'); return; } window.open('https://wa.me/91'+encodeURIComponent(mob)+'?text='+encodeURIComponent(msg),'_blank'); if(ta){ ta.style.opacity='.5'; ta.disabled=true; } }
 function runPendingHtml(delivered, allOrders, payments, nameBy){ try{window._GH_NAMEBY=nameBy||{};}catch(e){} var recBy=runFifoAlloc(allOrders,payments); var rows=(delivered||[]).map(function(o){ var total=+o.amount||0; var rec=Math.min(total,recBy[o.id]||0); return {o:o,total:total,rec:rec,pend:Math.max(0,total-rec)}; }).filter(function(r){return r.pend>0.5;}); try{window._GH_PENDING=rows;}catch(e){}  rows.sort(function(a,b){ return new Date(a.o.delivery_date||a.o.created_at)-new Date(b.o.delivery_date||b.o.created_at); }); var out=rows.reduce(function(a,r){return a+r.pend;},0); var now=new Date(); function dSince(d){ if(!d)return null; var x=Math.floor((now-new Date(d))/864e5); return isNaN(x)?null:x; } var over7=rows.filter(function(r){ var d=dSince(r.o.delivery_date||r.o.created_at); return d!=null&&d>7; }).length; var totalDel=(delivered||[]).reduce(function(a,o){return a+(+o.amount||0);},0); var pct=totalDel?Math.round((totalDel-out)/totalDel*100):100; var h='<div class="cust-sec" style="border:1px solid #C6282840"><h4 style="color:#C62828">Delivered \u2014 payment pending <button onclick="collectAutopilot()" style="margin-left:auto;background:#5B5BBC;color:#fff;border:none;border-radius:999px;padding:6px 14px;font-size:11.5px;font-weight:800;cursor:pointer;font-family:inherit">\u2728 Draft reminders</button><span style="margin-left:10px;font-weight:800">'+custMoney(out)+'</span></h4>'; h+='<div class="an-grid" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr));margin-bottom:12px">'+salesStat('Outstanding',custMoney(out),'#C62828')+salesStat('Orders pending',String(rows.length))+salesStat('Overdue 7d+',String(over7),over7?'#C62828':'#1B7A4D')+salesStat('Collected (delivered)',pct+'%','#1B7A4D')+'</div>'; h+= rows.length? rows.map(function(r){ var o=r.o; var d=dSince(o.delivery_date||o.created_at); var late=d!=null&&d>7; var nm=nameBy[o.mobile]||('+91 '+o.mobile); var msg='Hi '+((nm||'').split(' ')[0]||'')+', gentle reminder from Gharnish \u2014 Rs.'+Math.round(r.pend).toLocaleString('en-IN')+' is pending for '+(o.title||'your order')+' (delivered '+(o.delivery_date?custDate(o.delivery_date):custDate(o.created_at))+'). Total Rs.'+Math.round(r.total).toLocaleString('en-IN')+', received Rs.'+Math.round(r.rec).toLocaleString('en-IN')+'. Kindly arrange the balance at your convenience. Thank you!'; return '<div class="cust-row" style="align-items:center'+(late?';border-left:3px solid #C62828;padding-left:10px':'')+'"><div style="flex:2;min-width:0;cursor:pointer" onclick="openCustomer(\''+escA(o.mobile)+'\')"><div style="font-weight:700;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escA(nm)+' \u00b7 '+escA(o.title||'Order')+'</div><div style="font-size:11px;color:var(--ink3)">Delivered '+(o.delivery_date?custDate(o.delivery_date):custDate(o.created_at))+(d!=null?(' \u00b7 <b style="color:'+(late?'#C62828':'var(--ink3)')+'">'+d+'d ago</b>'):'')+'</div></div><div style="flex:1.6;display:flex;gap:12px;font-size:11.5px;justify-content:flex-end;flex-wrap:wrap;align-items:center"><span style="color:var(--ink3)">Total <b style="color:var(--ink)">'+custMoney(r.total)+'</b></span><span style="color:#1B7A4D">Recd <b>'+custMoney(r.rec)+'</b></span><span style="color:#C62828;font-weight:800">Due '+custMoney(r.pend)+'</span></div><a href="https://wa.me/91'+escA(o.mobile)+'?text='+encodeURIComponent(msg)+'" target="_blank" onclick="event.stopPropagation()" style="background:#1B7A4D;color:#fff;border-radius:8px;padding:6px 11px;font-size:11px;font-weight:700;text-decoration:none;flex:none">WhatsApp</a></div>'; }).join('') : '<div style="color:var(--ink3);font-size:12.5px;padding:8px 0">Nothing pending \u2014 all delivered orders are fully collected.</div>'; h+='</div>'; return h; }
 var _LDS=[];
+var _ldBuildVendor='', _ldConfirmed=[];
+function ldBuildPick(vid){ _ldBuildVendor=vid; _ldConfirmed=[]; ldRenderBuilder(); if(!vid||!supa)return; supa.rpc('admin_vendor_confirmed',{p_vendor_id:parseInt(vid,10)}).then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } _ldConfirmed=(r&&r.data)||[]; ldRenderBuilder(); },function(){ toast('Could not load confirmed items','#C62828'); }); }
+function ldRenderBuilder(){
+  var el=document.getElementById('ld-builder'); if(!el)return;
+  var opts='<option value="">— choose vendor —</option>'+(VENDORS||[]).map(function(v){return '<option value="'+v.id+'"'+(String(_ldBuildVendor)===String(v.id)?' selected':'')+'>'+escA(v.name)+'</option>';}).join('');
+  var H='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><b style="font-family:Poppins,sans-serif;font-size:14px">Prepare a loading</b><select class="cust-in" style="margin:0;width:210px" onchange="ldBuildPick(this.value)">'+opts+'</select><span style="font-size:11.5px;color:var(--ink3)">Pick the vendor’s confirmed items, set qty &amp; price, add to their loading.</span></div>';
+  if(_ldBuildVendor){
+    if(!_ldConfirmed.length){ H+='<div style="font-size:12.5px;color:var(--ink3);padding:6px 0">No confirmed items waiting for this vendor.</div>'; }
+    else {
+      H+='<div style="border:1px solid rgba(0,0,0,.08);border-radius:10px;overflow:hidden">';
+      _ldConfirmed.forEach(function(it,i){ var cost=(typeof costTotal==='function')?costTotal(it.pid):0;
+        H+='<label style="display:flex;align-items:center;gap:10px;padding:8px 10px;'+(i?'border-top:1px solid rgba(0,0,0,.06)':'')+'"><input type="checkbox" class="ldb-chk" data-i="'+i+'" checked><div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--ink)">'+escA(it.name)+'</div><div style="font-size:11px;color:var(--ink3)">'+escA(it.title||'')+' · '+escA(it.stage||'')+'</div></div><input class="cust-in ldb-qty" data-i="'+i+'" type="number" style="margin:0;width:58px;text-align:right" value="'+(it.qty||0)+'"><input class="cust-in ldb-price" data-i="'+i+'" type="number" style="margin:0;width:82px;text-align:right" placeholder="₹" value="'+(cost>0?cost:'')+'"></label>';
+      });
+      H+='</div><button class="settings-save-btn" style="margin-top:10px" onclick="ldBuildCreate()">Add selected to loading</button>';
+    }
+  }
+  el.innerHTML=H;
+}
+function ldBuildCreate(){
+  if(!_ldBuildVendor||!supa)return;
+  var items=[]; var chks=document.querySelectorAll('.ldb-chk');
+  for(var j=0;j<chks.length;j++){ var c=chks[j]; if(!c.checked)continue; var i=+c.getAttribute('data-i'); var it=_ldConfirmed[i]; if(!it)continue; var q=document.querySelector('.ldb-qty[data-i="'+i+'"]'); var p=document.querySelector('.ldb-price[data-i="'+i+'"]'); items.push({order_id:String(it.order_id),pid:it.pid,name:it.name,image:it.image||'',qty:(q?parseInt(q.value,10)||0:it.qty||0),price:(p?parseInt(p.value,10)||0:0)}); }
+  if(!items.length){ toast('Select at least one item','#C62828'); return; }
+  supa.rpc('admin_add_to_loading',{p_vendor_id:parseInt(_ldBuildVendor,10),p_items:items}).then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast('Added '+((r.data&&r.data.added!=null)?r.data.added:items.length)+' item(s) to loading','#1B7A4D'); _ldConfirmed=[]; _ldBuildVendor=''; renderLoadings(); },function(){ toast('Failed','#C62828'); }); }
 function renderLoadings(){
   var mc=document.getElementById('main-content');
-  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Loadings</div><div class="page-sub">Vendor consignments — prices, comments &amp; dispatch</div></div><button class="settings-save-btn" onclick="renderLoadings()">Refresh</button></div><div id="ld-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading…</div></div>';
+  mc.innerHTML='<div class="page-hd"><div><div class="page-title">Loadings</div><div class="page-sub">Vendor consignments — prices, comments &amp; dispatch</div></div><button class="settings-save-btn" onclick="renderLoadings()">Refresh</button></div><div id="ld-builder" class="settings-card" style="margin-bottom:14px"></div><div id="ld-wrap"><div style="padding:30px;text-align:center;color:var(--ink3)">Loading…</div></div>';
   ldAdminLoad();
 }
 function ldAdminLoad(){
@@ -2358,7 +2382,7 @@ function ldAdminLoad(){
   Promise.all(need).then(function(res){
     if(res[0].error){ if(w)w.innerHTML='<div class="sc" style="padding:20px;color:#C62828">Could not load: '+escA(res[0].error.message)+'</div>'; return; }
     if(res[1]&&res[1].data&&res[1].data.length) VENDORS=res[1].data;
-    _LDS=res[0].data||[]; ldAdminRender();
+    _LDS=res[0].data||[]; ldAdminRender(); ldRenderBuilder();
   },function(){ if(w)w.innerHTML='<div class="sc" style="padding:20px;color:#C62828">Error loading.</div>'; });
 }
 function ldVendName(id){ var v=VENDORS.find(function(x){return String(x.id)===String(id);}); return v?v.name:('Vendor '+id); }
@@ -3456,6 +3480,11 @@ function bulkBestseller(val){
   const prods=loadProds().map(p=>selectedProds.has(p.id)?{...p,bestseller:!!val}:p);
   saveProds(prods); clearSelection(); renderProducts(); toast((val?'Marked best seller':'Removed best seller')+': '+n+' products');
 }
+function bulkNewArrival(val){
+  const n=selectedProds.size; if(!n){ toast('Select products first','#C62828'); return; }
+  const prods=loadProds().map(p=>selectedProds.has(p.id)?{...p,isNew:!!val}:p);
+  saveProds(prods); clearSelection(); renderProducts(); toast((val?'Marked new arrival':'Removed new arrival')+': '+n+' products');
+}
 function bulkDelete(){
   var _n=selectedProds.size; if(!_n){ toast('Select products first','#C62828'); return; }
   ghConfirm('Delete '+_n+' products? This cannot be undone.',function(){
@@ -3673,6 +3702,8 @@ function openBulkActions(subScope){
       {l:'Mark coming soon',on:'bulkStock(false)'}
     ]},
     {t:'Badges',items:[
+      {l:'Mark new arrival',on:'bulkNewArrival(true)'},
+      {l:'Remove new arrival',on:'bulkNewArrival(false)'},
       {l:'Mark bestseller',on:'bulkBestseller(true)'},
       {l:'Remove bestseller',on:'bulkBestseller(false)'},
       {l:'Mark clearance',on:'bulkClearance(true)'},
