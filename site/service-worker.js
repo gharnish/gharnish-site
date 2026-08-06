@@ -1,9 +1,41 @@
 /* Gharnish PWA service worker — network-first for fresh content, offline fallback */
-var CACHE = 'gharnish-v112';
-var SHELL = ['/', '/index.html', '/table-estimator.html', '/space-planner.html', '/icons/icon-192.png', '/icons/icon-512.png'];
+var CACHE = 'gharnish-v113';
+var SHELL = ['/', '/index.html', '/customers.html', '/table-estimator.html', '/space-planner.html', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('message', function (e) {
   if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+/* ── Web Push: follow-up reminders ── */
+self.addEventListener('push', function (e) {
+  var data = {};
+  try { data = e.data ? e.data.json() : {}; }
+  catch (_) { data = { title: 'Gharnish', body: (e.data && e.data.text && e.data.text()) || '' }; }
+  var title = data.title || 'Gharnish follow-up';
+  var opts = {
+    body: data.body || '',
+    icon: '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: data.tag || 'gh-followup',
+    renotify: true,
+    requireInteraction: true,
+    vibrate: [90, 40, 90],
+    data: { url: data.url || '/customers.html' }
+  };
+  e.waitUntil(self.registration.showNotification(title, opts));
+});
+self.addEventListener('notificationclick', function (e) {
+  e.notification.close();
+  var target = (e.notification.data && e.notification.data.url) || '/customers.html';
+  e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (cl) {
+    for (var i = 0; i < cl.length; i++) {
+      if (cl[i].url.indexOf('/customers') > -1 && 'focus' in cl[i]) {
+        try { cl[i].navigate(target); } catch (_) {}
+        return cl[i].focus();
+      }
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(target);
+  }));
 });
 self.addEventListener('install', function (e) {
   self.skipWaiting();
