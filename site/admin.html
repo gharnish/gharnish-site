@@ -2462,6 +2462,53 @@ function ldNewProduct(){
       _ldExtra[pid]=(+_ldExtra[pid]||0)+qty; toast('“'+name+'” created · added ×'+qty,'#1B7A4D'); ldRenderCatalogue(); ldUpdateAddBtn();
     } });
 }
+function ldPdf(id){
+  var L=(_LDS||[]).find(function(x){return x.id===id;}); if(!L){ toast('Loading not found','#C62828'); return; }
+  var items=(L.loading_items||[]).slice().sort(function(a,b){return (a.id||0)-(b.id||0);});
+  if(!items.length){ toast('No items in this loading yet','#C8860A'); return; }
+  toast('Building loading list…');
+  ghLoadScript('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js').then(function(){ return ghLoadScript('https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js'); }).then(function(){
+    return Promise.all(items.map(function(p){ return llLoadImg(p.image); })).then(function(imgs){ ldBuildPDF(L,items,imgs); });
+  }).catch(function(){ toast('Could not load PDF library','#C62828'); });
+}
+function ldBuildPDF(L,items,imgs){
+  var JS=(window.jspdf&&window.jspdf.jsPDF)||window.jsPDF; var doc=new JS({unit:'pt',format:'a4'});
+  var W=doc.internal.pageSize.getWidth(); var M=36; var y=44;
+  var GOLD=[196,132,16], INK=[38,34,26], GREY=[110,110,110];
+  function rs(n){ return 'Rs. '+(Math.round(+n||0)).toLocaleString('en-IN'); }
+  var vend=(typeof ldVendName==='function')?ldVendName(L.vendor_id):('Vendor '+L.vendor_id);
+  var num=L.number||('LD-'+L.id); var disp=(L.status==='dispatched');
+  doc.setFont('helvetica','bold'); doc.setFontSize(18); doc.setTextColor.apply(doc,INK); doc.text('LOADING LIST',M,y);
+  doc.setFontSize(12); doc.setTextColor.apply(doc,GOLD); doc.text(String(vend),M,y+18);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor.apply(doc,GREY);
+  doc.text(String(num),W-M,y,{align:'right'});
+  var dt=(L.created_at?new Date(L.created_at):new Date());
+  doc.text('Date: '+dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}),W-M,y+14,{align:'right'});
+  doc.text('Status: '+(disp?'Dispatched':'Open'),W-M,y+28,{align:'right'});
+  y+=40; doc.setDrawColor.apply(doc,GOLD); doc.setLineWidth(1.3); doc.line(M,y,W-M,y); doc.setLineWidth(0.5); y+=14;
+  var totQty=items.reduce(function(a,p){return a+(+p.qty||0);},0);
+  var totVal=items.reduce(function(a,p){return a+((+p.qty||0)*(+p.price||0));},0);
+  doc.setFontSize(9); doc.setTextColor.apply(doc,GREY); doc.text('Gharnish · '+items.length+' item(s) · '+totQty+' pcs',M,y); y+=8;
+  var body=items.map(function(p,i){ var nm=(p.name||p.product_id||''); if(p.comment){ nm+='\n'+p.comment; } var amt=(+p.qty||0)*(+p.price||0); return [String(i+1),'',nm,String(p.qty||0),(+p.price>0?rs(p.price):'—'),(amt>0?rs(amt):'—')]; });
+  doc.autoTable({ startY:y, margin:{left:M,right:M},
+    head:[['#','Photo','Product / note','Qty','Unit price','Amount']], body:body, theme:'grid',
+    headStyles:{fillColor:GOLD,textColor:[255,255,255],fontSize:9.5,cellPadding:6},
+    bodyStyles:{fontSize:9.5,cellPadding:6,minCellHeight:46,valign:'middle',textColor:INK},
+    alternateRowStyles:{fillColor:[252,250,246]},
+    columnStyles:{0:{cellWidth:24,halign:'center'},1:{cellWidth:52},2:{cellWidth:'auto'},3:{cellWidth:36,halign:'center',fontStyle:'bold'},4:{cellWidth:74,halign:'right'},5:{cellWidth:80,halign:'right'}},
+    didDrawCell:function(d){ if(d.section==='body'&&d.column.index===1){ var im=imgs[d.row.index]; if(im){ var pad=4,cw=d.cell.width-pad*2,ch=d.cell.height-pad*2; var r=Math.min(cw/im.w,ch/im.h); var dw=im.w*r,dh=im.h*r; try{ doc.addImage(im.data,'JPEG',d.cell.x+(d.cell.width-dw)/2,d.cell.y+(d.cell.height-dh)/2,dw,dh); }catch(e){} } } }
+  });
+  var yend=doc.lastAutoTable.finalY+18;
+  doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor.apply(doc,INK);
+  doc.text('Total value: '+rs(totVal),W-M,yend,{align:'right'});
+  var ny=yend+6;
+  if(L.note){ doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor.apply(doc,GREY); var nl=doc.splitTextToSize('Note: '+L.note,W-2*M-170); doc.text(nl,M,yend); ny=Math.max(ny,yend+nl.length*11); }
+  var ys=ny+34;
+  doc.setDrawColor(200,200,200); doc.line(M,ys,M+180,ys); doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor.apply(doc,GREY); doc.text('Loaded by / Signature',M,ys+14);
+  doc.line(W-M-180,ys,W-M,ys); doc.text('Received by / Signature',W-M-180,ys+14);
+  doc.save('loading-'+String(num).replace(/[^a-z0-9]+/gi,'-').toLowerCase()+'.pdf');
+  toast('Loading list PDF downloaded','#1B7A4D');
+}
 function ldBuildCreate(){
   if(!_ldBuildVendor||!supa)return;
   var items=[]; var chks=document.querySelectorAll('.ldb-chk');
@@ -2498,7 +2545,7 @@ function ldAdminRender(){
     items.forEach(function(it){
       H+='<div class="ldx-li">'+ldThumbImg(it.image)+'<div style="flex:1;min-width:0"><div class="ldx-nm" style="-webkit-line-clamp:1">'+escA(it.name||it.product_id)+(it.is_extra?' <span class="ldx-chip" style="background:#B260221f;color:#B26022">extra</span>':'')+'</div><input class="ldx-cmt" placeholder="Add a comment / note for this item…" value="'+escA(it.comment||'')+'" onchange="admLdSave('+it.id+',\'comment\',this.value)"></div><span class="ldx-qbadge">×'+(it.qty||0)+'</span><div class="ldx-money"><span>₹</span><input type="number" value="'+((+it.price>0)?it.price:'')+'" placeholder="0" onchange="admLdSave('+it.id+',\'price\',this.value)"></div></div>';
     });
-    H+='<div class="ldx-foot"><div class="ldx-totrow"><span style="font-size:11.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em">Total value</span><span class="ldx-tot">'+custMoney(ldTot(ld))+'</span></div><input class="ldx-cmt" style="margin-top:0" placeholder="Loading note (dispatch details, transport…)" value="'+escA(ld.note||'')+'" onchange="admLdNote('+ld.id+',this.value)"><div style="display:flex;gap:8px;margin-top:10px">'+(disp?'':'<button class="settings-save-btn" onclick="admLdDispatch('+ld.id+')">Mark dispatched</button>')+'<button class="settings-save-btn" style="background:var(--c2);color:var(--ink2);box-shadow:none" onclick="admLdAddExtra('+ld.id+','+ld.vendor_id+')">+ Extra item</button></div></div></div>';
+    H+='<div class="ldx-foot"><div class="ldx-totrow"><span style="font-size:11.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.04em">Total value</span><span class="ldx-tot">'+custMoney(ldTot(ld))+'</span></div><input class="ldx-cmt" style="margin-top:0" placeholder="Loading note (dispatch details, transport…)" value="'+escA(ld.note||'')+'" onchange="admLdNote('+ld.id+',this.value)"><div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'+(disp?'':'<button class="settings-save-btn" onclick="admLdDispatch('+ld.id+')">Mark dispatched</button>')+'<button class="settings-save-btn" style="background:var(--c2);color:var(--ink2);box-shadow:none" onclick="admLdAddExtra('+ld.id+','+ld.vendor_id+')">+ Extra item</button><button class="settings-save-btn" style="background:#fff;color:var(--g);border:1.5px solid rgba(200,134,10,.5);box-shadow:none" onclick="ldPdf('+ld.id+')">⬇ PDF</button></div></div></div>';
   });
   w.innerHTML=H;
 }
