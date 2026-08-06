@@ -106,6 +106,7 @@ a{color:inherit}
 .staffrow{display:flex;gap:8px;margin-top:8px}
 .fu-item{background:var(--c1);border-radius:var(--r1);padding:11px 12px;margin-bottom:8px;border-left:3px solid var(--g)}
 .fu-item.done{opacity:.55;border-left-color:var(--grn)}
+.ftag{display:inline-block;color:#fff;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:2px 7px;border-radius:var(--rpill);vertical-align:middle}
 .mini{font-size:11px;color:var(--ink3)}
 </style>
 </head>
@@ -135,19 +136,24 @@ a{color:inherit}
     <div class="page-title">Add customer</div>
     <div class="page-sub">Walk-in or phone call — save the number in seconds.</div>
     <div class="card">
-      <div class="seg">
-        <button id="src-walk" class="on" onclick="setSrc('Walk-in')">🏬 Walk-in</button>
-        <button id="src-call" onclick="setSrc('Call')">📞 Call</button>
-      </div>
       <input id="c-mobile" class="bignum" type="tel" inputmode="numeric" placeholder="Mobile number" autocomplete="off">
-      <div class="row2" style="margin-top:10px">
-        <input id="c-name" class="in" placeholder="Name (optional)">
-        <input id="c-city" class="in" placeholder="City (optional)">
+      <input id="c-name" class="in" style="margin-top:10px" placeholder="Full name (optional)">
+      <div class="row2" style="margin-top:8px">
+        <div><label class="lbl">City</label><input id="c-city" class="in" placeholder="City (optional)"></div>
+        <div><label class="lbl">Lead source</label><select id="c-source" class="in"></select></div>
       </div>
-      <button class="btn" style="margin-top:12px" onclick="saveCustomer()">Save customer</button>
+      <div class="row2" style="margin-top:8px">
+        <div><label class="lbl">Customer type</label><select id="c-ctype" class="in"></select></div>
+        <div><label class="lbl">Segment</label><select id="c-segment" class="in"></select></div>
+      </div>
+      <div class="row2" style="margin-top:8px">
+        <div><label class="lbl">Restaurant type</label><select id="c-subseg" class="in"></select></div>
+        <div><label class="lbl">Handled by</label><select id="c-owner" class="in"></select></div>
+      </div>
+      <button class="btn" style="margin-top:14px" onclick="saveCustomer()">Save customer</button>
       <div id="cap-after" class="hidden"></div>
     </div>
-    <div class="note">Tip: just the number is enough. Add the name and a follow-up later from the Customers tab.</div>
+    <div class="note">Only the mobile number is required — everything else you can fill now or later. "Handled by" is who owns this customer; new follow-ups default to them.</div>
   </div>
 
   <!-- Customers -->
@@ -189,6 +195,13 @@ a{color:inherit}
       <button class="btn sec" style="margin-top:10px" onclick="addStaff()">+ Add staff</button>
       <div class="note">Staff must have a Gharnish login and open this app once (tapping Enable reminders) to receive push notifications.</div>
     </div>
+    <div class="card">
+      <h3>Follow-up types</h3>
+      <div id="futype-chips"></div>
+      <div class="staffrow"><input id="ft-new" class="in" placeholder="e.g. Site measurement"></div>
+      <button class="btn sec" style="margin-top:10px" onclick="addFuType()">+ Add type</button>
+      <div class="note">These appear when creating a follow-up. Defaults: Call back, Visit, Payment follow-up, Delivery follow-up. Add or remove anytime — changes apply everywhere instantly.</div>
+    </div>
     <button class="btn sec" onclick="doLogout()">Sign out</button>
   </div>
 
@@ -214,8 +227,16 @@ const SUPABASE_URL = 'https://djedmaezxvuzmwjnooel.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ZLUr4NQFTEN6qzVAYNL7CA_qocs1pQK';
 const VAPID_PUBLIC = 'BJHk6PsARmWSydcOf3lHdq_oI_uQnQNElbVVInbvyd9e7XS6SQFXwdnDdJFhyTxBISDI7XE2LP7IhGEK4apZr8Q';
 
-var supa = null, currentUser = null, _src = 'Walk-in';
-var _CUSTOMERS = [], _STAFF = [], _fuScope = 'mine', _openMobile = null;
+var supa = null, currentUser = null;
+var _CUSTOMERS = [], _STAFF = [], _FUTYPES = [], _fuScope = 'mine', _openMobile = null;
+var FU_COLORS={'Call back':'#C8860A','Visit':'#1A6BA8','Payment follow-up':'#C62828','Delivery follow-up':'#2E7D32'};
+function ftypeColor(t){ return FU_COLORS[t]||'#8A5C07'; }
+var CUST_TYPES=['Consumer','Architect/Interior','Reseller'];
+var LEAD_SOURCES=['Walk-in','Call','Google','YouTube','Referral','Repeat'];
+var CUST_SEGMENTS=['Restaurant','Residential','Banquet','Hotel'];
+var CUST_SUBSEG=['Cafe','Fine Dine','Pub','Bar','QSR','Bakery'];
+function optionsHTML(list,sel,blank){ var h=(blank!=null)?'<option value="">'+esc(blank)+'</option>':''; return h+list.map(function(s){return '<option'+(sel===s?' selected':'')+'>'+esc(s)+'</option>';}).join(''); }
+function fillCaptureSelects(){ var g=function(id){return document.getElementById(id);}; if(!g('c-source'))return; g('c-source').innerHTML=optionsHTML(LEAD_SOURCES,'Walk-in'); g('c-ctype').innerHTML=optionsHTML(CUST_TYPES,'Consumer'); g('c-segment').innerHTML=optionsHTML(CUST_SEGMENTS,'','—'); g('c-subseg').innerHTML=optionsHTML(CUST_SUBSEG,'','—'); g('c-owner').innerHTML=assigneeOptions(currentUser.email); }
 
 function ensureSupa(){ if(supa) return supa; try{ supa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }catch(e){} return supa; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
@@ -243,7 +264,7 @@ async function showApp(){
   document.getElementById('login').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('set-who').textContent='Signed in as '+currentUser.email;
-  await loadStaff(); await loadCustomers(); refreshPushStatus();
+  await loadStaff(); await loadFollowupTypes(); fillCaptureSelects(); await loadCustomers(); refreshPushStatus();
   // deep link from a notification: /customers.html?m=<mobile>
   var m=new URLSearchParams(location.search).get('m');
   if(m){ go('list'); setTimeout(function(){ openCustomer(normMobile(m)); },200); }
@@ -252,7 +273,7 @@ async function showApp(){
 /* ══ DATA ══ */
 async function loadCustomers(){
   if(!ensureSupa()) return;
-  var r=await supa.from('customers').select('mobile,name,city,lead_status,next_followup,lead_source,updated_at').order('updated_at',{ascending:false}).limit(500);
+  var r=await supa.from('customers').select('mobile,name,city,lead_status,next_followup,lead_source,owner,customer_type,segment,sub_segment,updated_at').order('updated_at',{ascending:false}).limit(500);
   _CUSTOMERS=(r.data)||[]; renderList();
 }
 async function loadStaff(){
@@ -263,22 +284,35 @@ async function loadStaff(){
 async function saveStaff(){
   await supa.from('app_settings').upsert({key:'gh_staff',value:_STAFF,updated_at:new Date().toISOString()},{onConflict:'key'});
 }
+async function loadFollowupTypes(){
+  var r=await supa.from('app_settings').select('value').eq('key','gh_followup_types').maybeSingle();
+  var v=r&&r.data?r.data.value:[]; if(typeof v==='string'){ try{v=JSON.parse(v);}catch(_){v=[];} }
+  _FUTYPES=(Array.isArray(v)&&v.length)?v:['Call back','Visit','Payment follow-up','Delivery follow-up']; renderFuTypes();
+}
+async function saveFuTypes(){
+  await supa.from('app_settings').upsert({key:'gh_followup_types',value:_FUTYPES,updated_at:new Date().toISOString()},{onConflict:'key'});
+}
 
 /* ══ CAPTURE ══ */
-function setSrc(s){ _src=s; document.getElementById('src-walk').classList.toggle('on',s==='Walk-in'); document.getElementById('src-call').classList.toggle('on',s==='Call'); }
 async function saveCustomer(){
   var mob=normMobile(document.getElementById('c-mobile').value);
   if(mob.length!==10){ toast('Enter a valid 10-digit mobile','#C62828'); return; }
   var name=(document.getElementById('c-name').value||'').trim();
-  var city=(document.getElementById('c-city').value||'').trim();
   var exists=_CUSTOMERS.find(function(c){return c.mobile===mob;});
-  var row={mobile:mob,updated_at:new Date().toISOString()};
-  if(name) row.name=name; if(city) row.city=city;
-  if(!exists){ row.lead_source=_src; row.lead_status='New'; row.signup_source='customers-app'; }
+  var row={mobile:mob,updated_at:new Date().toISOString(),
+    city:(document.getElementById('c-city').value||'').trim()||null,
+    customer_type:document.getElementById('c-ctype').value||null,
+    lead_source:document.getElementById('c-source').value||null,
+    segment:document.getElementById('c-segment').value||null,
+    sub_segment:document.getElementById('c-subseg').value||null,
+    owner:document.getElementById('c-owner').value||null};
+  if(name) row.name=name;
+  if(!exists){ row.lead_status='New'; row.signup_source='customers-app'; }
   var r=await supa.from('customers').upsert(row,{onConflict:'mobile'}).select().maybeSingle();
   if(r.error){ toast('Failed: '+r.error.message,'#C62828'); return; }
   toast(exists?'Customer updated':'Customer saved ✓','#2E7D32');
   document.getElementById('c-mobile').value=''; document.getElementById('c-name').value=''; document.getElementById('c-city').value='';
+  fillCaptureSelects();
   await loadCustomers();
   var after=document.getElementById('cap-after'); after.classList.remove('hidden');
   after.innerHTML='<div class="qactions"><a class="a-call" href="tel:+91'+mob+'">Call</a><a class="a-wa" href="https://wa.me/91'+mob+'" target="_blank">WhatsApp</a><button class="a-fu" onclick="openFollowup(\''+mob+'\',\''+esc(name).replace(/'/g,"\\'")+'\')">+ Follow-up</button></div>';
@@ -296,7 +330,7 @@ function renderList(){
     var due=c.next_followup?('<div class="due-badge'+(c.next_followup<=today?' due-over':'')+'">📅 '+c.next_followup+'</div>'):'';
     return '<div class="crow" onclick="openCustomer(\''+esc(c.mobile)+'\')"><div class="av">'+esc(initials(c.name,c.mobile))+'</div>'+
     '<div style="min-width:0;flex:1"><div class="nm">'+esc(c.name||('+91 '+c.mobile))+'</div>'+
-    '<div class="meta">'+esc(c.mobile)+(c.city?' · '+esc(c.city):'')+(c.lead_source?' · '+esc(c.lead_source):'')+'</div></div>'+due+'</div>';
+    '<div class="meta">'+esc(c.mobile)+(c.city?' · '+esc(c.city):'')+(c.lead_source?' · '+esc(c.lead_source):'')+(c.owner?' · 👤 '+esc((c.owner||'').split('@')[0]):'')+'</div></div>'+due+'</div>';
   }).join('');
 }
 
@@ -307,7 +341,10 @@ async function openCustomer(mob){
   openSheet('<h2>'+esc(c.name||('+91 '+mob))+'</h2><div class="mini">'+esc(mob)+(c.city?' · '+esc(c.city):'')+'</div>'+
     '<div class="qactions" style="margin-top:14px"><a class="a-call" href="tel:+91'+mob+'">Call</a><a class="a-wa" href="https://wa.me/91'+mob+'" target="_blank">WhatsApp</a><button class="a-fu" onclick="openFollowup(\''+mob+'\',\''+esc(c.name||'').replace(/\'/g,"")+'\')">+ Follow-up</button></div>'+
     '<label class="lbl">Name</label><input id="d-name" class="in" value="'+esc(c.name||'')+'">'+
-    '<div class="row2" style="margin-top:8px"><input id="d-city" class="in" placeholder="City" value="'+esc(c.city||'')+'"><select id="d-status" class="in">'+['New','Contacted','Quoted','Won','Lost'].map(function(s){return '<option'+((c.lead_status||'New')===s?' selected':'')+'>'+s+'</option>';}).join('')+'</select></div>'+
+    '<div class="row2" style="margin-top:8px"><div><label class="lbl">City</label><input id="d-city" class="in" placeholder="City" value="'+esc(c.city||'')+'"></div><div><label class="lbl">Lead status</label><select id="d-status" class="in">'+optionsHTML(['New','Contacted','Quoted','Negotiating','Won','Lost'],c.lead_status||'New')+'</select></div></div>'+
+    '<div class="row2" style="margin-top:8px"><div><label class="lbl">Customer type</label><select id="d-ctype" class="in">'+optionsHTML(CUST_TYPES,c.customer_type||'Consumer')+'</select></div><div><label class="lbl">Lead source</label><select id="d-source" class="in">'+optionsHTML(LEAD_SOURCES,c.lead_source||'Walk-in')+'</select></div></div>'+
+    '<div class="row2" style="margin-top:8px"><div><label class="lbl">Segment</label><select id="d-segment" class="in">'+optionsHTML(CUST_SEGMENTS,c.segment||'','—')+'</select></div><div><label class="lbl">Restaurant type</label><select id="d-subseg" class="in">'+optionsHTML(CUST_SUBSEG,c.sub_segment||'','—')+'</select></div></div>'+
+    '<label class="lbl">Handled by</label><select id="d-owner" class="in">'+assigneeOptions(c.owner||currentUser.email)+'</select>'+
     '<button class="btn" style="margin-top:12px" onclick="saveCustDetail()">Save</button>'+
     '<label class="lbl">Notes</label><textarea id="d-note" class="in" rows="2" placeholder="Add a note…"></textarea><button class="btn sec" style="margin-top:8px" onclick="addNote()">Add note</button>'+
     '<div id="d-notes" class="mini" style="margin-top:10px"></div>'+
@@ -315,7 +352,8 @@ async function openCustomer(mob){
   loadCustNotes(mob); loadCustFus(mob);
 }
 async function saveCustDetail(){
-  var upd={name:(document.getElementById('d-name').value||'').trim(),city:(document.getElementById('d-city').value||'').trim(),lead_status:document.getElementById('d-status').value,updated_at:new Date().toISOString()};
+  var g=function(id){return document.getElementById(id);};
+  var upd={name:(g('d-name').value||'').trim(),city:(g('d-city').value||'').trim()||null,lead_status:g('d-status').value,customer_type:g('d-ctype').value||null,lead_source:g('d-source').value||null,segment:g('d-segment').value||null,sub_segment:g('d-subseg').value||null,owner:g('d-owner').value||null,updated_at:new Date().toISOString()};
   var r=await supa.from('customers').update(upd).eq('mobile',_openMobile);
   if(r.error){ toast('Failed: '+r.error.message,'#C62828'); return; }
   toast('Saved ✓','#2E7D32'); await loadCustomers();
@@ -343,8 +381,9 @@ function defaultDue(){ var d=new Date(Date.now()+864e5); d.setHours(10,0,0,0); v
 function assigneeOptions(sel){ var opts=[]; var seen={}; [currentUser.email].concat(_STAFF.map(function(s){return s.email;})).forEach(function(e){ e=(e||'').toLowerCase(); if(e&&!seen[e]){seen[e]=1;opts.push(e);} }); return opts.map(function(e){ var nm=(_STAFF.find(function(s){return (s.email||'').toLowerCase()===e;})||{}).name; return '<option value="'+esc(e)+'"'+(sel===e?' selected':'')+'>'+esc(nm?nm+' ('+e+')':e)+(e===currentUser.email?' — me':'')+'</option>'; }).join(''); }
 function openFollowup(mob,name){
   openSheet('<h2>New follow-up</h2><div class="mini">'+esc(name||('+91 '+mob))+' · '+esc(mob)+'</div>'+
+    '<label class="lbl">Type</label><select id="f-type" class="in">'+optionsHTML(_FUTYPES.length?_FUTYPES:['Call back'],_FUTYPES[0]||'Call back')+'</select>'+
     '<label class="lbl">When to follow up</label><input id="f-due" class="in" type="datetime-local" value="'+defaultDue()+'">'+
-    '<label class="lbl">Assign to</label><select id="f-assignee" class="in">'+assigneeOptions(currentUser.email)+'</select>'+
+    '<label class="lbl">Assign follow-up to</label><select id="f-assignee" class="in">'+assigneeOptions(((_CUSTOMERS.find(function(x){return x.mobile===mob;})||{}).owner)||currentUser.email)+'</select>'+
     '<label class="lbl">Note (optional)</label><input id="f-note" class="in" placeholder="e.g. Send dining table quote">'+
     '<button class="btn grn" style="margin-top:16px" onclick="saveFollowup(\''+mob+'\',\''+esc(name||'').replace(/\'/g,"")+'\')">Set reminder</button>'+
     '<div class="note">The assigned person gets a push notification at this time — even if the app is closed (Home-Screen install required on iPhone).</div>');
@@ -355,14 +394,16 @@ async function saveFollowup(mob,name){
   var iso=new Date(dueLocal).toISOString();
   var assignee=document.getElementById('f-assignee').value;
   var note=(document.getElementById('f-note').value||'').trim();
-  var row={mobile:mob,customer_name:name||null,due_at:iso,assignee_email:assignee,created_by:currentUser.email,note:note||null,title:'Follow up',status:'pending'};
+  var type=(document.getElementById('f-type')&&document.getElementById('f-type').value)||'Call back';
+  var row={mobile:mob,customer_name:name||null,due_at:iso,assignee_email:assignee,created_by:currentUser.email,note:note||null,title:type,status:'pending'};
   var r=await supa.from('followups').insert(row);
   if(r.error){ toast('Failed: '+r.error.message,'#C62828'); return; }
   toast('Reminder set ✓','#2E7D32'); closeSheet(); await loadCustomers(); if(document.getElementById('tab-due') && !document.getElementById('tab-due').classList.contains('hidden')) renderDue();
 }
 function fuItemHTML(f){
   var over=f.status==='pending'&&new Date(f.due_at)<=new Date();
-  return '<div class="fu-item'+(f.status==='done'?' done':'')+'"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px">'+esc(f.customer_name||f.mobile)+'</div>'+
+  var col=ftypeColor(f.title);
+  return '<div class="fu-item'+(f.status==='done'?' done':'')+'" style="border-left-color:'+(f.status==='done'?'#2E7D32':col)+'"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px">'+(f.title?'<span class="ftag" style="background:'+col+'">'+esc(f.title)+'</span> ':'')+esc(f.customer_name||f.mobile)+'</div>'+
     '<div class="mini'+(over?' due-over':'')+'" style="'+(over?'color:#C62828;font-weight:700':'')+'">📅 '+fmtDue(f.due_at)+' · '+esc((f.assignee_email||'').split('@')[0])+(f.note?' · '+esc(f.note):'')+'</div></div>'+
     (f.status==='pending'?'<a class="pill" style="background:#1A6BA8;color:#fff;text-decoration:none" href="tel:+91'+esc(f.mobile)+'">Call</a><button class="pill" style="background:#2E7D32;color:#fff;border:none;cursor:pointer" onclick="markDone('+f.id+')">Done</button>':'<span class="pill" style="background:#E3DCCF;color:#6B5C40">Done</span>')+'</div></div>';
 }
@@ -402,6 +443,18 @@ async function addStaff(){
   document.getElementById('st-email').value=''; document.getElementById('st-name').value=''; toast('Staff added','#2E7D32');
 }
 async function rmStaff(i){ _STAFF.splice(i,1); await saveStaff(); renderStaff(); }
+
+/* ══ FOLLOW-UP TYPES ══ */
+function renderFuTypes(){
+  var el=document.getElementById('futype-chips'); if(!el) return;
+  el.innerHTML=_FUTYPES.length?_FUTYPES.map(function(t,i){ var col=ftypeColor(t); return '<span class="chip" style="background:'+col+'1a;color:'+col+'">'+esc(t)+'<button onclick="rmFuType('+i+')">×</button></span>'; }).join(''):'<span class="mini">No types yet.</span>';
+}
+async function addFuType(){
+  var v=(document.getElementById('ft-new').value||'').trim(); if(!v){ return; }
+  if(_FUTYPES.indexOf(v)>-1){ toast('Already added'); return; }
+  _FUTYPES.push(v); await saveFuTypes(); renderFuTypes(); document.getElementById('ft-new').value=''; toast('Type added','#2E7D32');
+}
+async function rmFuType(i){ _FUTYPES.splice(i,1); await saveFuTypes(); renderFuTypes(); }
 
 /* ══ SHEET ══ */
 function openSheet(html){ document.getElementById('sheet-body').innerHTML=html; document.getElementById('sheet-bg').classList.add('open'); }
