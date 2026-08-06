@@ -148,7 +148,7 @@ a{color:inherit}
       </div>
       <div class="row2" style="margin-top:8px">
         <div><label class="lbl">Restaurant type</label><select id="c-subseg" class="in"></select></div>
-        <div><label class="lbl">Handled by</label><select id="c-owner" class="in"></select></div>
+        <div><label class="lbl">Handled by</label><select id="c-owner" class="in" onchange="handleAssignChange(this)"></select></div>
       </div>
       <button class="btn" style="margin-top:14px" onclick="saveCustomer()">Save customer</button>
       <div id="cap-after" class="hidden"></div>
@@ -344,7 +344,7 @@ async function openCustomer(mob){
     '<div class="row2" style="margin-top:8px"><div><label class="lbl">City</label><input id="d-city" class="in" placeholder="City" value="'+esc(c.city||'')+'"></div><div><label class="lbl">Lead status</label><select id="d-status" class="in">'+optionsHTML(['New','Contacted','Quoted','Negotiating','Won','Lost'],c.lead_status||'New')+'</select></div></div>'+
     '<div class="row2" style="margin-top:8px"><div><label class="lbl">Customer type</label><select id="d-ctype" class="in">'+optionsHTML(CUST_TYPES,c.customer_type||'Consumer')+'</select></div><div><label class="lbl">Lead source</label><select id="d-source" class="in">'+optionsHTML(LEAD_SOURCES,c.lead_source||'Walk-in')+'</select></div></div>'+
     '<div class="row2" style="margin-top:8px"><div><label class="lbl">Segment</label><select id="d-segment" class="in">'+optionsHTML(CUST_SEGMENTS,c.segment||'','—')+'</select></div><div><label class="lbl">Restaurant type</label><select id="d-subseg" class="in">'+optionsHTML(CUST_SUBSEG,c.sub_segment||'','—')+'</select></div></div>'+
-    '<label class="lbl">Handled by</label><select id="d-owner" class="in">'+assigneeOptions(c.owner||currentUser.email)+'</select>'+
+    '<label class="lbl">Handled by</label><select id="d-owner" class="in" onchange="handleAssignChange(this)">'+assigneeOptions(c.owner||currentUser.email)+'</select>'+
     '<button class="btn" style="margin-top:12px" onclick="saveCustDetail()">Save</button>'+
     '<label class="lbl">Notes</label><textarea id="d-note" class="in" rows="2" placeholder="Add a note…"></textarea><button class="btn sec" style="margin-top:8px" onclick="addNote()">Add note</button>'+
     '<div id="d-notes" class="mini" style="margin-top:10px"></div>'+
@@ -378,12 +378,19 @@ async function loadCustFus(mob){
 
 /* ══ FOLLOW-UP ══ */
 function defaultDue(){ var d=new Date(Date.now()+864e5); d.setHours(10,0,0,0); var p=function(n){return String(n).padStart(2,'0');}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'T'+p(d.getHours())+':'+p(d.getMinutes()); }
-function assigneeOptions(sel){ var opts=[]; var seen={}; [currentUser.email].concat(_STAFF.map(function(s){return s.email;})).forEach(function(e){ e=(e||'').toLowerCase(); if(e&&!seen[e]){seen[e]=1;opts.push(e);} }); return opts.map(function(e){ var nm=(_STAFF.find(function(s){return (s.email||'').toLowerCase()===e;})||{}).name; return '<option value="'+esc(e)+'"'+(sel===e?' selected':'')+'>'+esc(nm?nm+' ('+e+')':e)+(e===currentUser.email?' — me':'')+'</option>'; }).join(''); }
+function assigneeOptions(sel){ var opts=[]; var seen={}; var base=[currentUser.email].concat(_STAFF.map(function(s){return s.email;})); if(sel&&sel!=='__add__') base.unshift(sel); base.forEach(function(e){ e=(e||'').toLowerCase(); if(e&&!seen[e]){seen[e]=1;opts.push(e);} }); return opts.map(function(e){ var nm=(_STAFF.find(function(s){return (s.email||'').toLowerCase()===e;})||{}).name; return '<option value="'+esc(e)+'"'+((sel||'').toLowerCase()===e?' selected':'')+'>'+esc(nm?nm+' ('+e+')':e)+(e===(currentUser.email||'').toLowerCase()?' — me':'')+'</option>'; }).join('')+'<option value="__add__">➕ Add email…</option>'; }
+async function handleAssignChange(sel){
+  if(!sel||sel.value!=='__add__') return;
+  var em=(prompt('Email of the person to assign to:')||'').trim().toLowerCase();
+  if(!em||em.indexOf('@')<1){ sel.value=(currentUser.email||'').toLowerCase(); if(em) toast('Enter a valid email','#C62828'); return; }
+  if(!_STAFF.find(function(s){return (s.email||'').toLowerCase()===em;})){ var nm=(prompt('Their name (optional):')||'').trim(); _STAFF.push({email:em,name:nm}); await saveStaff(); if(document.getElementById('staff-chips')) renderStaff(); toast('Added '+em,'#2E7D32'); }
+  sel.innerHTML=assigneeOptions(em);
+}
 function openFollowup(mob,name){
   openSheet('<h2>New follow-up</h2><div class="mini">'+esc(name||('+91 '+mob))+' · '+esc(mob)+'</div>'+
     '<label class="lbl">Type</label><select id="f-type" class="in">'+optionsHTML(_FUTYPES.length?_FUTYPES:['Call back'],_FUTYPES[0]||'Call back')+'</select>'+
     '<label class="lbl">When to follow up</label><input id="f-due" class="in" type="datetime-local" value="'+defaultDue()+'">'+
-    '<label class="lbl">Assign follow-up to</label><select id="f-assignee" class="in">'+assigneeOptions(((_CUSTOMERS.find(function(x){return x.mobile===mob;})||{}).owner)||currentUser.email)+'</select>'+
+    '<label class="lbl">Assign follow-up to</label><select id="f-assignee" class="in" onchange="handleAssignChange(this)">'+assigneeOptions(((_CUSTOMERS.find(function(x){return x.mobile===mob;})||{}).owner)||currentUser.email)+'</select>'+
     '<label class="lbl">Note (optional)</label><input id="f-note" class="in" placeholder="e.g. Send dining table quote">'+
     '<button class="btn grn" style="margin-top:16px" onclick="saveFollowup(\''+mob+'\',\''+esc(name||'').replace(/\'/g,"")+'\')">Set reminder</button>'+
     '<div class="note">The assigned person gets a push notification at this time — even if the app is closed (Home-Screen install required on iPhone).</div>');
