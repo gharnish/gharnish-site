@@ -303,6 +303,7 @@ var LOGO='https://gharnish.app/icons/icon-192.png';
 var supa=null; try{ supa=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY); }catch(e){}
 var V=null, PRODS=[], PV={}, INV={items:{},incoming:{}}, VCAT='all', VSUB='all', VQ='';
 var SUBCATS={}, PSUB={}, SUBNAME={}, CLR={}, VCLRADD=false, LAND={}, VTAB='dashboard', IS_DEFAULT=false, CONF=[];
+var _VENDS=[], _activeVid=null;
 var PARTLBL={top:'Top',base:'Base',table:'Table',chairs:'Chairs'};
 var CATLBL={chair:'Chairs',stool:'Stools','restaurant-tables':'Restaurant Tables','table-round':'Round Tables','table-square':'Square Tables','table-rect':'Rectangular Tables','table-base':'Table Bases',booth:'Booths & Sofas','outdoor-chair':'Outdoor Chairs','outdoor-table':'Outdoor Tables','restaurant-set':'Restaurant Sets'};
 function catLabel(c){ if(!c||c==='other') return 'Other'; return CATLBL[c]||String(c).replace(/[-_]/g,' ').replace(/\b\w/g,function(ch){return ch.toUpperCase();}); }
@@ -349,10 +350,13 @@ function renderNoVendor(){
 
 function boot(){
   screen('<div class="wrap"><div class="loading">Loading your products\u2026</div></div>');
-  supa.rpc('my_vendor').then(function(r){
+  supa.rpc('my_vendors').then(function(r){
     if(r.error || !r.data || !r.data.length){ renderNoVendor(); return; }
-    V=r.data[0];
+    _VENDS=r.data;
+    var pick=_VENDS.find(function(v){return String(v.id)===String(_activeVid);})||_VENDS[0];
+    _activeVid=pick.id; V=pick;
     IS_DEFAULT=/^tfl$/i.test(String((V&&V.name)||'').trim());
+    var _go=function(){
     Promise.all([
       supa.from('gharnish_products').select('id,name,cat,image,price,hidden,internal').then(function(x){ return x.data||[]; }, function(){ return []; }),
       supa.from('app_settings').select('value').eq('key','product_vendors').maybeSingle().then(function(x){ return (x.data&&x.data.value)||{}; }, function(){ return {}; }),
@@ -370,8 +374,11 @@ function boot(){
       if(!INV.items) INV.items={}; if(!INV.incoming) INV.incoming={};
       VTAB='dashboard'; renderApp();
     });
+    };
+    supa.rpc('set_active_vendor',{p_vendor_id:_activeVid}).then(_go,_go);
   },function(){ renderNoVendor(); });
 }
+function setActive(vid){ if(String(vid)===String(_activeVid))return; _activeVid=parseInt(vid,10); boot(); }
 
 function isMine(pid){ var v=PV[pid]; if(v==null) return IS_DEFAULT; if(typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) return true; } return false; } return String(v)===String(V.id); }
 function myParts(pid){ var v=PV[pid]; var out=[]; if(v&&typeof v==='object'){ for(var k in v){ if(v[k]!=null && String(v[k])===String(V.id)) out.push(k); } } return out; }
@@ -507,7 +514,7 @@ var IC_BOX='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-wi
 var IC_TRUCK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4h13v11H1z"/><path d="M14 8h4l3 3v4h-7"/><circle cx="6" cy="18.5" r="2"/><circle cx="18" cy="18.5" r="2"/></svg>';
 var IC_USER='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>';
 var IC_CHECK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6a1 1 0 0 1 1 1v1h1a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h1V4a1 1 0 0 1 1-1Z"/><path d="M9 13l2 2 4-4"/></svg>';
-function topbarHtml(){ return '<div class="topbar"><img class="logo" src="'+LOGO+'" alt="Gharnish" onerror="this.style.display=\'none\'"><div class="vn">'+esc((V&&V.name)||'Vendor')+'</div></div>'; }
+function topbarHtml(){ var sw=''; if(_VENDS&&_VENDS.length>1){ sw='<select class="vswitch" onchange="setActive(this.value)" style="margin-left:auto;max-width:52%;padding:7px 11px;border-radius:999px;border:1px solid rgba(0,0,0,.14);background:#fff;font-weight:700;font-size:13px;font-family:inherit;color:#1A1510">'+_VENDS.map(function(v){return '<option value="'+v.id+'"'+(String(v.id)===String(_activeVid)?' selected':'')+'>'+esc(v.name)+'</option>';}).join('')+'</select>'; } return '<div class="topbar"><img class="logo" src="'+LOGO+'" alt="Gharnish" onerror="this.style.display=\'none\'"><div class="vn">'+esc((V&&V.name)||'Vendor')+'</div>'+sw+'</div>'; }
 function bottomNav(){
   function it(tab,label,svg){ return '<button class="bn'+(VTAB===tab?' on':'')+'" onclick="go(\''+tab+'\')">'+svg+'<span>'+label+'</span></button>'; }
   return '<nav class="botnav">'+it('dashboard','Home',IC_HOME)+it('stock','Stock',IC_BOX)+it('confirmed','Confirmed',IC_CHECK)+it('loadings','Loadings',IC_TRUCK)+it('account','Account',IC_USER)+'</nav>';
