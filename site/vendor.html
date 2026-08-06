@@ -269,8 +269,11 @@
   .sr-nm .pnm{font-weight:400;font-size:12.5px;color:var(--ink)}
   .sr-nm .pmeta{font-size:10.5px;color:var(--ink3);margin-top:1px}
   .sr-stk{flex:none;font-size:10.5px;font-weight:800;border-radius:999px;padding:3px 9px}
-  .sr-stk.in{background:#E8F5EA;color:var(--grn)}
+  .sr-stk.instk{background:#E8F5EA;color:var(--grn)}
   .sr-stk.out{background:#FDECEC;color:var(--red)}
+.sr .pnm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr .pmeta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sr-nm{overflow:hidden}
   .disc-tag{flex:none;font-size:10px;font-weight:800;color:#5B4B8A;background:#EFEBF7;border-radius:999px;padding:3px 9px}
   .pay2{display:flex;gap:11px}
   .pay{flex:1;border-radius:12px;padding:12px;text-align:center}
@@ -353,7 +356,7 @@ function boot(){
   supa.rpc('my_vendors').then(function(r){
     if(r.error || !r.data || !r.data.length){ renderNoVendor(); return; }
     _VENDS=r.data;
-    var pick=_VENDS.find(function(v){return String(v.id)===String(_activeVid);})||_VENDS[0];
+    var pick=_VENDS.find(function(v){return String(v.id)===String(_activeVid);}) || _VENDS.find(function(v){return /^tfl$/i.test(String((v.name||'')).trim());}) || _VENDS[0];
     _activeVid=pick.id; V=pick;
     IS_DEFAULT=/^tfl$/i.test(String((V&&V.name)||'').trim());
     var _go=function(){
@@ -692,8 +695,9 @@ function ldDispatch(id){ if(!supa)return; supa.from('loadings').update({status:'
 function ldAddExtra(id){ var name=(prompt('Extra item name')||'').trim(); if(!name)return; var qty=Math.max(1,parseInt(prompt('Quantity','1'),10)||1); if(!supa)return; supa.from('loading_items').insert({loading_id:id,vendor_id:(V&&V.id),name:name,qty:qty,price:0,is_extra:true}).then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,true); return; } toast('Extra item added'); loadLoadings(); },function(){ toast('Failed',true); }); }
 /* ── dashboard extra sections (live) ── */
 var DASH={};
-function sellRow(name,sold,stock){ var sc=stock>0?'<span class="sr-stk in">'+stock+' in stock</span>':'<span class="sr-stk out">No stock</span>'; return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+sold+' ordered</div></div>'+sc+'</div>'; }
-function discRow(name,meta){ return '<div class="sr"><div class="thumb sm ph">🪑</div><div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+esc(meta)+'</div></div><span class="disc-tag">In quote</span></div>'; }
+function srThumb(image){ return image?('<img class="thumb sm" src="'+esc(image)+'" loading="lazy" onerror="this.outerHTML=\'<div class=&quot;thumb sm ph&quot;>🪑</div>\'">'):'<div class="thumb sm ph">🪑</div>'; }
+function sellRow(name,sold,stock,image){ var sc=stock>0?'<span class="sr-stk instk">'+stock+' in stock</span>':'<span class="sr-stk out">No stock</span>'; return '<div class="sr">'+srThumb(image)+'<div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+sold+' ordered</div></div>'+sc+'</div>'; }
+function discRow(name,meta,image){ return '<div class="sr">'+srThumb(image)+'<div class="sr-nm"><div class="pnm">'+esc(name)+'</div><div class="pmeta">'+esc(meta)+'</div></div><span class="disc-tag">In quote</span></div>'; }
 function fmtShort(n){ n=+n||0; if(n>=100000) return '₹'+(n/100000).toFixed(n>=1000000?0:1)+'L'; if(n>=1000) return '₹'+(n/1000).toFixed(0)+'k'; return fmtINR(n); }
 function dashLoadExtra(){
   var el=document.getElementById('dashx'); if(!el) return;
@@ -707,10 +711,10 @@ function renderDashX(){
     +'<div class="mini"><div class="mini-n">'+(d.pcs||0)+'</div><div class="mini-l">Pc dispatched</div></div>'
     +'<div class="mini"><div class="mini-n">'+fmtShort(d.billed)+'</div><div class="mini-l">Billed</div></div></div></div>';
   var top=d.top||[];
-  H+='<div class="card"><div class="ch-t">Most ordered · stock</div>'+(top.length?top.map(function(t){ return sellRow(t.name,t.sold,t.stock); }).join(''):'<div class="hint">No orders yet.</div>')+'</div>';
+  H+='<div class="card"><div class="ch-t">Most ordered · stock</div>'+(top.length?top.map(function(t){ return sellRow(t.name,t.sold,t.stock,t.image); }).join(''):'<div class="hint">No orders yet.</div>')+'</div>';
   H+='<div class="card"><div class="ch-t">Payments & business</div><div class="pay2"><div class="pay pos"><div class="pay-n">'+fmtINR(d.received||0)+'</div><div class="pay-l">Received</div></div><div class="pay due"><div class="pay-n">'+fmtINR(d.pending||0)+'</div><div class="pay-l">Outstanding</div></div></div><div class="hint" style="margin-top:8px">Outstanding = dispatched value not yet paid.</div></div>';
   var disc=d.in_discussion||[];
-  H+='<div class="card"><div class="ch-t">In discussion <span style="font-weight:600;color:var(--ink3);font-size:11px">· from Gharnish quotes</span></div>'+(disc.length?disc.map(function(x){ return discRow(x.name,'Qty '+x.qty+' · '+x.quotes+' quote'+(x.quotes===1?'':'s')); }).join(''):'<div class="hint">Nothing in quotes right now.</div>')+'</div>';
+  H+='<div class="card"><div class="ch-t">In discussion <span style="font-weight:600;color:var(--ink3);font-size:11px">· from Gharnish quotes</span></div>'+(disc.length?disc.map(function(x){ return discRow(x.name,'Qty '+x.qty+' · '+x.quotes+' quote'+(x.quotes===1?'':'s'),x.image); }).join(''):'<div class="hint">Nothing in quotes right now.</div>')+'</div>';
   el.innerHTML=H;
 }
 function accountBody(){
