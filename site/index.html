@@ -3980,16 +3980,28 @@ function ghQAnormCat(k){
   if(k==='indoor-chairs') return 'chair';
   return k;
 }
-function ghQAsecOfCat(k){ if(/^res-/.test(k))return 'residential'; if(/^off-/.test(k))return 'office'; if(/^bnq-/.test(k))return 'banquet'; return 'restaurant'; }
+var GH_SECTIONS=[{key:'',label:'Restaurant / Commercial',pfx:''},{key:'residential',label:'Home Furniture',pfx:'res-'},{key:'office',label:'Office Furniture',pfx:'off-'},{key:'banquet',label:'Banquet',pfx:'bnq-'}];
+function ghSecKeys(){ return GH_SECTIONS.filter(function(s){return !!s.key;}).map(function(s){return s.key;}); }
+function ghValidSecKey(k){ return !!k && k!=='restaurant' && ghSecKeys().indexOf(k)>-1; }
+function ghCustomSections(){ return GH_SECTIONS.filter(function(s){ return s.key && ['residential','office','banquet'].indexOf(s.key)<0; }); }
+function ghSecLabelOf(k){ if(!k||k==='restaurant') return 'Restaurant / Commercial'; for(var i=0;i<GH_SECTIONS.length;i++){ if(GH_SECTIONS[i].key===k) return GH_SECTIONS[i].label; } return 'Restaurant / Commercial'; }
+function ghSecByPfx(k){ k=k||''; var best=null; GH_SECTIONS.forEach(function(s){ if(s.pfx && String(k).indexOf(s.pfx)===0){ if(!best||s.pfx.length>best.pfx.length) best=s; } }); return best; }
+function ghSecPfxOf(sec){ if(!sec||sec==='restaurant') return ''; for(var i=0;i<GH_SECTIONS.length;i++){ if(GH_SECTIONS[i].key===sec) return GH_SECTIONS[i].pfx||''; } return ''; }
+function ghMergeSections(arr){ var out=[{key:'',label:'Restaurant / Commercial',pfx:''},{key:'residential',label:'Home Furniture',pfx:'res-'},{key:'office',label:'Office Furniture',pfx:'off-'},{key:'banquet',label:'Banquet',pfx:'bnq-'}]; var seen={'':1,'residential':1,'office':1,'banquet':1}; (arr||[]).forEach(function(x){ if(!x||typeof x.key==='undefined') return; var kk=String(x.key); if(seen[kk]) return; out.push({key:kk,label:String(x.label||kk),pfx:String(x.pfx||(kk+'-'))}); seen[kk]=1; }); return out; }
+function ghGoSection(key){ ghSetSection(key); try{ trackEvent('go_section',{section:key}); }catch(e){} window.scrollTo({top:0,behavior:'smooth'}); }
+function ghRefreshSectionNav(){ try{ var menus=document.querySelectorAll('.dnav-menu'); [].forEach.call(menus,function(menu){ [].forEach.call(menu.querySelectorAll('[data-customseg]'),function(b){ b.remove(); }); ghCustomSections().forEach(function(s){ var b=document.createElement('button'); b.className='dnav-mi'; b.setAttribute('role','menuitem'); b.setAttribute('data-customseg',s.key); b.textContent=s.label; b.onclick=(function(k,btn){ return function(){ ghGoSection(k); try{ ghNavClose(btn); }catch(e){} }; })(s.key,b); menu.appendChild(b); }); }); }catch(e){} }
+try{ var _lssec=JSON.parse(localStorage.getItem('gh_product_sections')||'null'); if(Array.isArray(_lssec)&&_lssec.length) GH_SECTIONS=ghMergeSections(_lssec); }catch(e){}
+try{ if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', function(){ try{ ghRefreshSectionNav(); }catch(e){} }); } else { setTimeout(function(){ try{ ghRefreshSectionNav(); }catch(e){} },0); } }catch(e){}
+function ghQAsecOfCat(k){ var s=ghSecByPfx(k); return s?s.key:'restaurant'; }
 function ghQAcatLabel(k){ if(typeof CAT_LABEL!=='undefined'&&CAT_LABEL[k]) return CAT_LABEL[k]; if(typeof CATMETA!=='undefined'&&CATMETA[k]&&CATMETA[k].name) return CATMETA[k].name; return k; }
 function ghQAcats(sec){
-  var pfx = sec==='residential'?'res-':(sec==='office'?'off-':(sec==='banquet'?'bnq-':''));
+  var pfx = ghSecPfxOf(sec);
   var LEG=['table-round','table-square','table-rect'];
   var out=[], seen={};
   var meta=(typeof CATMETA!=='undefined'&&CATMETA&&typeof CATMETA==='object')?CATMETA:{};
   Object.keys(meta).sort(function(a,b){return ((meta[a]&&meta[a].order)||0)-((meta[b]&&meta[b].order)||0);}).forEach(function(k){
     var c=meta[k]||{}; if(c.visible===false) return; if(LEG.indexOf(k)>=0) return;
-    var isPref=/^(res-|off-|bnq-)/.test(k);
+    var isPref=!!ghSecByPfx(k);
     if(pfx){ if(k.indexOf(pfx)===0){ out.push([k,c.name||k]); seen[k]=1; } }
     else { if(!isPref){ out.push([k,c.name||k]); seen[k]=1; } }
   });
@@ -4012,14 +4024,14 @@ function ghQuickAddOpen(){
   var curCat=ghQAnormCat((S.filters&&S.filters.cat)||S.selectedCat||'all');
   var sec;
   if(curCat){ sec=ghQAsecOfCat(curCat); }
-  else { sec=(S.section==='residential'||S.section==='office'||S.section==='banquet')?S.section:'restaurant'; }
+  else { sec=ghValidSecKey(S.section)?S.section:'restaurant'; }
   var cats=ghQAcatOptions(sec,curCat);
   var catSel=curCat||(cats[0]?cats[0][0]:'');
   ov.innerHTML=
     '<div class="gh-qa-sheet" onclick="event.stopPropagation()">'
     +'<h3>Add a product</h3><div class="gh-qa-sub">Publishes straight to your storefront. You can refine everything later in the admin.</div>'
     +'<div class="gh-qa-row"><div><label class="gh-qa-l">Section</label><select class="gh-qa-sel" id="gh-qa-sec" onchange="ghQASecChange()">'
-      +[['restaurant','Restaurant / Commercial'],['residential','Home Furniture'],['office','Office'],['banquet','Banquet']].map(function(o){return '<option value="'+o[0]+'"'+(o[0]===sec?' selected':'')+'>'+o[1]+'</option>';}).join('')
+      +GH_SECTIONS.map(function(o){var kk=o.key||'restaurant';return '<option value="'+kk+'"'+(kk===sec?' selected':'')+'>'+o.label+'</option>';}).join('')
     +'</select></div>'
     +'<div><label class="gh-qa-l">Category</label><select class="gh-qa-sel" id="gh-qa-cat">'+cats.map(function(c){return '<option value="'+c[0]+'"'+(c[0]===catSel?' selected':'')+'>'+ghEsc(c[1])+'</option>';}).join('')+'</select></div></div>'
     +'<label class="gh-qa-l">Product name</label><input class="gh-qa-in" id="gh-qa-name" placeholder="e.g. Verona Bistro Chair" autocomplete="off">'
@@ -4200,8 +4212,8 @@ var RES_CAT_CARDS=[
   {key:'res-side-table',  label:'Side Tables',       sub:'Accent & lamp tables',    icon:'roundtable',cats:['res-side-table']},
 ];
 var GH_ALL=[];
-function ghSecOf(p){ var s=p&&p.section; return (s==='residential'||s==='office'||s==='banquet')?s:'restaurant'; }
-function ghCurSec(){ return (S.section==='residential'||S.section==='office'||S.section==='banquet')?S.section:'restaurant'; }
+function ghSecOf(p){ var s=p&&p.section; return ghValidSecKey(s)?s:'restaurant'; }
+function ghCurSec(){ return ghValidSecKey(S.section)?S.section:'restaurant'; }
 function applyClearanceOffers(){
   var list=(typeof GH_ALL!=='undefined'&&GH_ALL.length)?GH_ALL:PRODUCTS;
   (list||[]).forEach(function(p){
@@ -4220,14 +4232,14 @@ function ghGoBanquet(){ ghSetSection('banquet'); try{ trackEvent('go_banquet',{}
 function ghNavCat(btn){ var d=btn.parentNode; var open=d.classList.toggle('open'); btn.setAttribute('aria-expanded',open?'true':'false'); document.removeEventListener('click',ghNavCatOut,true); if(open){ setTimeout(function(){ document.addEventListener('click',ghNavCatOut,true); },0); } }
 function ghNavCatOut(e){ var d=document.querySelector('.dnav-drop.open'); if(d && !d.contains(e.target)){ d.classList.remove('open'); var t=d.querySelector('.dnav-cat'); if(t)t.setAttribute('aria-expanded','false'); document.removeEventListener('click',ghNavCatOut,true); } }
 function ghNavClose(el){ var d=el.closest('.dnav-drop'); if(d){ d.classList.remove('open'); var t=d.querySelector('.dnav-cat'); if(t)t.setAttribute('aria-expanded','false'); } document.removeEventListener('click',ghNavCatOut,true); }
-function ghSetSection(sec){ S.section=(sec==='residential'||sec==='office'||sec==='banquet')?sec:'restaurant'; ghApplySection(); S.selectedProduct=null; S.selectedProject=null; S.tab='categories'; S.catView='list'; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section}); }catch(e){} render(); window.scrollTo(0,0); }
+function ghSetSection(sec){ S.section=ghValidSecKey(sec)?sec:'restaurant'; ghApplySection(); S.selectedProduct=null; S.selectedProject=null; S.tab='categories'; S.catView='list'; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section}); }catch(e){} render(); window.scrollTo(0,0); }
 var CAT_IMAGES={};
 var CATMETA={};
 function ghIsResCat(k){ return /^res-/.test(k||''); }
 function ghIsOffCat(k){ return /^off-/.test(k||''); }
 function ghIsBnqCat(k){ return /^bnq-/.test(k||''); }
-function ghHomeSec(sec){ S.section=(sec==='residential'||sec==='office'||sec==='banquet')?sec:'restaurant'; if(typeof ghApplySection==='function') ghApplySection(); S.tab='home'; S.homeView='landing'; S.selectedProduct=null; S.selectedProject=null; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section,from:'home_tabs'}); }catch(e){} render(); var e=document.querySelector('[data-sec="categories"]'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); }
-function ghCatSec(k){ return ghIsResCat(k)?'residential':(ghIsOffCat(k)?'office':(ghIsBnqCat(k)?'banquet':'restaurant')); }
+function ghHomeSec(sec){ S.section=ghValidSecKey(sec)?sec:'restaurant'; if(typeof ghApplySection==='function') ghApplySection(); S.tab='home'; S.homeView='landing'; S.selectedProduct=null; S.selectedProject=null; if(S.filters){ S.filters.cat='all'; } try{ trackEvent('section_switch',{section:S.section,from:'home_tabs'}); }catch(e){} render(); var e=document.querySelector('[data-sec="categories"]'); if(e) e.scrollIntoView({behavior:'smooth',block:'start'}); }
+function ghCatSec(k){ var s=ghSecByPfx(k); return s?s.key:'restaurant'; }
 var OFFICE_CAT_CARDS=[{key:'off-general',label:'Office Furniture',sub:'Desks, chairs & workstations for your workspace',icon:'chair',cats:['off-general']}];
 try{ if(typeof CAT_LABEL!=='undefined') CAT_LABEL['off-general']='Office Furniture'; }catch(e){}
 var BANQUET_CAT_CARDS=[{key:'bnq-chair',label:'Banquet Chairs',sub:'Stackable & cushioned banquet chairs',icon:'chair',cats:['bnq-chair']},{key:'bnq-chair-cover',label:'Chair Covers',sub:'Covers & sashes for banquet chairs',icon:'chair',cats:['bnq-chair-cover']},{key:'bnq-buffet-table',label:'Buffet Tables',sub:'Round buffet & dining tables',icon:'roundtable',cats:['bnq-buffet-table']},{key:'bnq-table-cover',label:'Table Covers',sub:'Covers & linens for buffet tables',icon:'roundtable',cats:['bnq-table-cover']}];
@@ -4379,7 +4391,7 @@ H.push('</div>');
   }
 
   if(ghCurSec()==='restaurant') H.push(logoWallHTML(false));
-  H.push('<div class="hs" data-sec="categories"><div class="hs-hd" style="flex-direction:column;align-items:flex-start;gap:12px"><div class="hs-title">Shop by Category</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+[['restaurant','Restaurant'],['residential','Residential'],['banquet','Banquet'],['office','Office']].map(function(t){ var on=(ghCurSec()===t[0]); return '<button onclick="ghHomeSec(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div>'+'</div></div>');
+  H.push('<div class="hs" data-sec="categories"><div class="hs-hd" style="flex-direction:column;align-items:flex-start;gap:12px"><div class="hs-title">Shop by Category</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">'+([['restaurant','Restaurant']].concat(GH_SECTIONS.filter(function(_s){return !!_s.key;}).map(function(_s){return [_s.key,_s.label];}))).map(function(t){ var on=(ghCurSec()===t[0]); return '<button onclick="ghHomeSec(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:8px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div>'+'</div></div>');
   H.push('<div class="cat-img-grid">');
   (function(){var _hs=ghCurSec();return (_hs==='banquet'?BANQUET_CAT_CARDS:(_hs==='office'?OFFICE_CAT_CARDS:(_hs==='residential'?RES_CAT_CARDS:orderedCards())));})().forEach(function(c){
     var n=(function(cats){var _src=(typeof GH_ALL!=='undefined'&&GH_ALL.length)?GH_ALL:prods;return _src.filter(function(p){return cats.some(function(cc){return prodInCat(p,cc);});}).length;})(c.cats);
@@ -4873,7 +4885,7 @@ function renderCategoriesPage(){
   var adminCats=(function(){try{return JSON.parse(localStorage.getItem('gh_categories')||'null');}catch(e){return null;}})();
   var H=[];
   H.push('<div class="home-wrap">');
-  var _sec=ghCurSec(); var _res=(_sec==='residential'); var _off=(_sec==='office'); var _bnq=(_sec==='banquet'); H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">'+(_bnq?'Banquet Furniture':(_off?'Office Furniture':(_res?'Residential Collection':'Shop by Category')))+'</div><div style="font-size:13px;color:var(--ink3)">'+(_bnq?'Chairs, tables &amp; event furniture for banquets &amp; functions':(_off?'Desks, chairs &amp; workstations for your workspace':(_res?'Dining sets, tables &amp; chairs, sofas, beds &amp; more for your home':'Browse the full Gharnish range by furniture type')))+'</div>');
+  var _sec=ghCurSec(); var _res=(_sec==='residential'); var _off=(_sec==='office'); var _bnq=(_sec==='banquet'); H.push('<div style="padding:18px 16px 4px"><div style="font-size:23px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin-bottom:3px">'+(_bnq?'Banquet Furniture':(_off?'Office Furniture':(_res?'Residential Collection':(ghValidSecKey(_sec)?ghSecLabelOf(_sec):'Shop by Category'))))+'</div><div style="font-size:13px;color:var(--ink3)">'+(_bnq?'Chairs, tables &amp; event furniture for banquets &amp; functions':(_off?'Desks, chairs &amp; workstations for your workspace':(_res?'Dining sets, tables &amp; chairs, sofas, beds &amp; more for your home':'Browse the full Gharnish range by furniture type')))+'</div>');
   H.push('<div style="display:flex;gap:8px;margin-top:12px">'+[['restaurant','Restaurant &amp; Caf\u00e9'],['residential','Residential'],['office','Office'],['banquet','Banquet']].map(function(t){ var on=(S.section===t[0]); return '<button onclick="ghSetSection(\''+t[0]+'\')" style="flex:none;border-radius:99px;padding:9px 18px;font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid '+(on?'var(--ink,#1a1208)':'rgba(0,0,0,.15)')+';background:'+(on?'var(--ink,#1a1208)':'transparent')+';color:'+(on?'#fff':'var(--ink2,#555)')+'">'+t[1]+'</button>'; }).join('')+'</div></div>');
   H.push('<div class="cat-img-grid" style="margin-top:12px">');
   (_bnq?BANQUET_CAT_CARDS:(_off?OFFICE_CAT_CARDS:(_res?RES_CAT_CARDS:orderedCards()))).forEach(function(c){
@@ -7918,6 +7930,8 @@ ghLoadMapsKey();
       var cm=(typeof cr.data.value==='string'?JSON.parse(cr.data.value):cr.data.value);
       if(cm && typeof cm==='object'){ CATMETA=cm; render(); }
     }
+    var scr=await supa.from('app_settings').select('value').eq('key','product_sections').maybeSingle();
+    if(!scr.error && scr.data && scr.data.value){ var sv=(typeof scr.data.value==='string'?JSON.parse(scr.data.value):scr.data.value); if(Array.isArray(sv)&&sv.length){ GH_SECTIONS=ghMergeSections(sv); try{ localStorage.setItem('gh_product_sections',JSON.stringify(GH_SECTIONS)); }catch(e){} try{ ghRefreshSectionNav(); }catch(e){} render(); } }
     var tgr=await supa.from('app_settings').select('value').eq('key','tag_groups').maybeSingle();
     if(!tgr.error && tgr.data && tgr.data.value){ var tg=(typeof tgr.data.value==='string'?JSON.parse(tgr.data.value):tgr.data.value); if(Array.isArray(tg)){ TAG_GROUPS=tg; render(); } }
     var wpr=await supa.from('app_settings').select('value').eq('key','wood_polishes').maybeSingle();
