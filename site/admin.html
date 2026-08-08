@@ -2308,8 +2308,8 @@ function vendLoadProduction(){
     var orders=res[0], nameBy={}, vpays=res[2]; _runOrders=orders; _prodStages={}; (res[3]||[]).forEach(function(r){ _prodStages[r.line_key]=r; }); res[1].forEach(function(c){nameBy[c.mobile]=c.name;});
     var payable=0, blocks=[];
     orders.slice().sort(function(a,b){ var ua=orderUrgency(a).lvl,ub=orderUrgency(b).lvl; if(ua!==ub)return ub-ua; var da=a.delivery_date?new Date(a.delivery_date).getTime():Infinity,db=b.delivery_date?new Date(b.delivery_date).getTime():Infinity; return da-db; }).forEach(function(o){ var m=parseMeta(o); if(!m||!m.items)return; var u=orderUrgency(o); var mine=[]; m.items.forEach(function(itX){ vendorParts(itX.pid,itX).forEach(function(pp){ if(String(pp.vid)===String(_curVend.id)) mine.push({it:itX,part:pp.part}); }); }); if(!mine.length)return; var sub=0; var rows=mine.map(function(mp){ var it=mp.it; var land=itemLandingPart(it,mp.part); var qn=+it.qty||0; sub+=land*qn; var stg=stageOf(o.id,it.pid,mp.part); var sc=STAGE_COL[stg]||'#888'; return '<div style="display:flex;gap:8px;padding:5px 0;align-items:center">'+(it.image?'<img src="'+escA(it.image)+'" style="width:30px;height:30px;border-radius:6px;object-fit:contain;background:var(--c2);flex:none">':'<span style="width:30px;height:30px;flex:none"></span>')+'<span style="flex:1;min-width:0;font-size:12.5px;color:var(--ink)">'+escA(it.name)+partLabel(mp.part)+(it.desc?('<span style="display:block;font-size:11px;color:var(--ink3)">'+escA(it.desc)+'</span>'):'')+'</span>'+'<span style="font-size:12px;color:var(--ink3);font-weight:600;white-space:nowrap">x'+qn+'</span>'+'<span class="pstage-tag" style="background:'+sc+'1a;color:'+sc+'">'+stg+'</span>'+'</div>'; }).join(''); payable+=sub; blocks.push('<div class="cust-row" style="flex-direction:column;align-items:stretch;gap:2px'+(u.lvl>=2?';border-left:3px solid '+u.col+';padding-left:10px':'')+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px"><span style="font-weight:700;font-size:13px;color:var(--ink)">'+escA(o.title||'Order')+' \u00b7 '+escA(nameBy[o.mobile]||o.mobile)+'</span><span class="lead-badge" style="background:#D979061f;color:#D97706">'+escA(o.status)+'</span>'+urgChip(u)+(o.delivery_date?'<span class="lead-badge" style="background:var(--c2);color:var(--ink2);padding:1px 8px">Deliver '+escA(custDate(o.delivery_date))+'</span>':'')+'</div>'+rows+'</div>'); });
-    var paid=vpays.reduce(function(a,p){return a+(+p.amount||0);},0); var bal=payable-paid;
-    var payHtml='<div class="cust-sec"><h4>Payments to vendor <button onclick="vendPay()" class="cust-hbtn" style="margin-left:auto;background:var(--g);color:#fff;padding:5px 12px;font-size:11px">+ Record</button></h4><div style="display:flex;gap:16px;margin-bottom:10px;font-size:12.5px;flex-wrap:wrap"><span style="color:var(--ink3)">Payable <b style="color:var(--ink)">'+custMoney(payable)+'</b></span><span style="color:#1B7A4D">Paid <b>'+custMoney(paid)+'</b></span><span style="color:'+(bal>0?'#C62828':'#1B7A4D')+';font-weight:700">Balance '+custMoney(bal)+'</span></div>'+(vpays.length?vpays.map(function(p){return '<div class="cust-row"><div style="flex:1"><div style="font-weight:700;color:#1B7A4D">'+custMoney(p.amount)+'</div><div style="font-size:11px;color:var(--ink3)">'+escA(p.mode||'')+' \u00b7 '+custDate(p.created_at)+'</div></div><button onclick="vendDelPay('+p.id+')" style="background:none;border:none;color:#C62828;cursor:pointer;font-size:15px">\u00d7</button></div>';}).join(''):'<div style="color:var(--ink3);font-size:12px;padding:4px 0">No payments recorded yet.</div>')+'</div>';
+    _vendPays=vpays; var _vo=[]; orders.forEach(function(o){ var mm=parseMeta(o); if(!mm||!mm.items)return; var has=false; mm.items.forEach(function(itX){ vendorParts(itX.pid,itX).forEach(function(pp){ if(String(pp.vid)===String(_curVend.id)) has=true; }); }); if(has) _vo.push({id:o.id,label:(o.title||('Order #'+o.id))+' · '+(nameBy[o.mobile]||o.mobile)}); }); _vendLedgerOrders=_vo; var olbl={}; orders.forEach(function(o){ olbl[o.id]=(o.title||('Order #'+o.id)); }); var paidOut=0, payIn=0; vpays.forEach(function(p){ if(p.direction==='in') payIn+=(+p.amount||0); else paidOut+=(+p.amount||0); }); var net=paidOut-payIn; var bal=payable-net;
+    var payHtml=vendLedgerHtml(payable,paidOut,payIn,bal,vpays,olbl);
     el.innerHTML='<div class="cust-sec"><h4>Confirmed &amp; processing for you</h4>'+(blocks.length?'<div class="pline-actions" style="margin:2px 0 12px"><button class="pload-btn" onclick="runLoadingList('+_curVend.id+')">\ud83d\udce6 Create loading list</button><button class="pjob-btn" onclick="runVendorSheet('+_curVend.id+')">\u2193 Job sheet</button></div>':'')+(blocks.length?blocks.join(''):'<div style="color:var(--ink3);font-size:12.5px;padding:6px 0">No confirmed / in-production orders with your products right now.</div>')+'</div>'+payHtml;
   });
 }
@@ -2356,7 +2356,48 @@ function vendRemoveLogin(){
     });
   });
 }
-function vendPay(){ if(!_curVend||!supa)return; ghForm({title:'Pay '+(_curVend.name||'vendor'), fields:[{key:'amount',label:'Amount \u20b9',type:'number'},{key:'mode',label:'Mode',type:'select',options:[['UPI','UPI'],['Bank','Bank'],['Cash','Cash']]}], submitLabel:'Record payment', onSubmit:function(v){ var amt=parseFloat(v.amount)||0; if(amt<=0){toast('Enter an amount','#C62828');return false;} supa.from('vendor_payments').insert({vendor_id:_curVend.id,amount:amt,mode:v.mode||'UPI',created_at:new Date().toISOString()}).then(function(r){ if(r&&r.error){toast('Failed: '+r.error.message,'#C62828');return;} toast('Payment recorded','#1B7A4D'); vendLoadProduction(); }); }}); }
+var _vendPays=[], _vendLedgerOrders=[];
+function vendLedgerHtml(payable,paidOut,payIn,bal,vpays,olbl){
+  var tile=function(l,v,c){ return '<div style="flex:1;min-width:78px;background:var(--c1);border:1px solid rgba(0,0,0,.08);border-radius:10px;padding:8px 10px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em">'+l+'</div><div style="font-size:15px;font-weight:800;font-family:Poppins,sans-serif;margin-top:2px'+(c?(';color:'+c):'')+'">'+v+'</div></div>'; };
+  var h='<div class="cust-sec"><h4>Vendor ledger <button onclick="vendPay()" class="cust-hbtn" style="margin-left:auto;background:var(--g);color:#fff;padding:5px 12px;font-size:11px">+ Record</button></h4>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">'+tile('Payable',custMoney(payable),'')+tile('Paid out',custMoney(paidOut),'#1B7A4D')+tile('Received',custMoney(payIn),'#2563EB')+tile('Balance',custMoney(bal),(bal>0?'#C62828':'#1B7A4D'))+'</div>';
+  h+='<div style="font-size:11px;color:var(--ink3);margin:-4px 0 9px">Balance still owed = Payable \u2212 Paid out + Received.</div>';
+  if(!vpays.length){ h+='<div style="color:var(--ink3);font-size:12px;padding:4px 0">No payments recorded yet.</div></div>'; return h; }
+  h+=vpays.map(function(p){
+    var isIn=(p.direction==='in'); var col=isIn?'#2563EB':'#1B7A4D';
+    var meta=[]; if(p.mode)meta.push(escA(p.mode)); if(p.account)meta.push(escA(p.account)); if(p.order_id&&olbl[p.order_id])meta.push('for '+escA(olbl[p.order_id])); meta.push(custDate(p.created_at)); if(p.note)meta.push(escA(p.note));
+    return '<div class="cust-row"><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="lead-badge" style="background:'+col+'1a;color:'+col+'">'+(isIn?'Received':'Paid out')+'</span><span style="font-weight:800;color:'+col+'">'+(isIn?'+ ':'\u2212 ')+custMoney(p.amount)+'</span></div><div style="font-size:11px;color:var(--ink3);margin-top:3px">'+meta.join(' \u00b7 ')+'</div></div><button onclick="vendEditPay('+p.id+')" style="background:none;border:none;color:var(--ink3);cursor:pointer;font-size:14px;margin-right:4px" title="Edit">\u270e</button><button onclick="vendDelPay('+p.id+')" style="background:none;border:none;color:#C62828;cursor:pointer;font-size:15px" title="Delete">\u00d7</button></div>';
+  }).join('');
+  h+='</div>'; return h;
+}
+function vendPayForm(existing){
+  if(!_curVend||!supa)return;
+  var ex=existing||{}; var isEdit=!!(existing&&existing.id);
+  var d=ex.created_at?new Date(ex.created_at):new Date();
+  var ymd=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  var orderOpts=[['','\u2014 not linked \u2014']].concat((_vendLedgerOrders||[]).map(function(o){return [String(o.id),o.label];}));
+  ghForm({title:(isEdit?'Edit ledger entry':'Record vendor payment')+' \u2014 '+(_curVend.name||''),
+    fields:[
+      {key:'direction',label:'Type',type:'select',value:(ex.direction||'out'),options:[['out','Pay out \u2014 money to vendor'],['in','Pay in \u2014 money from vendor']]},
+      {key:'amount',label:'Amount \u20b9',type:'number',value:(ex.amount!=null?ex.amount:'')},
+      {key:'mode',label:'Mode',type:'select',value:(ex.mode||'UPI'),options:[['UPI','UPI'],['Bank','Bank transfer'],['Cash','Cash'],['Cheque','Cheque'],['Card','Card']]},
+      {key:'account',label:'Paid from / into',type:'select',value:(ex.account||''),options:[['','\u2014 none \u2014']].concat((PAY_ACCOUNTS||[]).map(function(a){return [a,a];}))},
+      {key:'order_id',label:'Against order (optional)',type:'select',value:(ex.order_id!=null?String(ex.order_id):''),options:orderOpts},
+      {key:'date',label:'Date',type:'date',value:ymd},
+      {key:'note',label:'Note / reference',type:'text',value:(ex.note||'')}
+    ],
+    submitLabel:(isEdit?'Save changes':'Record'),
+    onSubmit:function(v){
+      var amt=parseFloat(v.amount)||0; if(amt<=0){toast('Enter an amount','#C62828');return false;}
+      var iso; try{ iso=v.date?new Date(v.date+'T12:00:00').toISOString():new Date().toISOString(); }catch(e){ iso=new Date().toISOString(); }
+      var payload={vendor_id:_curVend.id, amount:amt, direction:(v.direction==='in'?'in':'out'), mode:v.mode||'UPI', account:v.account||null, order_id:(v.order_id?parseInt(v.order_id,10):null), note:(v.note||'').trim()||null, created_at:iso};
+      var q=isEdit?supa.from('vendor_payments').update(payload).eq('id',existing.id):supa.from('vendor_payments').insert(payload);
+      q.then(function(r){ if(r&&r.error){ toast('Failed: '+r.error.message,'#C62828'); return; } toast(isEdit?'Ledger updated':'Recorded','#1B7A4D'); vendLoadProduction(); try{ if(typeof txnLoad==='function' && typeof currentPage!=='undefined' && currentPage==='transactions') txnLoad(); }catch(e){} },function(){ toast('Failed','#C62828'); });
+    }
+  });
+}
+function vendPay(){ vendPayForm(null); }
+function vendEditPay(id){ var p=(_vendPays||[]).find(function(x){return String(x.id)===String(id);}); if(!p){ toast('Entry not found','#C62828'); return; } vendPayForm(p); }
 function vendDelPay(id){ ghConfirm('Delete this payment?',function(){ supa.from('vendor_payments').delete().eq('id',id).then(function(){ vendLoadProduction(); }); }); }
 function vendPickSearch(q){ var el=document.getElementById('v-presults'); if(!el)return; q=(q||'').trim().toLowerCase(); if(!q){ el.innerHTML=''; return; } var prods=(typeof loadProds==='function')?(loadProds()||[]):[]; var m=prods.filter(function(p){ return (p.name||'').toLowerCase().indexOf(q)>-1; }).slice(0,12); el.innerHTML=m.length?m.map(function(p){ var mine=String(PRODUCT_VENDORS[p.id])===String(_curVend.id); var other=PRODUCT_VENDORS[p.id]&&!mine?(' \u00b7 '+escA(vendName(PRODUCT_VENDORS[p.id]))):''; return '<div class="cust-row">'+(p.image?'<img src="'+escA(p.image)+'" style="width:30px;height:30px;border-radius:6px;object-fit:contain;background:var(--c2);flex:none">':'<span style="width:30px;flex:none"></span>')+'<div style="flex:1;min-width:0"><div style="font-size:12.5px;color:var(--ink)">'+escA(p.name)+'</div><div style="font-size:10.5px;color:var(--ink3)">'+custMoney(p.price||0)+other+'</div></div><button class="cust-add-btn" style="padding:5px 12px;font-size:11px" onclick="vendAssignProduct(\''+escA(String(p.id))+'\')">'+(mine?'\u2713':'Assign')+'</button></div>'; }).join(''):'<div style="color:var(--ink3);font-size:12px;padding:8px">No match</div>'; }
 function vendAssignProduct(pid){ PRODUCT_VENDORS[pid]=_curVend.id; saveProductVendors(); toast('Assigned','#1B7A4D'); vendRenderDetail(); }
@@ -2729,7 +2770,7 @@ function txnLoad(){
     var cp=res[0], vp=res[1], ex=res[2], custs=res[3]; _txnCusts=custs; var nameBy={}; custs.forEach(function(c){nameBy[c.mobile]=c.name;});
     _txns=[];
     cp.forEach(function(p){ _txns.push({date:p.created_at,party:nameBy[p.mobile]||('+91 '+p.mobile),type:'in',kind:'Customer payment',amount:+p.amount||0,note:(p.account?(p.account+' · '):'')+(p.mode||''),src:'customer_payments',id:p.id,mobile:p.mobile,canDel:true,canEdit:true}); });
-    vp.forEach(function(p){ _txns.push({date:p.created_at,party:vendName(p.vendor_id)||'Vendor',type:'out',kind:'Vendor payment',amount:+p.amount||0,note:(p.account?(p.account+' · '):'')+(p.mode||p.note||''),src:'vendor_payments',id:p.id,canDel:true,canEdit:true}); });
+    vp.forEach(function(p){ _txns.push({date:p.created_at,party:vendName(p.vendor_id)||'Vendor',type:(p.direction==='in'?'in':'out'),kind:(p.direction==='in'?'Vendor refund / return':'Vendor payment'),amount:+p.amount||0,note:(p.account?(p.account+' · '):'')+(p.mode||p.note||''),src:'vendor_payments',id:p.id,canDel:true,canEdit:true}); });
     ex.forEach(function(e){ _txns.push({date:e.created_at,party:e.category||'Expense',type:'out',kind:'Showroom expense',amount:+e.amount||0,note:(e.account?(e.account+' · '):'')+(e.note||''),src:'expenses',id:e.id,canDel:true,canEdit:true}); });
     _txns.sort(function(a,b){return new Date(b.date)-new Date(a.date);});
     txnRender();
@@ -6192,7 +6233,7 @@ function renderAnalytics(){
   Promise.all([
     cacheOrders(),
     cachePayments(),
-    supa.from('vendor_payments').select('amount').then(function(r){return r.data||[];},function(){return [];}),
+    supa.from('vendor_payments').select('amount,direction').then(function(r){return r.data||[];},function(){return [];}),
     supa.from('expenses').select('amount,created_at').then(function(r){return r.data||[];},function(){return [];}),
     cacheCustomers()
   ]).then(function(res){ analyticsRender(res[0],res[1],res[2],res[3],res[4]); });
@@ -6203,7 +6244,7 @@ function analyticsRender(orders,payments,vpays,expenses,customers){
   var collected=payments.reduce(function(a,p){return a+(+p.amount||0);},0);
   var pending=Math.max(0,totalSales-collected);
   var fin=orders.filter(function(o){return o.status!=='Quotation'&&o.status!=='Cancelled';}).reduce(function(a,o){var f=orderFinancials(o);a.sales+=f.sales;a.spend+=f.spend;a.profit+=f.profit;return a;},{sales:0,spend:0,profit:0});
-  var paidOut=vpays.reduce(function(a,p){return a+(+p.amount||0);},0)+expenses.reduce(function(a,e){return a+(+e.amount||0);},0);
+  var paidOut=vpays.reduce(function(a,p){return a+(p.direction==='in'?-(+p.amount||0):(+p.amount||0));},0)+expenses.reduce(function(a,e){return a+(+e.amount||0);},0);
   var leads=customers.length;
   var byStage={}; LEAD_STATUS.forEach(function(s){byStage[s]=0;}); customers.forEach(function(c){var s=c.lead_status||'New';byStage[s]=(byStage[s]||0)+1;});
   var won=byStage['Won']||0, lost=byStage['Lost']||0; var winRate=(won+lost)?Math.round(won/(won+lost)*100):0;
