@@ -227,7 +227,7 @@
   .li-note label{display:block;font-size:9px;font-weight:800;color:var(--ink3);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
   /* ── confirmed ── */
   .conf-order{background:#fff;border:1px solid rgba(20,16,10,.06);border-radius:15px;margin:10px 0;box-shadow:0 1px 2px rgba(20,16,10,.04);overflow:hidden}
-  .co-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:12px 14px 8px}
+  .co-hd{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;padding:12px 14px 9px}
   .co-hd b{font-family:Poppins,sans-serif;font-size:14px}
   .co-meta{font-size:11px;color:var(--ink3);font-weight:600;flex:none}
   .co-meta.urgent{color:var(--red)}
@@ -239,6 +239,19 @@
   .cf-nm .pnm{font-weight:400;font-size:13px;color:var(--ink)}
   .cf-nm .urg{display:inline-block;font-size:8.5px;font-weight:800;color:#fff;background:var(--red);border-radius:999px;padding:1px 6px;margin-left:6px;vertical-align:middle;text-transform:uppercase}
   .cf-nm .pmeta{font-size:10.5px;color:var(--ink3);margin:2px 0 6px}
+  .cf-filters{display:flex;gap:7px;margin:0 0 10px;flex-wrap:wrap}
+  .cf-chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--line);color:var(--ink2);border-radius:999px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit}
+  .cf-chip.on{background:#17120b;color:#fff;border-color:#17120b}
+  .cf-chip-n{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--g);color:#fff;font-size:10px;font-weight:800;line-height:1}
+  .cf-chip.on .cf-chip-n{background:rgba(255,255,255,.26)}
+  .co-who{font-size:11.5px;color:var(--ink3);font-weight:600;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .co-urg{display:inline-block;font-size:9px;font-weight:800;color:#fff;background:var(--red);border-radius:999px;padding:2px 9px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px}
+  .co-urg.over{background:#8B1A1A}
+  .conf-order.urgent{border-color:rgba(198,40,40,.28);box-shadow:0 3px 15px rgba(198,40,40,.10)}
+  .conf-order.urgent .co-hd{border-left:3px solid var(--red);padding-left:11px}
+  .conf-order.over .co-hd{border-left-color:#8B1A1A}
+  .cf-nm .urg.over{background:#8B1A1A}
+
   .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
   .seg-b{background:#fff;border:none;padding:5px 11px;font-size:11px;font-weight:700;color:var(--ink3);cursor:pointer;font-family:inherit}
   .seg-b.on.proc{background:#FFF3E0;color:#B26A00}
@@ -617,29 +630,52 @@ function confLoad(){
   if(!supa){ el.innerHTML='<div class="empty">Connection unavailable.</div>'; return; }
   supa.rpc('vendor_confirmed').then(function(r){ if(r&&r.error){ el.innerHTML='<div class="empty">Could not load items.</div>'; return; } CONF=(r&&r.data)||[]; renderConfList(); }, function(){ el.innerHTML='<div class="empty">Could not load items.</div>'; });
 }
+var CONF_FILTER='all';
+function confSetFilter(f){ CONF_FILTER=f; renderConfList(); }
 function renderConfList(){
   var el=document.getElementById('conflist'); if(!el) return;
   if(!CONF.length){ el.innerHTML='<div class="empty">No confirmed items right now.<br>Items from Gharnish’s running orders will show here.</div>'; return; }
   var groups={}, order=[];
   CONF.forEach(function(it){ var k=String(it.order_id); if(!groups[k]){ groups[k]=[]; order.push(k); } groups[k].push(it); });
   order.sort(function(a,b){ var da=daysUntil((groups[a][0]||{}).load_by), db=daysUntil((groups[b][0]||{}).load_by); if(da==null)da=9999; if(db==null)db=9999; return da-db; });
-  var H='';
+  var urgentCount=0, todoCount=0;
+  CONF.forEach(function(it){ if(it.stage!=='Ready') todoCount++; });
+  order.forEach(function(k){ var du=daysUntil((groups[k][0]||{}).load_by); if(du!=null&&du<=3) urgentCount+=groups[k].length; });
+  var chip=function(f,label,n,c){ return '<button class="cf-chip'+(CONF_FILTER===f?' on':'')+'" onclick="confSetFilter(\''+f+'\')">'+label+(n?('<span class="cf-chip-n"'+((c&&CONF_FILTER!==f)?' style="background:'+c+'"':'')+'>'+n+'</span>'):'')+'</button>'; };
+  var H='<div class="cf-filters">'+chip('all','All',CONF.length,'')+chip('urgent','Urgent',urgentCount,'#C62828')+chip('todo','To make ready',todoCount,'#C8860A')+'</div>';
+  var shown=0;
   order.forEach(function(k){
-    var items=groups[k]; var lb=items[0].load_by; var du=daysUntil(lb); var urgent=(du!=null && du<=3);
-    var lbTxt=lb?('Load by '+fmtDate(lb)+((du!=null&&du>=0)?(' · '+(du===0?'today':(du+'d'))):'')):'No load date set';
-    H+='<div class="conf-order"><div class="co-hd"><b>'+esc(items[0].title||('Order #'+k))+'</b><span class="co-meta'+(urgent?' urgent':'')+'">'+esc(lbTxt)+'</span></div>';
-    items.forEach(function(it){ H+=confRowReal(it,urgent); });
+    var items=groups[k]; var lb=items[0].load_by; var du=daysUntil(lb);
+    var over=(du!=null&&du<0); var urgent=(du!=null&&du<=3);
+    if(CONF_FILTER==='urgent' && !urgent) return;
+    var vis=items;
+    if(CONF_FILTER==='todo'){ vis=items.filter(function(x){return x.stage!=='Ready';}); if(!vis.length) return; }
+    shown++;
+    var lbTxt = lb ? ((over?'Overdue · ':'Due ')+fmtDate(lb)+((!over&&du!=null&&du>=0)?(' · '+(du===0?'today':(du+'d'))):'')) : 'No date set';
+    var cust=(items[0].cust_name||'').trim(); var ref=(items[0].reference||'').trim();
+    var who=''; if(cust) who=esc(cust); if(ref) who+=(who?' · ':'')+'Ref '+esc(ref);
+    H+='<div class="conf-order'+(urgent?' urgent':'')+(over?' over':'')+'"><div class="co-hd">'
+      +'<div style="min-width:0;flex:1"><b>'+esc(items[0].title||('Order #'+k))+'</b>'
+      +(who?('<div class="co-who">'+who+'</div>'):('<div class="co-who" style="opacity:.55">+91 '+esc(items[0].mobile||'')+'</div>'))
+      +'</div>'
+      +'<div style="text-align:right;flex:none">'
+      +(urgent?('<span class="co-urg'+(over?' over':'')+'">'+(over?'Overdue':'Urgent')+'</span>'):'')
+      +'<div class="co-meta'+(urgent?' urgent':'')+'">'+esc(lbTxt)+'</div>'
+      +'</div></div>';
+    vis.forEach(function(it){ H+=confRowReal(it,urgent,over); });
     H+='</div>';
   });
-  H+='<div class="hint" style="text-align:center;margin-top:12px">“Load by” is set by Gharnish; items due within 3 days show <b>Urgent</b>.</div>';
+  if(!shown) H+='<div class="empty" style="padding:34px 0">Nothing in this filter right now.</div>';
+  H+='<div class="hint" style="text-align:center;margin-top:12px">Sorted by due date. Items due within 3 days show <b>Urgent</b>; past due show <b>Overdue</b>.</div>';
   el.innerHTML=H;
 }
-function confRowReal(it,urgent){
+function confRowReal(it,urgent,over){
   var oidJs=jsEsc(String(it.order_id)), pidJs=jsEsc(String(it.pid)); var seg=esc(String(it.order_id)+'_'+String(it.pid)).replace(/[^A-Za-z0-9_]/g,'_');
   var ready=(it.stage==='Ready');
+  var showUrg=urgent && !ready;
   var img=it.image?('<img class="thumb sm" src="'+esc(it.image)+'" loading="lazy">'):'<div class="thumb sm ph">🪑</div>';
-  return '<div class="conf-row'+(urgent?' urgent':'')+'">'+img
-    +'<div class="cf-nm"><div class="pnm">'+esc(it.name||it.pid)+(urgent?'<span class="urg">Urgent</span>':'')+'</div><div class="pmeta">Qty '+(it.qty||0)+'</div>'
+  return '<div class="conf-row'+(showUrg?' urgent':'')+'">'+img
+    +'<div class="cf-nm"><div class="pnm">'+esc(it.name||it.pid)+(showUrg?('<span class="urg'+(over?' over':'')+'">'+(over?'Overdue':'Urgent')+'</span>'):'')+'</div><div class="pmeta">Qty '+(it.qty||0)+'</div>'
     +'<div class="seg" id="seg-'+seg+'"><button class="seg-b'+(ready?'':' on proc')+'" onclick="cfSetReal(\''+oidJs+'\',\''+pidJs+'\',\'processing\',\''+seg+'\')">Processing</button><button class="seg-b'+(ready?' on rdy':'')+'" onclick="cfSetReal(\''+oidJs+'\',\''+pidJs+'\',\'ready\',\''+seg+'\')">Ready</button></div></div>'
     +'<button class="cf-move" id="mv-'+seg+'" onclick="cfMoveReal(\''+oidJs+'\',\''+pidJs+'\',\''+seg+'\')" style="display:'+(ready?'inline-flex':'none')+'">→ Loading</button></div>';
 }
